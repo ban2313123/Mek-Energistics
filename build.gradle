@@ -166,6 +166,7 @@ dependencies {
     localRuntime "curse.maven:applied-flux-965012:7429565"
     localRuntime "curse.maven:ex-pattern-provider-892005:8025439"
     localRuntime "curse.maven:extendedae-plus-1337639:8141724"
+    localRuntime "curse.maven:data-energistics-1565514:8299879"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

@@ -108,13 +108,15 @@ public interface MeFactoryAeMachine extends ICraftingProvider, IGridConnectedBlo
 
     @Override
     default IGridNode getActionableNode() {
-        return getMainNode().getNode();
+        IGridNode node = getMainNode().getNode();
+        return node != null && node.isActive() ? node : null;
     }
 
     @Nullable
     @Override
     default IGridNode getGridNode(Direction dir) {
-        return getMainNode().getNode();
+        IGridNode node = getMainNode().getNode();
+        return node != null && node.isActive() ? node : null;
     }
 
     @Override

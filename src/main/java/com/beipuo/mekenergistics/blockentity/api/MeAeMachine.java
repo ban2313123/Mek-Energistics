@@ -143,14 +143,16 @@ public interface MeAeMachine extends PatternContainer, ICraftingProvider, IActio
     @Override
     default IGridNode getActionableNode() {
         IManagedGridNode node = getMainNode();
-        return node == null ? null : node.getNode();
+        IGridNode gridNode = node == null ? null : node.getNode();
+        return gridNode != null && gridNode.isActive() ? gridNode : null;
     }
 
     @Nullable
     @Override
     default IGridNode getGridNode(Direction dir) {
         IManagedGridNode node = getMainNode();
-        return node == null ? null : node.getNode();
+        IGridNode gridNode = node == null ? null : node.getNode();
+        return gridNode != null && gridNode.isActive() ? gridNode : null;
     }
 
     @Override

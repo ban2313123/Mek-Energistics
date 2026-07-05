@@ -718,9 +718,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
             return;
         }
         this.patternTerminalName = MeAeMachine.sanitizePatternTerminalName(name);
-        if (this.mainNode.getNode() != null) {
-            ICraftingProvider.requestUpdate(this.mainNode);
-        }
+        MeLegacyMachineAeHelper.requestCraftingUpdate(this.mainNode);
     }
 
     @Override

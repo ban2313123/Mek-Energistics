@@ -28,6 +28,12 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
         if (mixinClassName.endsWith(".extendedae.ContainerRenamerMixin")) {
             return isModLoaded("extendedae");
         }
+        if (mixinClassName.endsWith(".dataenergistics.PatternProviderSyncHelperMixin")) {
+            return isModLoaded("data_energistics");
+        }
+        if (mixinClassName.endsWith(".dataenergistics.PatternProviderNameHelperMixin")) {
+            return isModLoaded("data_energistics");
+        }
         return true;
     }
 

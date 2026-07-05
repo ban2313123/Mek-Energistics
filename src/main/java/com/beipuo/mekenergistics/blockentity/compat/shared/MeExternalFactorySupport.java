@@ -62,7 +62,8 @@ public final class MeExternalFactorySupport {
         @Nullable
         @Override
         default IGridNode getGridNode(Direction dir) {
-            return getMainNode().getNode();
+            IGridNode node = getMainNode().getNode();
+            return node != null && node.isActive() ? node : null;
         }
     }
 

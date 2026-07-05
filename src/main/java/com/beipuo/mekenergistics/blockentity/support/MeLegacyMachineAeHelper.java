@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.blockentity.support;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
+import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.stacks.KeyCounter;
@@ -31,7 +32,12 @@ public final class MeLegacyMachineAeHelper {
                 }
             }
         }
-        if (mainNode.getNode() != null) {
+        requestCraftingUpdate(mainNode);
+    }
+
+    public static void requestCraftingUpdate(IManagedGridNode mainNode) {
+        IGridNode node = mainNode.getNode();
+        if (node != null && node.isActive()) {
             ICraftingProvider.requestUpdate(mainNode);
         }
     }

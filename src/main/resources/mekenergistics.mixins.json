@@ -29,6 +29,8 @@
     "TileEntityFormulaicAssemblicatorAccessor",
     "TileEntityPressurizedReactionChamberAccessor",
     "TileEntityUpdateableMixin",
+    "dataenergistics.PatternProviderNameHelperMixin",
+    "dataenergistics.PatternProviderSyncHelperMixin",
     "extendedae.ContainerRenamerMixin"
   ],
   "injectors": {

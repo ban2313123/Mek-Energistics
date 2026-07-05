@@ -126,9 +126,7 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
             return;
         }
         this.patternTerminalName = MeAeMachine.sanitizePatternTerminalName(name);
-        if (this.mainNode.getNode() != null) {
-            ICraftingProvider.requestUpdate(this.mainNode);
-        }
+        MeLegacyMachineAeHelper.requestCraftingUpdate(this.mainNode);
     }
 
     public void createOnFirstTick() {
@@ -216,7 +214,8 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
     }
 
     public IGrid getGrid() {
-        return this.mainNode.getGrid();
+        IGridNode node = this.mainNode.getNode();
+        return node == null || !node.isActive() ? null : node.getGrid();
     }
 
     public boolean insertOutputSlotIntoNetwork(OutputInventorySlot outputSlot, AeOutputMode mode) {
@@ -454,9 +453,7 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
                 }
             }
         }
-        if (this.mainNode.getNode() != null) {
-            ICraftingProvider.requestUpdate(this.mainNode);
-        }
+        MeLegacyMachineAeHelper.requestCraftingUpdate(this.mainNode);
         this.owner.setChanged();
     }
 
