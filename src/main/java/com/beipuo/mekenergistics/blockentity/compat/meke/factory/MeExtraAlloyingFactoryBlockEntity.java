@@ -50,7 +50,7 @@ public class MeExtraAlloyingFactoryBlockEntity extends TileEntityExtraAlloyingFa
     @NotNull
     @Override
     protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        return MeExternalFactorySupport.withPatternSlots(super.getInitialInventory(listener), this);
+        return getAeSupport().withPatternSlots(super.getInitialInventory(listener));
     }
 
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
@@ -65,9 +65,9 @@ public class MeExtraAlloyingFactoryBlockEntity extends TileEntityExtraAlloyingFa
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public CachedRecipe<AlloyerRecipe> createNewCachedRecipe(@NotNull AlloyerRecipe recipe, int cacheIndex) { return MeExternalFactorySupport.wrapRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
     @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = MeExternalFactorySupport.processThreeItemsSmartPatterns(this, getExtraSlot(), getSecondExtraSlot()); sendUpdatePacket |= super.onUpdateServer(); return MeExternalFactorySupport.updateServer(this, sendUpdatePacket, () -> MeExternalFactorySupport.finishThreeItemsSmartPatterns(this, getExtraSlot(), getSecondExtraSlot())); }
-    @Override public void clearRemoved() { super.clearRemoved(); MeExternalFactorySupport.createNodeOnFirstTick(this, getAeSupport(), getLevel(), getBlockPos()); }
+    @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }
-    @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.saveAdditional(tag, registries); MeExternalFactorySupport.save(getAeSupport(), tag, registries); }
-    @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.loadAdditional(tag, registries); MeExternalFactorySupport.load(getAeSupport(), tag, registries); }
+    @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.saveAdditional(tag, registries); getAeSupport().saveAll(tag, registries); }
+    @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.loadAdditional(tag, registries); getAeSupport().loadAll(tag, registries); }
 }
