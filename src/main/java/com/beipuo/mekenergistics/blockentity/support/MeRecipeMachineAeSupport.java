@@ -28,6 +28,7 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
@@ -176,6 +177,32 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
         }
         boolean changed = MePatternInputRouter.route(inputHolder, List.of(
                 MeMachineIoAdapter.itemInput(inputSlot), MeMachineIoAdapter.chemicalInput(chemicalTank)));
+        if (changed) {
+            this.owner.setChanged();
+        }
+        return changed;
+    }
+
+    /** Routes fixed-position or interchangeable lanes as one atomic input transaction. */
+    public boolean pushLanes(KeyCounter[] inputHolder, List<? extends MeInputPort> lanePorts) {
+        if (inputHolder == null || lanePorts == null || inputHolder.length != lanePorts.size()
+                || lanePorts.stream().anyMatch(java.util.Objects::isNull)) {
+            return false;
+        }
+        List<List<MeInputPort>> lanes = lanePorts.stream().map(List::of).toList();
+        boolean changed = MePatternInputRouter.routeLanes(inputHolder, lanes);
+        if (changed) {
+            this.owner.setChanged();
+        }
+        return changed;
+    }
+
+    public boolean pushLaneChoices(KeyCounter[] inputHolder,
+            List<? extends List<? extends MeInputPort>> lanePorts) {
+        if (inputHolder == null || lanePorts == null || inputHolder.length != lanePorts.size()) {
+            return false;
+        }
+        boolean changed = MePatternInputRouter.routeLanes(inputHolder, lanePorts);
         if (changed) {
             this.owner.setChanged();
         }

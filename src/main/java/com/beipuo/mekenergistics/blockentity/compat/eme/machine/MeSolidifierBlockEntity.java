@@ -9,6 +9,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntitySolidifierAccessor;
 import fr.iglee42.evolvedmekanism.recipes.SolidificationRecipe;
@@ -75,45 +77,16 @@ public class MeSolidifierBlockEntity extends TileEntitySolidifier implements ICr
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        ItemStack item = ItemStack.EMPTY;
-        FluidStack firstFluid = FluidStack.EMPTY;
-        FluidStack secondFluid = FluidStack.EMPTY;
-        for (KeyCounter counter : inputHolder) {
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
-            if (input == null) {
-                return false;
-            }
-            if (input.isItem() && item.isEmpty()) {
-                item = input.item();
-            } else if (input.isFluid() && firstFluid.isEmpty()) {
-                firstFluid = input.fluid();
-            } else if (input.isFluid() && secondFluid.isEmpty()) {
-                secondFluid = input.fluid();
-            } else {
-                return false;
-            }
-        }
-        if (item.isEmpty() || firstFluid.isEmpty() || secondFluid.isEmpty()) {
-            return false;
-        }
-        return tryInsert(item, firstFluid, secondFluid) || tryInsert(item, secondFluid, firstFluid);
-    }
-
-    private boolean tryInsert(ItemStack item, FluidStack fluid, FluidStack extraFluid) {
         TileEntitySolidifierAccessor accessor = (TileEntitySolidifierAccessor) this;
         InputInventorySlot inputSlot = accessor.mekenergistics$getInputSlot();
         BasicFluidTank fluidTank = accessor.mekenergistics$getInputFluidTank();
         BasicFluidTank extraTank = accessor.mekenergistics$getInputFluidExtraTank();
-        if (!inputSlot.insertItem(item.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || fluidTank.fill(fluid.copy(), FluidAction.SIMULATE) != fluid.getAmount()
-                || extraTank.fill(extraFluid.copy(), FluidAction.SIMULATE) != extraFluid.getAmount()) {
-            return false;
-        }
-        inputSlot.insertItem(item.copy(), Action.EXECUTE, AutomationType.INTERNAL);
-        fluidTank.fill(fluid.copy(), FluidAction.EXECUTE);
-        extraTank.fill(extraFluid.copy(), FluidAction.EXECUTE);
-        setChanged();
-        return true;
+        MeInputPort itemPort = MeMachineIoAdapter.itemInput(inputSlot);
+        MeInputPort fluidPort = MeMachineIoAdapter.fluidInput(fluidTank);
+        MeInputPort extraPort = MeMachineIoAdapter.fluidInput(extraTank);
+        return getRecipeAeSupport().pushLaneChoices(inputHolder, java.util.List.of(
+                java.util.List.of(itemPort), java.util.List.of(fluidPort, extraPort),
+                java.util.List.of(fluidPort, extraPort)));
     }
 
     @Override public boolean isBusy() { return false; }

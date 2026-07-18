@@ -9,6 +9,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityChemixerAccessor;
 import fr.iglee42.evolvedmekanism.recipes.ChemixerRecipe;
@@ -87,36 +88,14 @@ public class MeChemixerBlockEntity extends TileEntityChemixer implements ICrafti
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        ItemStack first = itemInput(inputHolder[0]);
-        ItemStack second = itemInput(inputHolder[1]);
-        ChemicalStack chemical = chemicalInput(inputHolder[2]);
-        if (first.isEmpty() || second.isEmpty() || chemical.isEmpty()) {
-            return false;
-        }
         TileEntityChemixerAccessor accessor = (TileEntityChemixerAccessor) this;
         InputInventorySlot mainSlot = accessor.mekenergistics$getMainInputSlot();
         InputInventorySlot extraSlot = accessor.mekenergistics$getExtraInputSlot();
         IChemicalTank chemicalTank = accessor.mekenergistics$getInputChemicalTank();
-        if (!mainSlot.insertItem(first.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || !extraSlot.insertItem(second.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || chemicalTank.insert(chemical.copy(), Action.SIMULATE, AutomationType.INTERNAL).getAmount() != 0) {
-            return false;
-        }
-        mainSlot.insertItem(first, Action.EXECUTE, AutomationType.INTERNAL);
-        extraSlot.insertItem(second, Action.EXECUTE, AutomationType.INTERNAL);
-        chemicalTank.insert(chemical, Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
-    }
-
-    private static ItemStack itemInput(KeyCounter counter) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
-        return input != null && input.isItem() ? input.item() : ItemStack.EMPTY;
-    }
-
-    private static ChemicalStack chemicalInput(KeyCounter counter) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
-        return input != null && input.isChemical() ? input.chemical() : ChemicalStack.EMPTY;
+        return getRecipeAeSupport().pushLanes(inputHolder, java.util.List.of(
+                MeMachineIoAdapter.itemInput(mainSlot),
+                MeMachineIoAdapter.itemInput(extraSlot),
+                MeMachineIoAdapter.chemicalInput(chemicalTank)));
     }
 
     @Override public boolean isBusy() { return false; }

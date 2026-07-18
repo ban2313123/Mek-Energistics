@@ -13,6 +13,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityAlloyerAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -98,31 +99,14 @@ public class MeAlloyerBlockEntity extends TileEntityAlloyer implements ICrafting
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        ItemStack first = itemInput(inputHolder[0]);
-        ItemStack second = itemInput(inputHolder[1]);
-        ItemStack third = itemInput(inputHolder[2]);
-        if (first.isEmpty() || second.isEmpty() || third.isEmpty()) {
-            return false;
-        }
         TileEntityAlloyerAccessor accessor = (TileEntityAlloyerAccessor) this;
         InputInventorySlot mainSlot = accessor.mekenergistics$getMainInputSlot();
         IInventorySlot extraSlot = accessor.mekenergistics$getExtraInputSlot();
         IInventorySlot secondExtraSlot = accessor.mekenergistics$getSecondExtraInputSlot();
-        if (!mainSlot.insertItem(first.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || !extraSlot.insertItem(second.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || !secondExtraSlot.insertItem(third.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        mainSlot.insertItem(first, Action.EXECUTE, AutomationType.INTERNAL);
-        extraSlot.insertItem(second, Action.EXECUTE, AutomationType.INTERNAL);
-        secondExtraSlot.insertItem(third, Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
-    }
-
-    private static ItemStack itemInput(KeyCounter counter) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
-        return input != null && input.isItem() ? input.item() : ItemStack.EMPTY;
+        return getRecipeAeSupport().pushLanes(inputHolder, java.util.List.of(
+                MeMachineIoAdapter.itemInput(mainSlot),
+                MeMachineIoAdapter.itemInput(extraSlot),
+                MeMachineIoAdapter.itemInput(secondExtraSlot)));
     }
 
     @Override public boolean isBusy() { return false; }
