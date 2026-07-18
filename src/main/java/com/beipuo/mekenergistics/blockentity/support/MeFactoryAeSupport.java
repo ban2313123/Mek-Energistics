@@ -409,6 +409,64 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         return processSmartPattern(new ItemChemicalPortFeeder(inputSlots, inputTank));
     }
 
+    public boolean processChemicalSmartPatterns(List<IChemicalTank> inputTanks,
+            List<IInventorySlot> outputSlots, List<IChemicalTank> outputTanks) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        for (IChemicalTank outputTank : outputTanks) {
+            changed |= insertChemicalTankIntoNetwork(outputTank);
+        }
+        if (hasItemOutputBacklog(outputSlots) || hasChemicalOutputBacklog(outputTanks)) {
+            return changed;
+        }
+        return processSmartPattern(new ChemicalPortFeeder(inputTanks)) || changed;
+    }
+
+    public boolean finishChemicalSmartPatterns(List<IChemicalTank> inputTanks) {
+        markOwnerHandlesSmartPatternProcessing();
+        return processSmartPattern(new ChemicalPortFeeder(inputTanks));
+    }
+
+    public boolean processFluidChemicalSmartPatterns(IExtendedFluidTank fluidTank,
+            List<IChemicalTank> inputTanks, List<IInventorySlot> outputSlots,
+            List<IChemicalTank> outputTanks) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        for (IChemicalTank outputTank : outputTanks) {
+            changed |= insertChemicalTankIntoNetwork(outputTank);
+        }
+        if (hasItemOutputBacklog(outputSlots) || hasChemicalOutputBacklog(outputTanks)) {
+            return changed;
+        }
+        return processSmartPattern(new FluidChemicalPortFeeder(fluidTank, inputTanks)) || changed;
+    }
+
+    public boolean finishFluidChemicalSmartPatterns(IExtendedFluidTank fluidTank,
+            List<IChemicalTank> inputTanks) {
+        markOwnerHandlesSmartPatternProcessing();
+        return processSmartPattern(new FluidChemicalPortFeeder(fluidTank, inputTanks));
+    }
+
+    public boolean processItemFluidChemicalSmartPatterns(List<IInventorySlot> inputSlots,
+            IExtendedFluidTank fluidTank, IChemicalTank chemicalTank, List<IInventorySlot> outputSlots,
+            List<IChemicalTank> outputTanks) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        for (IChemicalTank outputTank : outputTanks) {
+            changed |= insertChemicalTankIntoNetwork(outputTank);
+        }
+        if (hasItemOutputBacklog(outputSlots) || hasChemicalOutputBacklog(outputTanks)) {
+            return changed;
+        }
+        return processSmartPattern(new ItemFluidChemicalPortFeeder(inputSlots, fluidTank, chemicalTank)) || changed;
+    }
+
+    public boolean finishItemFluidChemicalSmartPatterns(List<IInventorySlot> inputSlots,
+            IExtendedFluidTank fluidTank, IChemicalTank chemicalTank) {
+        markOwnerHandlesSmartPatternProcessing();
+        return processSmartPattern(new ItemFluidChemicalPortFeeder(inputSlots, fluidTank, chemicalTank));
+    }
+
     private boolean hasChemicalOutputBacklog(List<IChemicalTank> outputTanks) {
         for (IChemicalTank outputTank : outputTanks) {
             if (outputTank != null && !outputTank.isEmpty()) {
@@ -461,6 +519,91 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             }
             return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, input.item()),
                     MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(this.inputTank, input.chemical()));
+        }
+    }
+
+    private final class ChemicalPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final List<IChemicalTank> inputTanks;
+
+        private ChemicalPortFeeder(List<IChemicalTank> inputTanks) {
+            this.inputTanks = inputTanks;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            return pushChemical(oneCraftInputs, this.inputTanks);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            MeFactoryPatternInput input = MeFactoryPatternInput.single(oneCraftInputs == null || oneCraftInputs.length == 0
+                    ? null : oneCraftInputs[0]);
+            if (input == null || !input.isChemical()) {
+                return 0;
+            }
+            long accepted = 0;
+            for (IChemicalTank tank : this.inputTanks) {
+                accepted = Math.max(accepted, MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(tank, input.chemical()));
+            }
+            return accepted;
+        }
+    }
+
+    private final class FluidChemicalPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final IExtendedFluidTank fluidTank;
+        private final List<IChemicalTank> inputTanks;
+
+        private FluidChemicalPortFeeder(IExtendedFluidTank fluidTank, List<IChemicalTank> inputTanks) {
+            this.fluidTank = fluidTank;
+            this.inputTanks = inputTanks;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            return pushFluidChemical(oneCraftInputs, this.fluidTank, this.inputTanks);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            MeFactoryPatternInput input = MeFactoryPatternInput.separate(oneCraftInputs);
+            if (input == null || input.fluid().isEmpty() || input.chemical().isEmpty() || !input.item().isEmpty()) {
+                return 0;
+            }
+            long chemical = 0;
+            for (IChemicalTank tank : this.inputTanks) {
+                chemical = Math.max(chemical, MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(tank, input.chemical()));
+            }
+            return Math.min(chemical, MeFactoryInventoryInsert.acceptedCopiesIntoFluidTank(this.fluidTank, input.fluid()));
+        }
+    }
+
+    private final class ItemFluidChemicalPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final List<IInventorySlot> inputSlots;
+        private final IExtendedFluidTank fluidTank;
+        private final IChemicalTank chemicalTank;
+
+        private ItemFluidChemicalPortFeeder(List<IInventorySlot> inputSlots, IExtendedFluidTank fluidTank,
+                IChemicalTank chemicalTank) {
+            this.inputSlots = inputSlots;
+            this.fluidTank = fluidTank;
+            this.chemicalTank = chemicalTank;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            return pushItemFluidChemical(oneCraftInputs, this.inputSlots, this.fluidTank, this.chemicalTank);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            MeFactoryPatternInput input = MeFactoryPatternInput.separate(oneCraftInputs);
+            if (input == null || input.item().isEmpty() || input.fluid().isEmpty() || input.chemical().isEmpty()) {
+                return 0;
+            }
+            long items = MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, input.item());
+            long fluid = MeFactoryInventoryInsert.acceptedCopiesIntoFluidTank(this.fluidTank, input.fluid());
+            long chemical = MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(this.chemicalTank, input.chemical());
+            return Math.min(items, Math.min(fluid, chemical));
         }
     }
 
