@@ -6,10 +6,9 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
-import com.beipuo.mekenergistics.blockentity.support.MeChemicalInputHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -23,7 +22,6 @@ import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
 import java.util.List;
 import mekanism.api.IContentsListener;
-import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
 import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;
@@ -96,25 +94,9 @@ public class MeChemicalInfuserBlockEntity extends TileEntityChemicalInfuser impl
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        ChemicalStack first = getChemical(inputHolder[0]);
-        ChemicalStack second = getChemical(inputHolder[1]);
-        if (first.isEmpty() || second.isEmpty()) {
-            return false;
-        }
-        return tryInsertChemicals(first, second) || tryInsertChemicals(second, first);
-    }
-
-    private ChemicalStack getChemical(KeyCounter counter) {
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(counter);
-        return input == null || !input.isChemical() ? ChemicalStack.EMPTY : input.chemical();
-    }
-
-    private boolean tryInsertChemicals(ChemicalStack left, ChemicalStack right) {
-        if (!MeChemicalInputHelper.insertPair(this.leftTank, this.rightTank, left, right)) {
-            return false;
-        }
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushPatternInputs(inputHolder, java.util.List.of(
+                MeMachineIoAdapter.chemicalInput(this.leftTank),
+                MeMachineIoAdapter.chemicalInput(this.rightTank)));
     }
 
     @Override public boolean isBusy() { return false; }

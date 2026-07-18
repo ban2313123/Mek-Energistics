@@ -6,9 +6,9 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -21,8 +21,6 @@ import com.beipuo.mekenergistics.mixin.TileEntityCombinerAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
 import java.util.List;
-import mekanism.api.Action;
-import mekanism.api.AutomationType;
 import mekanism.api.IContentsListener;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
@@ -104,21 +102,10 @@ public class MeCombinerBlockEntity extends TileEntityCombiner implements ICrafti
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        MeFactoryPatternInput first = MeFactoryPatternInput.single(inputHolder[0]);
-        MeFactoryPatternInput second = MeFactoryPatternInput.single(inputHolder[1]);
-        if (first == null || second == null || !first.isItem() || !second.isItem()) {
-            return false;
-        }
         InputInventorySlot main = ((TileEntityCombinerAccessor) this).mekenergistics$getMainInputSlot();
         InputInventorySlot extra = ((TileEntityCombinerAccessor) this).mekenergistics$getExtraInputSlot();
-        if (!main.insertItem(first.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || !extra.insertItem(second.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        main.insertItem(first.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        extra.insertItem(second.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushPatternInputs(inputHolder, java.util.List.of(
+                MeMachineIoAdapter.itemInput(main), MeMachineIoAdapter.itemInput(extra)));
     }
 
     @Override public boolean isBusy() { return false; }

@@ -91,6 +91,10 @@ public class MeItemStackToItemStackFactoryBlockEntity extends TileEntityItemStac
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
+        if (inputHolder == null || inputHolder.length != 1
+                || MeFactoryPatternInput.singleItem(inputHolder[0]).isEmpty()) {
+            return false;
+        }
         return getAeSupport().pushPatternInputs(inputHolder,
                 this.inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
     }

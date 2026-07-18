@@ -10,6 +10,7 @@ import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.List;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import mekanism.api.IContentsListener;
 import mekanism.api.recipes.SawmillRecipe;
 import mekanism.api.recipes.cache.CachedRecipe;
@@ -82,22 +83,12 @@ public class MeSawingFactoryBlockEntity extends TileEntitySawingFactory implemen
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
-        ItemStack input = MeFactoryPatternInput.singleItem(inputHolder[0]);
-        if (input.isEmpty()) {
+        if (inputHolder == null || inputHolder.length != 1
+                || MeFactoryPatternInput.singleItem(inputHolder[0]).isEmpty()) {
             return false;
         }
-        List<ItemStack> snapshot = knownFits ? MeFactoryInventoryInsert.snapshotSlots(this.inputSlots) : null;
-        boolean inserted = knownFits
-                ? MeFactoryInventoryInsert.insertAcrossSlotsKnownFits(this.inputSlots, input)
-                : MeFactoryInventoryInsert.insertAcrossSlots(this.inputSlots, input);
-        if (inserted) {
-            saveChanges();
-            return true;
-        }
-        if (knownFits) {
-            MeFactoryInventoryInsert.restoreSlots(this.inputSlots, snapshot);
-        }
-        return false;
+        return getAeSupport().pushPatternInputs(inputHolder,
+                this.inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
     }
 
     @Override public boolean isBusy() { return false; }

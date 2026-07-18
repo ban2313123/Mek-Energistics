@@ -5,6 +5,8 @@ import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -19,6 +21,7 @@ import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.tile.factory.TileEntityItemStackChemicalToItemStackFactory;
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -102,27 +105,9 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
         if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
             return false;
         }
-        boolean canInsertItem = knownFits || MeFactoryInventoryInsert.canInsertAcrossSlots(this.inputSlots, input.item());
-        if (canInsertItem && getChemicalTank().insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            List<ItemStack> itemSnapshot = MeFactoryInventoryInsert.snapshotSlots(this.inputSlots);
-            var chemicalSnapshot = getChemicalTank().getStack().copy();
-            boolean chemicalInserted = getChemicalTank().insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL).isEmpty();
-            boolean itemInserted = chemicalInserted && insertItemInput(input.item(), knownFits);
-            if (!chemicalInserted || !itemInserted) {
-                getChemicalTank().setStack(chemicalSnapshot);
-                MeFactoryInventoryInsert.restoreSlots(this.inputSlots, itemSnapshot);
-                return false;
-            }
-            saveChanges();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean insertItemInput(ItemStack input, boolean knownFits) {
-        return knownFits
-                ? MeFactoryInventoryInsert.insertAcrossSlotsKnownFits(this.inputSlots, input)
-                : MeFactoryInventoryInsert.insertAcrossSlots(this.inputSlots, input);
+        List<MeInputPort> ports = new ArrayList<>(this.inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
+        ports.add(MeMachineIoAdapter.chemicalInput(getChemicalTank()));
+        return getAeSupport().pushPatternInputs(inputHolder, ports);
     }
 
     @Override

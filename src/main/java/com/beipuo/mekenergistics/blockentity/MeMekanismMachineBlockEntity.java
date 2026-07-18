@@ -3,23 +3,20 @@ package com.beipuo.mekenergistics.blockentity;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeLegacyMachineAeHelper;
+import com.beipuo.mekenergistics.blockentity.support.MeMekanismMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeNetworkEnergyHelper;
 import com.beipuo.mekenergistics.blockentity.support.MePatternTerminalNames;
-import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
+import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.crafting.PatternDetailsHelper;
-import appeng.api.networking.GridFlags;
-import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
-import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
@@ -38,7 +35,6 @@ import mekanism.api.Upgrade;
 import mekanism.api.chemical.BasicChemicalTank;
 import mekanism.api.functions.ConstantPredicates;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.chemical.IChemicalTank;
@@ -82,7 +78,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.BooleanSupplier;
 
 public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
-        implements ICraftingProvider, MeSmartCableConnection, IGridNodeListener<MeMekanismMachineBlockEntity>, IActionHost, IHasDumpButton, MeAeMachine {
+        implements ICraftingProvider, MeSmartCableConnection, IActionHost, IHasDumpButton, MeAeMachine, MePatternIoOwner {
     private static final int BASE_TICKS_REQUIRED = 10 * 20;
     public static final int INPUT_SLOT = 0;
     public static final int SECONDARY_INPUT_SLOT = 1;
@@ -90,35 +86,23 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     public static final int SECONDARY_OUTPUT_SLOT = 3;
     public static final int PATTERN_SLOTS_START = 4;
 
-    private static final String TAG_INVENTORY = "Inventory";
-    private static final String TAG_PATTERN_PRIORITY = "PatternPriority";
     private static final String TAG_CHEMICAL = "Chemical";
     private static final String TAG_AE_OUTPUT_MODE = "AeOutputMode";
-    private static final String TAG_PATTERN_TERMINAL_NAME = "PatternTerminalName";
 
     private IInventorySlot[] inventorySlots;
-    private IManagedGridNode mainNode;
     private final IActionSource actionSource;
-    private final List<IPatternDetails> patterns = new ArrayList<>();
-    private final MeMekanismMachineAeOutput aeOutput;
-    private final MeSmartPatternMultiplication smartPatternMultiplication = new MeSmartPatternMultiplication();
+    private MeMekanismMachineAeSupport aeSupport;
     private final MeMekanismMachine machine;
     private IChemicalTank chemicalTank;
     private MachineEnergyContainer<MeMekanismMachineBlockEntity> energyContainer;
     private int operatingTicks;
     private int ticksRequired = BASE_TICKS_REQUIRED;
-    private int patternPriority = 0;
     private AeOutputMode aeOutputMode = AeOutputMode.BOTH;
-    private String patternTerminalName = "";
-    private CompoundTag retainedNodeData;
-    private boolean nodeDestroyed;
 
     public MeMekanismMachineBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(ModBlocks.getMachineBlock(machine), pos, state);
         this.machine = machine;
         this.actionSource = IActionSource.ofMachine(this);
-        this.aeOutput = new MeMekanismMachineAeOutput(this);
-        this.mainNode = createMainNode();
         IInventorySlot[] inventorySlots = slots();
         List<IInventorySlot> inputSlots = new ArrayList<>();
         inputSlots.add(inventorySlots[INPUT_SLOT]);
@@ -140,6 +124,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         }
         this.ejectorComponent = new TileComponentEjector(this);
         this.ejectorComponent.setOutputData(this.configComponent, TransmissionType.ITEM);
+        getAeSupport();
     }
 
     @Override
@@ -160,9 +145,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         } else {
             this.operatingTicks = 0;
             setActive(false);
-        }
-        if (this.aeOutput.hasWork()) {
-            this.aeOutput.process();
         }
         return sendUpdatePacket;
     }
@@ -244,7 +226,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
             ChemicalStack stack = this.chemicalTank.getStack();
             return Component.literal(stack.getAmount() + " mB " + stack.getTextComponent().getString());
         }
-        if (this.mainNode.isOnline()) {
+        if (getMainNode().isOnline()) {
             return Component.translatable("message.mekenergistics.machine.online");
         }
         return Component.translatable("message.mekenergistics.machine.offline");
@@ -288,14 +270,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
 
     @Override
     public List<BasicInventorySlot> getPatternSlots() {
-        List<BasicInventorySlot> patternSlots = new ArrayList<>(MekEnergisticsConfig.patternSlots());
-        IInventorySlot[] slots = slots();
-        for (int slot = PATTERN_SLOTS_START; slot <= patternSlotsEnd(); slot++) {
-            if (slots[slot] instanceof BasicInventorySlot patternSlot) {
-                patternSlots.add(patternSlot);
-            }
-        }
-        return Collections.unmodifiableList(patternSlots);
+        return getAeSupport().getPatternSlots();
     }
 
     public Component getDisplayName() {
@@ -658,68 +633,89 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     @Nullable
     @Override
     public IGrid getGrid() {
-        IGridNode node = this.mainNode.getNode();
+        IGridNode node = getMainNode().getNode();
         return node == null || !node.isActive() ? null : node.getGrid();
     }
 
     @Override
     public void clearRemoved() {
         super.clearRemoved();
-        if (this.nodeDestroyed) {
-            this.mainNode = createMainNode();
-            if (this.retainedNodeData != null) {
-                this.mainNode.loadFromNBT(this.retainedNodeData);
-            }
-            this.nodeDestroyed = false;
+        getAeSupport().createOnFirstTick();
+    }
+
+    public MeMekanismMachineAeSupport getAeSupport() {
+        if (this.aeSupport == null) {
+            this.aeSupport = new MeMekanismMachineAeSupport(this);
         }
-        MeLegacyMachineAeHelper.createOnFirstTick(this, this.mainNode, this::updatePatterns);
+        return this.aeSupport;
+    }
+
+    @Override
+    public List<BasicInventorySlot> getExternalPatternSlots() {
+        List<BasicInventorySlot> result = new ArrayList<>();
+        for (int slot = PATTERN_SLOTS_START; slot <= patternSlotsEnd(); slot++) {
+            if (slots()[slot] instanceof BasicInventorySlot patternSlot) {
+                result.add(patternSlot);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public int getLegacyPatternSlotOffset() {
+        return PATTERN_SLOTS_START;
+    }
+
+    public boolean hasAeOutputWork() {
+        if (hasSmartPatternWork()) {
+            return true;
+        }
+        for (MeOutputPort output : getAeOutputPorts()) {
+            if (output.key() == null || output.amount() <= 0) {
+                continue;
+            }
+            if (output.key() instanceof appeng.api.stacks.AEItemKey) {
+                if (this.aeOutputMode.items()) {
+                    return true;
+                }
+            } else if (this.aeOutputMode.chemicals()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean processAeOutputWork() {
+        boolean changed = processSmartPatternWork();
+        return getAeSupport().drainOutputPorts(this.aeOutputMode, getAeOutputPorts()) || changed;
     }
 
     @Override
     public void setRemoved() {
-        retainAndDestroyNode();
+        getAeSupport().destroyNode();
         super.setRemoved();
     }
 
     @Override
     public void onChunkUnloaded() {
-        retainAndDestroyNode();
+        getAeSupport().destroyNode();
         super.onChunkUnloaded();
-    }
-
-    private IManagedGridNode createMainNode() {
-        return GridHelper.createManagedNode(this, this)
-                .setInWorldNode(true)
-                .setTagName("node")
-                .setFlags(GridFlags.REQUIRE_CHANNEL)
-                .addService(ICraftingProvider.class, this)
-                .addService(appeng.api.networking.ticking.IGridTickable.class, this.aeOutput);
-    }
-
-    private void retainAndDestroyNode() {
-        if (this.nodeDestroyed) {
-            return;
-        }
-        this.retainedNodeData = new CompoundTag();
-        this.mainNode.saveToNBT(this.retainedNodeData);
-        MeLegacyMachineAeHelper.destroyNode(this.mainNode);
-        this.nodeDestroyed = true;
     }
 
     @Override
     public IManagedGridNode getMainNode() {
-        return this.mainNode;
+        return getAeSupport().getMainNode();
     }
 
     IManagedGridNode getManagedNode() {
-        return this.mainNode;
+        return getMainNode();
     }
 
     public IActionSource getActionSource() {
         return this.actionSource;
     }
 
-    List<MeInputPort> getAeInputPorts(int inputCount) {
+    public List<MeInputPort> getAeInputPorts(int inputCount) {
         List<MeInputPort> ports = new ArrayList<>();
         switch (this.machine.slotLayout()) {
             case SINGLE_ITEM, SAWING -> ports.add(MeMachineIoAdapter.itemInput(slots()[INPUT_SLOT]));
@@ -741,7 +737,12 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         return ports;
     }
 
-    List<MeOutputPort> getAeOutputPorts() {
+    @Override
+    public List<? extends MeInputPort> getPatternInputPorts() {
+        return getAeInputPorts(2);
+    }
+
+    public List<MeOutputPort> getAeOutputPorts() {
         List<MeOutputPort> ports = new ArrayList<>();
         if (slots()[OUTPUT_SLOT] instanceof OutputInventorySlot output) {
             ports.add(MeMachineIoAdapter.itemOutput(output));
@@ -756,94 +757,68 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     }
 
     @Override
-    public void onSaveChanges(MeMekanismMachineBlockEntity nodeOwner, IGridNode node) {
-        this.setChanged();
+    public List<? extends MeOutputPort> getPatternOutputPorts() {
+        return getAeOutputPorts();
     }
 
     @Override
     public List<IPatternDetails> getAvailablePatterns() {
-        return Collections.unmodifiableList(this.patterns);
+        return getAeSupport().getAvailablePatterns();
     }
 
     @Override
     public int getPatternPriority() {
-        return this.patternPriority;
+        return getAeSupport().getPatternPriority();
     }
 
     @Override
     public String getCustomPatternTerminalName() {
-        return MePatternTerminalNames.get(this, this.patternTerminalName);
+        return getAeSupport().getPatternTerminalName();
     }
 
     @Override
     public void setCustomPatternTerminalName(String name) {
-        if (!MePatternTerminalNames.set(this, name, this.patternTerminalName)) {
-            return;
-        }
-        this.patternTerminalName = MeAeMachine.sanitizePatternTerminalName(name);
-        MeLegacyMachineAeHelper.requestCraftingUpdate(this.mainNode);
+        getAeSupport().setPatternTerminalName(name);
     }
 
     @Override
     public boolean isSmartPatternMultiplicationEnabled() {
-        return this.smartPatternMultiplication.isEnabled();
+        return getAeSupport().isSmartPatternMultiplicationEnabled();
     }
 
     @Override
     public void setSmartPatternMultiplicationEnabled(boolean enabled) {
-        if (this.smartPatternMultiplication.isEnabled() == enabled) {
-            return;
-        }
-        this.smartPatternMultiplication.setEnabled(enabled);
-        this.aeOutput.alertTicker();
-        setChanged();
+        getAeSupport().setSmartPatternMultiplicationEnabled(enabled);
     }
 
     boolean hasSmartPatternWork() {
-        return this.smartPatternMultiplication.hasPendingWork();
+        return getAeSupport().hasSmartPatternWork();
     }
 
     boolean processSmartPatternWork() {
-        return MeLegacyMachineAeHelper.processSmartPatternWork(this.smartPatternMultiplication, this.patterns,
-                this::pushPattern, this::setChanged, this.aeOutput::alertTicker);
+        return getAeSupport().processSmartPatternWork();
     }
 
     @Override
     public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!this.mainNode.isActive() || !this.patterns.contains(patternDetails)) {
-            return false;
-        }
-
-        if (this.smartPatternMultiplication.isEnabled()) {
-            return MeLegacyMachineAeHelper.enqueueSmartPattern(this.smartPatternMultiplication, patternDetails,
-                    inputHolder, this::setChanged, this.aeOutput::alertTicker);
-        }
-        boolean inserted = MePatternInputRouter.route(inputHolder, getAeInputPorts(inputHolder.length));
-        if (inserted) {
-            setChanged();
-        }
-        return inserted;
+        return getAeSupport().pushPattern(patternDetails, inputHolder);
     }
 
     @Override
     public boolean isBusy() {
-        return false;
+        return getAeSupport().isPatternBusy();
     }
 
     private void updatePatterns() {
-        MeLegacyMachineAeHelper.updatePatterns(this.patterns, this::getStack, PATTERN_SLOTS_START, patternSlotsEnd(),
-                this.level, this.worldPosition, this.machine.name(), this.mainNode);
+        getAeSupport().updatePatterns();
     }
 
     @Override
     public void saveAdditional(CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt(TAG_PATTERN_PRIORITY, this.patternPriority);
         tag.putInt(TAG_AE_OUTPUT_MODE, this.aeOutputMode.ordinal());
-        tag.remove(TAG_PATTERN_TERMINAL_NAME);
         tag.putInt(SerializationConstants.PROGRESS, this.operatingTicks);
-        MeLegacyMachineAeHelper.saveAeState(tag, registries, this.smartPatternMultiplication, this.mainNode,
-                this.retainedNodeData);
+        getAeSupport().saveAeState(tag, registries, this.aeOutputMode);
     }
 
     @Override
@@ -852,12 +827,9 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         if (tag.contains(TAG_CHEMICAL) && this.chemicalTank != null && this.chemicalTank.isEmpty()) {
             this.chemicalTank.setStack(ChemicalStack.parseOptional(registries, tag.getCompound(TAG_CHEMICAL)));
         }
-        this.patternPriority = tag.getInt(TAG_PATTERN_PRIORITY);
         this.aeOutputMode = AeOutputMode.byId(tag.getInt(TAG_AE_OUTPUT_MODE));
-        this.patternTerminalName = MePatternTerminalNames.migrateLegacy(this, tag.getString(TAG_PATTERN_TERMINAL_NAME));
         this.operatingTicks = tag.getInt(SerializationConstants.PROGRESS);
-        MeLegacyMachineAeHelper.loadAeState(tag, registries, this.smartPatternMultiplication, this.mainNode);
-        this.updatePatterns();
+        this.aeOutputMode = getAeSupport().loadAeState(tag, registries);
     }
 
     @Override

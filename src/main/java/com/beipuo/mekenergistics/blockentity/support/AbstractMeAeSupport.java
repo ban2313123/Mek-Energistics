@@ -19,9 +19,11 @@ import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
 import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
+import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MePatternIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import java.util.ArrayList;
@@ -34,16 +36,19 @@ import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
 
 public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
+    public static final int AE_PATTERN_SCHEMA = 2;
+    private static final String TAG_PATTERN_SCHEMA = "AePatternSchema";
     private static final String TAG_PATTERN_TERMINAL_NAME = "PatternTerminalName";
     private static final String TAG_NODE = "node";
 
     protected final O owner;
     protected final TileEntityMekanism ownerTile;
     protected final IActionSource actionSource;
-    protected final List<BasicInventorySlot> patternSlots = new ArrayList<>(MekEnergisticsConfig.patternSlots());
+    protected final List<BasicInventorySlot> patternSlots;
     protected final List<IPatternDetails> patterns = new ArrayList<>();
     protected final Map<AEKey, IPatternDetails> patternsByDefinition = new HashMap<>();
     protected final MeSmartPatternMultiplication smartPatternMultiplication = new MeSmartPatternMultiplication();
@@ -60,8 +65,14 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
         this.ownerTile = owner.getAeOwnerTile();
         this.actionSource = IActionSource.ofMachine(owner);
         this.mainNode = createManagedNode();
-        for (int i = 0; i < MekEnergisticsConfig.patternSlots(); i++) {
-            this.patternSlots.add(MePatternInventorySlot.create(PatternDetailsHelper::isEncodedPattern, this::updatePatterns));
+        List<BasicInventorySlot> externalSlots = owner instanceof MePatternIoOwner io ? io.getExternalPatternSlots() : List.of();
+        if (externalSlots != null && !externalSlots.isEmpty()) {
+            this.patternSlots = externalSlots;
+        } else {
+            this.patternSlots = new ArrayList<>(MekEnergisticsConfig.patternSlots());
+            for (int i = 0; i < MekEnergisticsConfig.patternSlots(); i++) {
+                this.patternSlots.add(MePatternInventorySlot.create(PatternDetailsHelper::isEncodedPattern, this::updatePatterns));
+            }
         }
     }
 
@@ -84,6 +95,15 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
 
     public final List<BasicInventorySlot> getPatternSlots() {
         return Collections.unmodifiableList(this.patternSlots);
+    }
+
+    public final MePatternIoAdapter getPatternIoAdapter() {
+        return this.owner instanceof MePatternIoOwner io ? io.getPatternIoAdapter()
+                : new MePatternIoAdapter(List.of(), List.of(), false);
+    }
+
+    public final boolean isPatternBusy() {
+        return getPatternIoAdapter().busy();
     }
 
     public final IInventorySlotHolder withPatternSlots(IInventorySlotHolder original) {
@@ -111,7 +131,7 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
             return;
         }
         this.patternTerminalName = com.beipuo.mekenergistics.blockentity.api.MeAeMachine.sanitizePatternTerminalName(name);
-        MeLegacyMachineAeHelper.requestCraftingUpdate(this.mainNode);
+        requestCraftingUpdate();
     }
 
     public final void createOnFirstTick() {
@@ -268,7 +288,7 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
                 }
             }
         }
-        MeLegacyMachineAeHelper.requestCraftingUpdate(this.mainNode);
+        requestCraftingUpdate();
         this.owner.saveChanges();
     }
 
@@ -277,6 +297,13 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
     protected abstract boolean hasAeOutputWork();
 
     protected abstract boolean processAeOutputWork();
+
+    private void requestCraftingUpdate() {
+        IGridNode node = this.mainNode.getNode();
+        if (node != null && node.isActive()) {
+            ICraftingProvider.requestUpdate(this.mainNode);
+        }
+    }
 
     protected final void saveCommon(CompoundTag tag, HolderLookup.Provider registries) {
         save(tag);
@@ -291,6 +318,7 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
     }
 
     public final void saveSlots(CompoundTag tag, HolderLookup.Provider registries) {
+        tag.putInt(TAG_PATTERN_SCHEMA, AE_PATTERN_SCHEMA);
         for (int i = 0; i < this.patternSlots.size(); i++) {
             tag.put("MePatternSlot" + i, this.patternSlots.get(i).serializeNBT(registries));
         }
@@ -310,13 +338,44 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
     }
 
     public final void loadSlots(CompoundTag tag, HolderLookup.Provider registries) {
+        boolean migrated = tag.getInt(TAG_PATTERN_SCHEMA) < AE_PATTERN_SCHEMA;
         for (int i = 0; i < this.patternSlots.size(); i++) {
             if (tag.contains("MePatternSlot" + i)) {
                 this.patternSlots.get(i).deserializeNBT(registries, tag.getCompound("MePatternSlot" + i));
             }
         }
+        if (migrated && !hasPatternSlotTags(tag)) {
+            int offset = this.owner instanceof MePatternIoOwner io ? Math.max(0, io.getLegacyPatternSlotOffset()) : 0;
+            loadLegacyInventory(this.patternSlots, tag, registries, offset);
+        }
         this.smartPatternMultiplication.loadPending(tag, registries);
         updatePatterns();
+    }
+
+    private boolean hasPatternSlotTags(CompoundTag tag) {
+        for (int i = 0; i < this.patternSlots.size(); i++) {
+            if (tag.contains("MePatternSlot" + i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static void loadLegacyInventory(List<BasicInventorySlot> slots, CompoundTag tag, HolderLookup.Provider registries, int offset) {
+        if (!tag.contains("Inventory", CompoundTag.TAG_LIST)) {
+            return;
+        }
+        ListTag inventory = tag.getList("Inventory", CompoundTag.TAG_COMPOUND);
+        for (int i = 0; i < slots.size() && i + offset < inventory.size(); i++) {
+            slots.get(i).deserializeNBT(registries, inventory.getCompound(i + offset));
+        }
+    }
+
+    static void savePatternSlots(List<BasicInventorySlot> slots, CompoundTag tag, HolderLookup.Provider registries) {
+        tag.putInt(TAG_PATTERN_SCHEMA, AE_PATTERN_SCHEMA);
+        for (int i = 0; i < slots.size(); i++) {
+            tag.put("MePatternSlot" + i, slots.get(i).serializeNBT(registries));
+        }
     }
 
     protected final void saveNode(CompoundTag tag) {

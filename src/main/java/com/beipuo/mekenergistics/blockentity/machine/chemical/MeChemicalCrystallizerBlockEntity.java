@@ -6,9 +6,9 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -21,8 +21,6 @@ import com.beipuo.mekenergistics.mixin.TileEntityChemicalCrystallizerAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
 import java.util.List;
-import mekanism.api.Action;
-import mekanism.api.AutomationType;
 import mekanism.api.IContentsListener;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
@@ -103,16 +101,8 @@ public class MeChemicalCrystallizerBlockEntity extends TileEntityChemicalCrystal
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(inputHolder[0]);
-        if (input == null || !input.isChemical()) {
-            return false;
-        }
-        if (this.inputTank.insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).getAmount() != 0) {
-            return false;
-        }
-        this.inputTank.insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                java.util.List.of(MeMachineIoAdapter.chemicalInput(this.inputTank)));
     }
 
     @Override public boolean isBusy() { return false; }
