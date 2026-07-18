@@ -1,6 +1,6 @@
 package com.beipuo.mekenergistics.blockentity.compat.mekmm.factory;
 
-import com.beipuo.mekenergistics.blockentity.compat.shared.MeExternalFactorySupport;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
@@ -22,7 +22,7 @@ final class MeAdvancedFactorySupport {
     private MeAdvancedFactorySupport() {
     }
 
-    interface Owner extends MeMoreMachineFactoryAeMachine, MeExternalFactorySupport.Owner {
+    interface Owner extends MeMoreMachineFactoryAeMachine, MeFactoryIoOwner {
     }
 
     static IInventorySlotHolder withPatternSlots(IInventorySlotHolder original, Owner owner) {
@@ -208,42 +208,49 @@ final class MeAdvancedFactorySupport {
     }
 
     static boolean updateServer(Owner owner, boolean sendUpdatePacket) {
-        return MeExternalFactorySupport.updateServer(owner, sendUpdatePacket);
+        return drainOutputs(owner) || sendUpdatePacket;
     }
 
     static boolean updateServer(Owner owner, boolean sendUpdatePacket, java.util.function.BooleanSupplier processor) {
-        return MeExternalFactorySupport.updateServer(owner, sendUpdatePacket, processor);
+        boolean changed = updateServer(owner, sendUpdatePacket);
+        return hasItemOutputBacklog(owner) ? changed : processor.getAsBoolean() || changed;
     }
 
     static boolean drainOutputs(Owner owner) {
-        return MeExternalFactorySupport.drainOutputs(owner);
+        return owner.getAeSupport().insertOutputSlotsIntoNetwork(owner.meOutputSlots());
     }
 
     static boolean updateServer(Owner owner, boolean sendUpdatePacket, java.util.List<mekanism.api.chemical.IChemicalTank> outputTanks) {
-        return MeExternalFactorySupport.updateServer(owner, sendUpdatePacket, outputTanks);
+        boolean changed = updateServer(owner, sendUpdatePacket);
+        return owner.getAeSupport().insertChemicalTanksIntoNetwork(outputTanks) || changed;
     }
 
     static boolean updateServer(Owner owner, boolean sendUpdatePacket, mekanism.api.chemical.IChemicalTank outputTank) {
-        return MeExternalFactorySupport.updateServer(owner, sendUpdatePacket, outputTank);
+        boolean changed = updateServer(owner, sendUpdatePacket);
+        return owner.getAeSupport().insertChemicalTankIntoNetwork(outputTank) || changed;
     }
 
     static boolean updateServer(Owner owner, boolean sendUpdatePacket, mekanism.api.fluid.IExtendedFluidTank outputTank) {
-        return MeExternalFactorySupport.updateServer(owner, sendUpdatePacket, outputTank);
+        boolean changed = updateServer(owner, sendUpdatePacket);
+        return owner.getAeSupport().insertFluidTankIntoNetwork(outputTank) || changed;
     }
 
     static boolean updateServer(Owner owner, boolean sendUpdatePacket, java.util.List<mekanism.api.chemical.IChemicalTank> outputTanks,
             java.util.function.BooleanSupplier processor) {
-        return MeExternalFactorySupport.updateServer(owner, sendUpdatePacket, outputTanks, processor);
+        boolean changed = updateServer(owner, sendUpdatePacket, outputTanks);
+        return hasItemOutputBacklog(owner) || hasChemicalOutputBacklog(outputTanks) ? changed : processor.getAsBoolean() || changed;
     }
 
     static boolean updateServer(Owner owner, boolean sendUpdatePacket, mekanism.api.chemical.IChemicalTank outputTank,
             java.util.function.BooleanSupplier processor) {
-        return MeExternalFactorySupport.updateServer(owner, sendUpdatePacket, outputTank, processor);
+        boolean changed = updateServer(owner, sendUpdatePacket, outputTank);
+        return hasItemOutputBacklog(owner) || hasChemicalOutputBacklog(outputTank) ? changed : processor.getAsBoolean() || changed;
     }
 
     static boolean updateServer(Owner owner, boolean sendUpdatePacket, mekanism.api.fluid.IExtendedFluidTank outputTank,
             java.util.function.BooleanSupplier processor) {
-        return MeExternalFactorySupport.updateServer(owner, sendUpdatePacket, outputTank, processor);
+        boolean changed = updateServer(owner, sendUpdatePacket, outputTank);
+        return hasItemOutputBacklog(owner) || hasFluidOutputBacklog(outputTank) ? changed : processor.getAsBoolean() || changed;
     }
 
     static void createNodeOnFirstTick(TileEntityMekanism tile, MeFactoryAeSupport support, Level level, BlockPos pos) {
@@ -260,6 +267,32 @@ final class MeAdvancedFactorySupport {
 
     static List<IInventorySlot> noItemOutput() {
         return Collections.emptyList();
+    }
+
+    private static boolean hasItemOutputBacklog(Owner owner) {
+        for (IInventorySlot slot : owner.meOutputSlots()) {
+            if (slot != null && !slot.getStack().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasChemicalOutputBacklog(List<mekanism.api.chemical.IChemicalTank> tanks) {
+        for (mekanism.api.chemical.IChemicalTank tank : tanks) {
+            if (tank != null && !tank.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasChemicalOutputBacklog(mekanism.api.chemical.IChemicalTank tank) {
+        return tank != null && !tank.isEmpty();
+    }
+
+    private static boolean hasFluidOutputBacklog(mekanism.api.fluid.IExtendedFluidTank tank) {
+        return tank != null && !tank.isEmpty();
     }
 
     static <RECIPE extends MekanismRecipe<?>> CachedRecipe<RECIPE> wrapRecipeEnergy(
