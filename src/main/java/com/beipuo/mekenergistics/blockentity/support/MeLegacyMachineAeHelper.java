@@ -74,7 +74,9 @@ public final class MeLegacyMachineAeHelper {
     public static <TILE extends TileEntityMekanism> void createOnFirstTick(TILE owner, IManagedGridNode mainNode,
             Runnable updatePatterns) {
         GridHelper.onFirstTick(owner, blockEntity -> {
-            mainNode.create(blockEntity.getLevel(), blockEntity.getBlockPos());
+            if (!mainNode.isReady()) {
+                mainNode.create(blockEntity.getLevel(), blockEntity.getBlockPos());
+            }
             updatePatterns.run();
         });
     }

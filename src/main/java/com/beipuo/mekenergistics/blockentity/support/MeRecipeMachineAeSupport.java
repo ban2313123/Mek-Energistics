@@ -94,7 +94,16 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
     }
 
     public IManagedGridNode getMainNode() {
+        ensureNodeCreated();
         return this.mainNode;
+    }
+
+    private void ensureNodeCreated() {
+        Level level = this.owner.getLevel();
+        if (level != null && !this.owner.isRemoved() && !this.mainNode.isReady()) {
+            this.mainNode.create(level, this.owner.getBlockPos());
+            updatePatterns();
+        }
     }
 
     public List<BasicInventorySlot> getPatternSlots() {
@@ -205,7 +214,9 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
     }
 
     public void create(Level level, BlockPos pos) {
-        this.mainNode.create(level, pos);
+        if (!this.mainNode.isReady()) {
+            this.mainNode.create(level, pos);
+        }
         updatePatterns();
     }
 

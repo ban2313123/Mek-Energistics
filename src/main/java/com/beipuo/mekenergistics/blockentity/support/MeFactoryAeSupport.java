@@ -94,7 +94,17 @@ public final class MeFactoryAeSupport {
     }
 
     public IManagedGridNode getMainNode() {
+        ensureNodeCreated();
         return this.mainNode;
+    }
+
+    private void ensureNodeCreated() {
+        if (this.owner instanceof TileEntityMekanism tile) {
+            Level level = tile.getLevel();
+            if (level != null && !tile.isRemoved() && !this.mainNode.isReady()) {
+                create(level, tile.getBlockPos());
+            }
+        }
     }
 
     public List<BasicInventorySlot> getPatternSlots() {
@@ -446,7 +456,9 @@ public final class MeFactoryAeSupport {
     }
 
     public void create(Level level, BlockPos pos) {
-        this.mainNode.create(level, pos);
+        if (!this.mainNode.isReady()) {
+            this.mainNode.create(level, pos);
+        }
         updatePatterns();
     }
 

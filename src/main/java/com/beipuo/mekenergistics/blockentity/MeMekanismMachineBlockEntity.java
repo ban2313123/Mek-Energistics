@@ -681,6 +681,10 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
 
     @Override
     public IManagedGridNode getMainNode() {
+        if (this.getLevel() != null && !this.isRemoved() && !this.mainNode.isReady()) {
+            this.mainNode.create(this.getLevel(), this.getBlockPos());
+            this.updatePatterns();
+        }
         return this.mainNode;
     }
 
