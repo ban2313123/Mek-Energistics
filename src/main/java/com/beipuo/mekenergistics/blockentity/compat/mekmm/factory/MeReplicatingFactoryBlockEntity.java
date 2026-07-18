@@ -40,7 +40,7 @@ public class MeReplicatingFactoryBlockEntity extends TileEntityReplicatingFactor
     @Override public MeFactoryAeSupport getAeSupport() { if (this.aeSupport == null) this.aeSupport = new MeFactoryAeSupport(this); return this.aeSupport; }
     @Override public MeMekanismMachine getMachine() { return this.machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && MeExternalFactorySupport.pushItemChemical(this, patternDetails, inputHolder, getChemicalTank()); }
+    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder) : getAeSupport().pushItemChemical(inputHolder, this.inputSlots, getChemicalTank())); }
     @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public mekanism.api.recipes.cache.CachedRecipe<com.jerry.mekmm.api.recipes.basic.MMBasicItemStackChemicalToItemStackRecipe> createNewCachedRecipe(@NotNull com.jerry.mekmm.api.recipes.basic.MMBasicItemStackChemicalToItemStackRecipe recipe, int cacheIndex) { return MeExternalFactorySupport.wrapRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
