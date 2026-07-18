@@ -285,6 +285,12 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         return changed;
     }
 
+    public boolean pushSingleItemWithRequiredExtraSlot(KeyCounter[] inputHolder,
+            List<? extends IInventorySlot> inputSlots, IInventorySlot extraSlot) {
+        return extraSlot != null && !extraSlot.getStack().isEmpty()
+                && pushSingleItem(inputHolder, inputSlots);
+    }
+
     @Override
     protected String patternOwnerName() {
         return this.owner.getMachine().name();
