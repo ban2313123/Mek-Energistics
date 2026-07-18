@@ -22,12 +22,17 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-public interface MeFactoryAeMachine extends ICraftingProvider, IGridConnectedBlockEntity, IActionHost, MeSmartCableConnection, appeng.helpers.patternprovider.PatternContainer {
+public interface MeFactoryAeMachine extends MeAeSupportOwner, IGridConnectedBlockEntity, MeSmartCableConnection, appeng.helpers.patternprovider.PatternContainer {
     MeFactoryAeSupport getAeSupport();
 
     MeMekanismMachine getMachine();
 
     Level getOwnerLevel();
+
+    @Override
+    default mekanism.common.tile.base.TileEntityMekanism getAeOwnerTile() {
+        return (mekanism.common.tile.base.TileEntityMekanism) this;
+    }
 
     @Override
     default IManagedGridNode getMainNode() {

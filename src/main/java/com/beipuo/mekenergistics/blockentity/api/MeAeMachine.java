@@ -27,10 +27,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 
-public interface MeAeMachine extends PatternContainer, ICraftingProvider, IActionHost, appeng.me.helpers.IGridConnectedBlockEntity {
+public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.me.helpers.IGridConnectedBlockEntity {
     int MAX_PATTERN_TERMINAL_NAME_LENGTH = 64;
 
     AeOutputMode getAeOutputMode();
+
+    @Override
+    default TileEntityMekanism getAeOwnerTile() {
+        return (TileEntityMekanism) this;
+    }
 
     void cycleAeOutputMode();
 

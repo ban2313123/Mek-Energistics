@@ -549,7 +549,7 @@ public final class MeExternalFactorySupport {
     }
 
     public static void createNodeOnFirstTick(TileEntityMekanism tile, MeFactoryAeSupport support, Level level, BlockPos pos) {
-        GridHelper.onFirstTick(tile, ignored -> support.create(level, pos));
+        support.createNodeOnFirstTick(tile);
     }
 
     public static List<IPatternDetails> getAvailablePatterns(MeFactoryAeSupport support) {
@@ -562,13 +562,11 @@ public final class MeExternalFactorySupport {
     }
 
     public static void save(MeFactoryAeSupport support, CompoundTag tag, HolderLookup.Provider registries) {
-        support.save(tag);
-        support.saveSlots(tag, registries);
+        support.saveAll(tag, registries);
     }
 
     public static void load(MeFactoryAeSupport support, CompoundTag tag, HolderLookup.Provider registries) {
-        support.load(tag);
-        support.loadSlots(tag, registries);
+        support.loadAll(tag, registries);
     }
 
     private static boolean processIfOutputsClear(Owner owner, BooleanSupplier processor) {

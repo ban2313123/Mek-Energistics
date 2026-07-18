@@ -59,107 +59,17 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
 
-public final class MeFactoryAeSupport {
-    private static final String TAG_PATTERN_TERMINAL_NAME = "PatternTerminalName";
-
-    private final MeFactoryAeMachine owner;
-    private final IManagedGridNode mainNode;
-    private final IActionSource actionSource;
-    private final List<BasicInventorySlot> patternSlots = new ArrayList<>(MekEnergisticsConfig.patternSlots());
+public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMachine> {
     private final InternalInventory terminalPatternInventory = new PatternSlotInternalInventory(new PatternSlotOwner());
-    private final List<IPatternDetails> patterns = new ArrayList<>();
-    private final Map<AEKey, IPatternDetails> patternsByDefinition = new HashMap<>();
     private final List<IInventorySlot> knownOutputSlots = new ArrayList<>();
     private final List<IChemicalTank> knownChemicalOutputTanks = new ArrayList<>();
     private final List<IExtendedFluidTank> knownFluidOutputTanks = new ArrayList<>();
-    private final MeSmartPatternMultiplication smartPatternMultiplication = new MeSmartPatternMultiplication();
     private boolean ownerHandlesSmartPatternProcessing;
     private boolean suppressFeedSaveChanges;
-    private int patternPriority;
     private AeOutputMode aeOutputMode = AeOutputMode.BOTH;
-    private String patternTerminalName = "";
 
     public MeFactoryAeSupport(MeFactoryAeMachine owner) {
-        this.owner = owner;
-        this.actionSource = IActionSource.ofMachine(owner);
-        this.mainNode = GridHelper.createManagedNode(owner, NodeListener.INSTANCE)
-                .setInWorldNode(true)
-                .setTagName("node")
-                .setFlags(GridFlags.REQUIRE_CHANNEL)
-                .addService(ICraftingProvider.class, owner)
-                .addService(IGridTickable.class, new AeTicker());
-        for (int i = 0; i < MekEnergisticsConfig.patternSlots(); i++) {
-            this.patternSlots.add(MePatternInventorySlot.create(PatternDetailsHelper::isEncodedPattern, this::updatePatterns));
-        }
-    }
-
-    public IManagedGridNode getMainNode() {
-        ensureNodeCreated();
-        return this.mainNode;
-    }
-
-    private void ensureNodeCreated() {
-        if (this.owner instanceof TileEntityMekanism tile) {
-            Level level = tile.getLevel();
-            if (level != null && !tile.isRemoved() && !this.mainNode.isReady()) {
-                create(level, tile.getBlockPos());
-            }
-        }
-    }
-
-    public List<BasicInventorySlot> getPatternSlots() {
-        return Collections.unmodifiableList(this.patternSlots);
-    }
-
-    public IInventorySlotHolder withPatternSlots(IInventorySlotHolder original) {
-        return side -> {
-            List<IInventorySlot> slots = new ArrayList<>(original.getInventorySlots(side));
-            slots.addAll(this.patternSlots);
-            return slots;
-        };
-    }
-
-    public List<IPatternDetails> getAvailablePatterns() {
-        return Collections.unmodifiableList(this.patterns);
-    }
-
-    public int getPatternPriority() {
-        return this.patternPriority;
-    }
-
-    public String getPatternTerminalName() {
-        return MePatternTerminalNames.get((TileEntityMekanism) this.owner, this.patternTerminalName);
-    }
-
-    public void setPatternTerminalName(String name) {
-        TileEntityMekanism tile = (TileEntityMekanism) this.owner;
-        if (!MePatternTerminalNames.set(tile, name, this.patternTerminalName)) {
-            return;
-        }
-        this.patternTerminalName = MeAeMachine.sanitizePatternTerminalName(name);
-        MeLegacyMachineAeHelper.requestCraftingUpdate(this.mainNode);
-    }
-
-    public boolean isSmartPatternMultiplicationEnabled() {
-        return this.smartPatternMultiplication.isEnabled();
-    }
-
-    public void setSmartPatternMultiplicationEnabled(boolean enabled) {
-        if (this.smartPatternMultiplication.isEnabled() == enabled) {
-            return;
-        }
-        this.smartPatternMultiplication.setEnabled(enabled);
-        this.owner.saveChanges();
-        alertAeTicker();
-    }
-
-    public boolean enqueueSmartPattern(IPatternDetails patternDetails, appeng.api.stacks.KeyCounter[] inputHolder) {
-        if (!this.smartPatternMultiplication.enqueue(patternDetails, inputHolder)) {
-            return false;
-        }
-        this.owner.saveChanges();
-        alertAeTicker();
-        return true;
+        super(owner);
     }
 
     public boolean processSmartPattern(MeSmartPatternMultiplication.Feeder feeder) {
@@ -205,27 +115,6 @@ public final class MeFactoryAeSupport {
         return this.suppressFeedSaveChanges;
     }
 
-    private boolean processSmartPatternViaOwner() {
-        boolean wasEnabled = this.smartPatternMultiplication.isEnabled();
-        this.smartPatternMultiplication.setEnabled(false);
-        try {
-            return processSmartPatternWithPattern(this.owner::pushPattern);
-        } finally {
-            this.smartPatternMultiplication.setEnabled(wasEnabled);
-        }
-    }
-
-    private boolean processSmartPatternWithPattern(MeSmartPatternMultiplication.PatternFeeder feeder) {
-        boolean changed = this.smartPatternMultiplication.processNext(this.patternsByDefinition, feeder);
-        if (changed) {
-            this.owner.saveChanges();
-            if (this.smartPatternMultiplication.hasPendingWork()) {
-                alertAeTicker();
-            }
-        }
-        return changed;
-    }
-
     public AeOutputMode getAeOutputMode() {
         return this.aeOutputMode;
     }
@@ -256,11 +145,6 @@ public final class MeFactoryAeSupport {
                 ? Component.translatable(this.owner.getMachine().translationKey())
                 : Component.literal(terminalName);
         return new PatternContainerGroup(icon, name, List.of());
-    }
-
-    public IGrid getGrid() {
-        IGridNode node = this.mainNode.getNode();
-        return node == null || !node.isActive() ? null : node.getGrid();
     }
 
     public boolean insertOutputSlotsIntoNetwork(List<IInventorySlot> outputSlots) {
@@ -369,7 +253,8 @@ public final class MeFactoryAeSupport {
         }
     }
 
-    private boolean hasAeOutputWork() {
+    @Override
+    protected boolean hasAeOutputWork() {
         if (hasItemOutputBacklog(this.knownOutputSlots)) {
             return true;
         }
@@ -395,7 +280,8 @@ public final class MeFactoryAeSupport {
         return false;
     }
 
-    private boolean processAeOutputWork() {
+    @Override
+    protected boolean processAeOutputWork() {
         boolean hadWork = hasAeOutputWork();
         if (!this.ownerHandlesSmartPatternProcessing) {
             processSmartPatternViaOwner();
@@ -414,24 +300,9 @@ public final class MeFactoryAeSupport {
         return hadWork && !hasWork;
     }
 
-    private void alertAeTicker() {
-        this.mainNode.ifPresent((grid, node) -> grid.getTickManager().alertDevice(node));
-    }
-
-    private MEStorage getNetworkStorage() {
-        return getNetworkStorage(getGrid());
-    }
-
-    private MEStorage getNetworkStorage(IGrid grid) {
-        IStorageService storageService = grid == null ? null : grid.getService(IStorageService.class);
-        return storageService == null ? null : storageService.getInventory();
-    }
-
-    private long insertIntoNetwork(AEKey key, long amount) {
-        IGrid grid = getGrid();
-        MEStorage storage = getNetworkStorage(grid);
-        return storage == null || key == null || amount <= 0 ? 0
-                : StorageHelper.poweredInsert(grid.getEnergyService(), storage, key, amount, this.actionSource);
+    @Override
+    protected String patternOwnerName() {
+        return this.owner.getMachine().name();
     }
 
     public static IEnergyContainer recipeEnergyView(MachineEnergyContainer<?> energyContainer) {
@@ -455,85 +326,29 @@ public final class MeFactoryAeSupport {
         return cachedRecipe.setEnergyRequirements(energyContainer::getEnergyPerTick, recipeEnergyView(owner, energyContainer));
     }
 
-    public void create(Level level, BlockPos pos) {
-        if (!this.mainNode.isReady()) {
-            this.mainNode.create(level, pos);
-        }
-        updatePatterns();
-    }
-
     public void createNodeOnFirstTick(TileEntityMekanism tile) {
-        GridHelper.onFirstTick(tile, blockEntity -> create(blockEntity.getLevel(), blockEntity.getBlockPos()));
+        createOnFirstTick();
     }
 
     public void destroy() {
-        this.mainNode.destroy();
-    }
-
-    public void save(CompoundTag tag) {
-        tag.putInt("PatternPriority", this.patternPriority);
-        tag.putInt("AeOutputMode", this.aeOutputMode.ordinal());
-        this.smartPatternMultiplication.saveConfig(tag);
-        tag.remove(TAG_PATTERN_TERMINAL_NAME);
-        this.mainNode.saveToNBT(tag);
-    }
-
-    public void load(CompoundTag tag) {
-        this.patternPriority = tag.getInt("PatternPriority");
-        this.aeOutputMode = AeOutputMode.byId(tag.getInt("AeOutputMode"));
-        this.smartPatternMultiplication.loadConfig(tag);
-        this.patternTerminalName = MePatternTerminalNames.migrateLegacy((TileEntityMekanism) this.owner, tag.getString(TAG_PATTERN_TERMINAL_NAME));
-        this.mainNode.loadFromNBT(tag);
-        updatePatterns();
-    }
-
-    public void updatePatterns() {
-        this.patterns.clear();
-        this.patternsByDefinition.clear();
-        Level level = this.owner.getOwnerLevel();
-        for (BasicInventorySlot patternSlot : this.patternSlots) {
-            ItemStack stack = patternSlot.getStack();
-            if (!stack.isEmpty()) {
-                IPatternDetails pattern = MePatternDecodeHelper.safeDecode(stack, level,
-                        ((TileEntityMekanism) this.owner).getBlockPos(), this.owner.getMachine().name());
-                if (pattern != null) {
-                    this.patterns.add(pattern);
-                    this.patternsByDefinition.putIfAbsent(pattern.getDefinition(), pattern);
-                }
-            }
-        }
-        MeLegacyMachineAeHelper.requestCraftingUpdate(this.mainNode);
-        this.owner.saveChanges();
-    }
-
-    public void saveSlots(CompoundTag tag, HolderLookup.Provider registries) {
-        for (int i = 0; i < this.patternSlots.size(); i++) {
-            tag.put("MePatternSlot" + i, this.patternSlots.get(i).serializeNBT(registries));
-        }
-        this.smartPatternMultiplication.savePending(tag, registries);
+        destroyNode();
     }
 
     public void saveAll(CompoundTag tag, HolderLookup.Provider registries) {
-        save(tag);
-        saveSlots(tag, registries);
-    }
-
-    public void loadSlots(CompoundTag tag, HolderLookup.Provider registries) {
-        for (int i = 0; i < this.patternSlots.size(); i++) {
-            if (tag.contains("MePatternSlot" + i)) {
-                this.patternSlots.get(i).deserializeNBT(registries, tag.getCompound("MePatternSlot" + i));
-            }
-        }
-        this.smartPatternMultiplication.loadPending(tag, registries);
-        updatePatterns();
+        tag.putInt("AeOutputMode", this.aeOutputMode.ordinal());
+        saveCommon(tag, registries);
     }
 
     public void loadAll(CompoundTag tag, HolderLookup.Provider registries) {
-        load(tag);
-        loadSlots(tag, registries);
+        this.aeOutputMode = AeOutputMode.byId(tag.getInt("AeOutputMode"));
+        loadCommon(tag, registries);
     }
 
     private final class PatternSlotOwner implements MeAeMachine {
+        @Override
+        public TileEntityMekanism getAeOwnerTile() {
+            return ownerTile;
+        }
         @Override
         public AeOutputMode getAeOutputMode() {
             return AeOutputMode.BOTH;
@@ -576,42 +391,6 @@ public final class MeFactoryAeSupport {
         @Override
         public void setCustomPatternTerminalName(String name) {
             MeFactoryAeSupport.this.setPatternTerminalName(name);
-        }
-    }
-
-    private enum NodeListener implements IGridNodeListener<MeFactoryAeMachine> {
-        INSTANCE;
-
-        @Override
-        public void onSaveChanges(MeFactoryAeMachine nodeOwner, IGridNode node) {
-            nodeOwner.saveChanges();
-        }
-
-        @Override
-        public void onStateChanged(MeFactoryAeMachine nodeOwner, IGridNode node, State state) {
-            if (node.isActive()) {
-                node.getGrid().getTickManager().alertDevice(node);
-            }
-        }
-    }
-
-    private final class AeTicker implements IGridTickable {
-        @Override
-        public TickingRequest getTickingRequest(IGridNode node) {
-            return new TickingRequest(1, 1, !hasAeOutputWork());
-        }
-
-        @Override
-        public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
-            if (!mainNode.isActive()) {
-                return TickRateModulation.SLEEP;
-            }
-            boolean hadWork = hasAeOutputWork();
-            boolean finished = processAeOutputWork();
-            if (!hasAeOutputWork()) {
-                return TickRateModulation.SLEEP;
-            }
-            return finished || hadWork ? TickRateModulation.URGENT : TickRateModulation.SLOWER;
         }
     }
 
