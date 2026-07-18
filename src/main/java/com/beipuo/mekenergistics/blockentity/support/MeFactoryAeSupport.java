@@ -389,6 +389,22 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         return processSmartPattern(new SingleItemPortFeeder(inputSlots));
     }
 
+    public boolean processSingleItemSmartPatterns(List<IInventorySlot> outputSlots,
+            IExtendedFluidTank outputTank, List<IInventorySlot> inputSlots) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        changed |= insertFluidTankIntoNetwork(outputTank);
+        if (hasItemOutputBacklog(outputSlots) || outputTank != null && !outputTank.isEmpty()) {
+            return changed;
+        }
+        return processSmartPattern(new SingleItemPortFeeder(inputSlots)) || changed;
+    }
+
+    public boolean finishSingleItemSmartPatterns(List<IInventorySlot> inputSlots, IExtendedFluidTank outputTank) {
+        markOwnerHandlesSmartPatternProcessing();
+        return processSmartPattern(new SingleItemPortFeeder(inputSlots));
+    }
+
     public boolean processItemChemicalSmartPatterns(IChemicalTank inputTank,
             List<IInventorySlot> outputSlots, List<IChemicalTank> outputTanks,
             List<IInventorySlot> inputSlots) {
@@ -465,6 +481,37 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             IExtendedFluidTank fluidTank, IChemicalTank chemicalTank) {
         markOwnerHandlesSmartPatternProcessing();
         return processSmartPattern(new ItemFluidChemicalPortFeeder(inputSlots, fluidTank, chemicalTank));
+    }
+
+    public boolean processTwoItemsSmartPatterns(IInventorySlot extraSlot,
+            List<IInventorySlot> outputSlots, List<IInventorySlot> inputSlots) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        if (hasItemOutputBacklog(outputSlots)) {
+            return changed;
+        }
+        return processSmartPattern(new TwoItemsPortFeeder(inputSlots, extraSlot)) || changed;
+    }
+
+    public boolean finishTwoItemsSmartPatterns(List<IInventorySlot> inputSlots, IInventorySlot extraSlot) {
+        markOwnerHandlesSmartPatternProcessing();
+        return processSmartPattern(new TwoItemsPortFeeder(inputSlots, extraSlot));
+    }
+
+    public boolean processThreeItemsSmartPatterns(IInventorySlot secondSlot, IInventorySlot thirdSlot,
+            List<IInventorySlot> outputSlots, List<IInventorySlot> inputSlots) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        if (hasItemOutputBacklog(outputSlots)) {
+            return changed;
+        }
+        return processSmartPattern(new ThreeItemsPortFeeder(inputSlots, secondSlot, thirdSlot)) || changed;
+    }
+
+    public boolean finishThreeItemsSmartPatterns(List<IInventorySlot> inputSlots,
+            IInventorySlot secondSlot, IInventorySlot thirdSlot) {
+        markOwnerHandlesSmartPatternProcessing();
+        return processSmartPattern(new ThreeItemsPortFeeder(inputSlots, secondSlot, thirdSlot));
     }
 
     private boolean hasChemicalOutputBacklog(List<IChemicalTank> outputTanks) {
@@ -604,6 +651,52 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             long fluid = MeFactoryInventoryInsert.acceptedCopiesIntoFluidTank(this.fluidTank, input.fluid());
             long chemical = MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(this.chemicalTank, input.chemical());
             return Math.min(items, Math.min(fluid, chemical));
+        }
+    }
+
+    private final class TwoItemsPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final List<IInventorySlot> inputSlots;
+        private final IInventorySlot extraSlot;
+
+        private TwoItemsPortFeeder(List<IInventorySlot> inputSlots, IInventorySlot extraSlot) {
+            this.inputSlots = inputSlots;
+            this.extraSlot = extraSlot;
+        }
+
+        @Override public boolean feed(KeyCounter[] inputs) { return pushTwoItems(inputs, this.inputSlots, this.extraSlot); }
+
+        @Override public long maxAcceptedCopies(KeyCounter[] inputs) {
+            if (inputs == null || inputs.length != 2) return 0;
+            MeFactoryPatternInput first = MeFactoryPatternInput.single(inputs[0]);
+            MeFactoryPatternInput second = MeFactoryPatternInput.single(inputs[1]);
+            if (first == null || second == null || !first.isItem() || !second.isItem()) return 0;
+            return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, first.item()),
+                    MeFactoryInventoryInsert.acceptedCopiesIntoSlot(this.extraSlot, second.item()));
+        }
+    }
+
+    private final class ThreeItemsPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final List<IInventorySlot> inputSlots;
+        private final IInventorySlot secondSlot;
+        private final IInventorySlot thirdSlot;
+
+        private ThreeItemsPortFeeder(List<IInventorySlot> inputSlots, IInventorySlot secondSlot, IInventorySlot thirdSlot) {
+            this.inputSlots = inputSlots;
+            this.secondSlot = secondSlot;
+            this.thirdSlot = thirdSlot;
+        }
+
+        @Override public boolean feed(KeyCounter[] inputs) { return pushThreeItems(inputs, this.inputSlots, this.secondSlot, this.thirdSlot); }
+
+        @Override public long maxAcceptedCopies(KeyCounter[] inputs) {
+            if (inputs == null || inputs.length != 3) return 0;
+            MeFactoryPatternInput first = MeFactoryPatternInput.single(inputs[0]);
+            MeFactoryPatternInput second = MeFactoryPatternInput.single(inputs[1]);
+            MeFactoryPatternInput third = MeFactoryPatternInput.single(inputs[2]);
+            if (first == null || second == null || third == null || !first.isItem() || !second.isItem() || !third.isItem()) return 0;
+            return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, first.item()),
+                    Math.min(MeFactoryInventoryInsert.acceptedCopiesIntoSlot(this.secondSlot, second.item()),
+                            MeFactoryInventoryInsert.acceptedCopiesIntoSlot(this.thirdSlot, third.item())));
         }
     }
 
