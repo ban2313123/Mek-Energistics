@@ -9,6 +9,8 @@ import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import java.util.ArrayList;
 import java.util.List;
@@ -96,8 +98,12 @@ public final class MeExternalFactorySupport {
         if (inputHolder == null || inputHolder.length != 1) {
             return false;
         }
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(inputHolder[0]);
-        return input != null && input.isItem() && insertItem(owner, input.item(), knownFits);
+        boolean changed = MePatternInputRouter.route(inputHolder,
+                owner.meInputSlots().stream().map(MeMachineIoAdapter::itemInput).toList());
+        if (changed) {
+            owner.saveChanges();
+        }
+        return changed;
     }
 
     public static boolean pushSingleItem(Owner owner, IPatternDetails patternDetails, KeyCounter[] inputHolder) {
@@ -159,23 +165,18 @@ public final class MeExternalFactorySupport {
         if (inputHolder == null || inputHolder.length != 2) {
             return false;
         }
-        MeFactoryPatternInput input = MeFactoryPatternInput.separate(inputHolder);
-        if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
+        if (chemicalTank == null) {
             return false;
         }
-        boolean canInsertItem = knownFits || MeFactoryInventoryInsert.canInsertAcrossSlots(owner.meInputSlots(), input.item());
-        if (canInsertItem && chemicalTank.insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            InputTransaction transaction = InputTransaction.capture(owner).chemical(chemicalTank);
-            boolean chemicalInserted = chemicalTank.insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL).isEmpty();
-            boolean itemInserted = chemicalInserted && insertItemInput(owner, input.item(), knownFits);
-            if (!chemicalInserted || !itemInserted) {
-                transaction.restore();
-                return false;
-            }
+        boolean changed = MePatternInputRouter.route(inputHolder,
+                java.util.stream.Stream.concat(
+                        owner.meInputSlots().stream().map(MeMachineIoAdapter::itemInput),
+                        java.util.stream.Stream.of(MeMachineIoAdapter.chemicalInput(chemicalTank)))
+                        .toList());
+        if (changed) {
             owner.saveChanges();
-            return true;
         }
-        return false;
+        return changed;
     }
 
     public static boolean pushItemChemical(Owner owner, IPatternDetails patternDetails, KeyCounter[] inputHolder, IChemicalTank chemicalTank) {
