@@ -8,14 +8,13 @@ import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
 import java.util.List;
-import mekanism.api.Action;
-import mekanism.api.AutomationType;
 import mekanism.api.IContentsListener;
 import mekanism.api.chemical.IChemicalTank;
 import mekanism.api.inventory.IInventorySlot;
@@ -103,15 +102,12 @@ final class MeMekmmItemChemicalMachineSupport<TILE extends TileEntityMekanism & 
         if (aeSupport().isSmartPatternMultiplicationEnabled()) {
             return aeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        MeFactoryPatternInput input = MeFactoryPatternInput.separate(inputHolder);
-        if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()
-                || this.inputSlot == null || this.chemicalTank == null
-                || !this.inputSlot.insertItem(input.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || !this.chemicalTank.insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
+        if (this.inputSlot == null || this.chemicalTank == null
+                || !MePatternInputRouter.route(inputHolder, List.of(
+                        MeMachineIoAdapter.itemInput(this.inputSlot),
+                        MeMachineIoAdapter.chemicalInput(this.chemicalTank)))) {
             return false;
         }
-        this.inputSlot.insertItem(input.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        this.chemicalTank.insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL);
         this.owner.setChanged();
         return true;
     }

@@ -28,6 +28,7 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -161,17 +162,12 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
         if (inputHolder == null || inputHolder.length != 1 || inputSlot == null) {
             return false;
         }
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(inputHolder[0]);
-        if (input == null || !input.isItem()) {
-            return false;
+        boolean changed = MePatternInputRouter.route(inputHolder,
+                List.of(MeMachineIoAdapter.itemInput(inputSlot)));
+        if (changed) {
+            this.owner.setChanged();
         }
-        ItemStack itemInput = input.item();
-        if (!inputSlot.insertItem(itemInput.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        inputSlot.insertItem(itemInput, Action.EXECUTE, AutomationType.INTERNAL);
-        this.owner.setChanged();
-        return true;
+        return changed;
     }
 
     private void rememberOutputSlot(OutputInventorySlot outputSlot) {

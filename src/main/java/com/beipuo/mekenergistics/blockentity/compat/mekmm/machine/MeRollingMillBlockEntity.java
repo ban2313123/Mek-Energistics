@@ -10,7 +10,6 @@ import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
@@ -95,14 +94,8 @@ public class MeRollingMillBlockEntity extends TileEntityRollingMill implements I
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(inputHolder[0]);
         var inputSlot = ((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot();
-        if (input == null || !input.isItem() || !inputSlot.insertItem(input.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        inputSlot.insertItem(input.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushSingleItem(inputHolder, inputSlot);
     }
 
     @Override public boolean isBusy() { return false; }

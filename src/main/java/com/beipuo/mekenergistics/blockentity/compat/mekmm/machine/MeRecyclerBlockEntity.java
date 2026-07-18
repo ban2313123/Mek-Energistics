@@ -10,7 +10,6 @@ import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
@@ -100,14 +99,7 @@ public class MeRecyclerBlockEntity extends TileEntityRecycler implements ICrafti
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(inputHolder[0]);
-        if (input == null || !input.isItem() || this.meInputSlot == null
-                || !this.meInputSlot.insertItem(input.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        this.meInputSlot.insertItem(input.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return this.meInputSlot != null && getRecipeAeSupport().pushSingleItem(inputHolder, this.meInputSlot);
     }
 
     @Override public boolean isBusy() { return false; }
