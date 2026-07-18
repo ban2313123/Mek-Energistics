@@ -405,6 +405,22 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         return processSmartPattern(new SingleItemPortFeeder(inputSlots));
     }
 
+    public boolean processSingleItemWithRequiredExtraSlotSmartPatterns(IInventorySlot extraSlot,
+            List<IInventorySlot> outputSlots, List<IInventorySlot> inputSlots) {
+        if (extraSlot == null || extraSlot.getStack().isEmpty()) {
+            return false;
+        }
+        return processSingleItemSmartPatterns(outputSlots, inputSlots);
+    }
+
+    public boolean finishSingleItemWithRequiredExtraSlotSmartPatterns(IInventorySlot extraSlot,
+            List<IInventorySlot> inputSlots) {
+        if (extraSlot == null || extraSlot.getStack().isEmpty()) {
+            return false;
+        }
+        return finishSingleItemSmartPatterns(inputSlots);
+    }
+
     public boolean processItemChemicalSmartPatterns(IChemicalTank inputTank,
             List<IInventorySlot> outputSlots, List<IChemicalTank> outputTanks,
             List<IInventorySlot> inputSlots) {
