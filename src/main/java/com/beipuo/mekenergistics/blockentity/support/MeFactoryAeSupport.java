@@ -291,6 +291,15 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
                 && pushSingleItem(inputHolder, inputSlots);
     }
 
+    public boolean pushChemical(KeyCounter[] inputHolder, List<? extends IChemicalTank> chemicalTanks) {
+        boolean changed = MePatternInputRouter.route(inputHolder,
+                chemicalTanks.stream().map(MeMachineIoAdapter::chemicalInput).toList());
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
+    }
+
     @Override
     protected String patternOwnerName() {
         return this.owner.getMachine().name();

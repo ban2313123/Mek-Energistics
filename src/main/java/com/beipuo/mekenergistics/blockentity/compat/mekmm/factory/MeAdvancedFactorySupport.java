@@ -30,11 +30,13 @@ final class MeAdvancedFactorySupport {
     }
 
     static boolean pushSingleItem(Owner owner, KeyCounter[] inputHolder) {
-        return MeExternalFactorySupport.pushSingleItem(owner, inputHolder);
+        return owner.getAeSupport().pushSingleItem(inputHolder, owner.meInputSlots());
     }
 
     static boolean pushSingleItem(Owner owner, IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        return MeExternalFactorySupport.pushSingleItem(owner, patternDetails, inputHolder);
+        return owner.getAeSupport().isSmartPatternMultiplicationEnabled()
+                ? owner.getAeSupport().enqueueSmartPattern(patternDetails, inputHolder)
+                : owner.getAeSupport().pushSingleItem(inputHolder, owner.meInputSlots());
     }
 
     static boolean processSingleItemSmartPatterns(Owner owner) {
@@ -62,11 +64,13 @@ final class MeAdvancedFactorySupport {
     }
 
     static boolean pushItemChemical(Owner owner, KeyCounter[] inputHolder, mekanism.api.chemical.IChemicalTank chemicalTank) {
-        return MeExternalFactorySupport.pushItemChemical(owner, inputHolder, chemicalTank);
+        return owner.getAeSupport().pushItemChemical(inputHolder, owner.meInputSlots(), chemicalTank);
     }
 
     static boolean pushItemChemical(Owner owner, IPatternDetails patternDetails, KeyCounter[] inputHolder, mekanism.api.chemical.IChemicalTank chemicalTank) {
-        return MeExternalFactorySupport.pushItemChemical(owner, patternDetails, inputHolder, chemicalTank);
+        return owner.getAeSupport().isSmartPatternMultiplicationEnabled()
+                ? owner.getAeSupport().enqueueSmartPattern(patternDetails, inputHolder)
+                : owner.getAeSupport().pushItemChemical(inputHolder, owner.meInputSlots(), chemicalTank);
     }
 
     static boolean processItemChemicalSmartPatterns(Owner owner, mekanism.api.chemical.IChemicalTank chemicalTank) {
@@ -87,11 +91,13 @@ final class MeAdvancedFactorySupport {
     }
 
     static boolean pushChemical(Owner owner, KeyCounter[] inputHolder, mekanism.api.chemical.IChemicalTank chemicalTank) {
-        return MeExternalFactorySupport.pushChemical(owner, inputHolder, chemicalTank);
+        return owner.getAeSupport().pushChemical(inputHolder, java.util.List.of(chemicalTank));
     }
 
     static boolean pushChemical(Owner owner, IPatternDetails patternDetails, KeyCounter[] inputHolder, mekanism.api.chemical.IChemicalTank chemicalTank) {
-        return MeExternalFactorySupport.pushChemical(owner, patternDetails, inputHolder, chemicalTank);
+        return owner.getAeSupport().isSmartPatternMultiplicationEnabled()
+                ? owner.getAeSupport().enqueueSmartPattern(patternDetails, inputHolder)
+                : owner.getAeSupport().pushChemical(inputHolder, java.util.List.of(chemicalTank));
     }
 
     static boolean processChemicalSmartPatterns(Owner owner, mekanism.api.chemical.IChemicalTank chemicalTank) {
@@ -103,11 +109,13 @@ final class MeAdvancedFactorySupport {
     }
 
     static boolean pushChemical(Owner owner, KeyCounter[] inputHolder, java.util.List<mekanism.api.chemical.IChemicalTank> chemicalTanks) {
-        return MeExternalFactorySupport.pushChemical(owner, inputHolder, chemicalTanks);
+        return owner.getAeSupport().pushChemical(inputHolder, chemicalTanks);
     }
 
     static boolean pushChemical(Owner owner, IPatternDetails patternDetails, KeyCounter[] inputHolder, java.util.List<mekanism.api.chemical.IChemicalTank> chemicalTanks) {
-        return MeExternalFactorySupport.pushChemical(owner, patternDetails, inputHolder, chemicalTanks);
+        return owner.getAeSupport().isSmartPatternMultiplicationEnabled()
+                ? owner.getAeSupport().enqueueSmartPattern(patternDetails, inputHolder)
+                : owner.getAeSupport().pushChemical(inputHolder, chemicalTanks);
     }
 
     static boolean processChemicalSmartPatterns(Owner owner, java.util.List<mekanism.api.chemical.IChemicalTank> chemicalTanks) {
