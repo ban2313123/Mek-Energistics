@@ -31,6 +31,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
@@ -294,6 +295,38 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
     public boolean pushChemical(KeyCounter[] inputHolder, List<? extends IChemicalTank> chemicalTanks) {
         boolean changed = MePatternInputRouter.route(inputHolder,
                 chemicalTanks.stream().map(MeMachineIoAdapter::chemicalInput).toList());
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
+    }
+
+    public boolean pushFluidChemical(KeyCounter[] inputHolder, IExtendedFluidTank fluidTank,
+            List<? extends IChemicalTank> chemicalTanks) {
+        List<MeInputPort> ports = new ArrayList<>();
+        if (fluidTank != null) {
+            ports.add(MeMachineIoAdapter.fluidInput(fluidTank));
+        }
+        ports.addAll(chemicalTanks.stream().map(MeMachineIoAdapter::chemicalInput).toList());
+        boolean changed = MePatternInputRouter.route(inputHolder, ports);
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
+    }
+
+    public boolean pushItemFluidChemical(KeyCounter[] inputHolder,
+            List<? extends IInventorySlot> inputSlots, IExtendedFluidTank fluidTank,
+            IChemicalTank chemicalTank) {
+        List<MeInputPort> ports = new ArrayList<>(inputSlots.stream()
+                .map(MeMachineIoAdapter::itemInput).toList());
+        if (fluidTank != null) {
+            ports.add(MeMachineIoAdapter.fluidInput(fluidTank));
+        }
+        if (chemicalTank != null) {
+            ports.add(MeMachineIoAdapter.chemicalInput(chemicalTank));
+        }
+        boolean changed = MePatternInputRouter.route(inputHolder, ports);
         if (changed) {
             this.owner.saveChanges();
         }
