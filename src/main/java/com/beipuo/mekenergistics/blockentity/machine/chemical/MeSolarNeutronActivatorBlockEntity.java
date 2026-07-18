@@ -9,6 +9,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -64,7 +65,7 @@ public class MeSolarNeutronActivatorBlockEntity extends TileEntitySolarNeutronAc
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
+        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         return getRecipeAeSupport().drainChemicalOutputs(this.aeOutputMode, sendUpdatePacket, this.outputTank);
     }
@@ -77,20 +78,13 @@ public class MeSolarNeutronActivatorBlockEntity extends TileEntitySolarNeutronAc
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                java.util.List.of(MeMachineIoAdapter.chemicalInput(this.inputTank)));
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[0]);
-        if (input == null || !input.isChemical()) {
-            return false;
-        }
-        if (this.inputTank.insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).getAmount() != 0) {
-            return false;
-        }
-        this.inputTank.insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                java.util.List.of(MeMachineIoAdapter.chemicalInput(this.inputTank)));
     }
 
     @Override public boolean isBusy() { return false; }

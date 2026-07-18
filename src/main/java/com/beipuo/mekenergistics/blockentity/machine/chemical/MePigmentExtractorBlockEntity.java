@@ -78,7 +78,7 @@ public class MePigmentExtractorBlockEntity extends TileEntityPigmentExtractor im
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
+        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         return getRecipeAeSupport().drainChemicalOutputs(this.aeOutputMode, sendUpdatePacket, this.pigmentTank);
     }
@@ -98,21 +98,12 @@ public class MePigmentExtractorBlockEntity extends TileEntityPigmentExtractor im
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        return getRecipeAeSupport().pushSingleItem(inputHolder, (InputInventorySlot) getInputSlot());
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[0]);
-        if (input == null || !input.isItem()) {
-            return false;
-        }
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         InputInventorySlot inputSlot = (InputInventorySlot) getInputSlot();
-        if (!inputSlot.insertItem(input.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        inputSlot.insertItem(input.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushSingleItem(inputHolder, inputSlot);
     }
 
     @Override public boolean isBusy() { return false; }
