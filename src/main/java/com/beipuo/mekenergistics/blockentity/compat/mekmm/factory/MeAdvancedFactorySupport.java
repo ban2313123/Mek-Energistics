@@ -26,7 +26,7 @@ final class MeAdvancedFactorySupport {
     }
 
     static IInventorySlotHolder withPatternSlots(IInventorySlotHolder original, Owner owner) {
-        return MeExternalFactorySupport.withPatternSlots(original, owner);
+        return owner.getAeSupport().withPatternSlots(original);
     }
 
     static boolean pushSingleItem(Owner owner, KeyCounter[] inputHolder) {
@@ -247,15 +247,15 @@ final class MeAdvancedFactorySupport {
     }
 
     static void createNodeOnFirstTick(TileEntityMekanism tile, MeFactoryAeSupport support, Level level, BlockPos pos) {
-        MeExternalFactorySupport.createNodeOnFirstTick(tile, support, level, pos);
+        support.createNodeOnFirstTick(tile);
     }
 
     static void save(MeFactoryAeSupport support, CompoundTag tag, HolderLookup.Provider registries) {
-        MeExternalFactorySupport.save(support, tag, registries);
+        support.saveAll(tag, registries);
     }
 
     static void load(MeFactoryAeSupport support, CompoundTag tag, HolderLookup.Provider registries) {
-        MeExternalFactorySupport.load(support, tag, registries);
+        support.loadAll(tag, registries);
     }
 
     static List<IInventorySlot> noItemOutput() {
