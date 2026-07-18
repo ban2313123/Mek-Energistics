@@ -44,7 +44,7 @@ public class MeExtraItemStackToItemStackFactoryBlockEntity extends TileEntityExt
     @NotNull
     @Override
     protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        return MeExternalFactorySupport.withPatternSlots(super.getInitialInventory(listener), this);
+        return getAeSupport().withPatternSlots(super.getInitialInventory(listener));
     }
 
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
@@ -53,14 +53,14 @@ public class MeExtraItemStackToItemStackFactoryBlockEntity extends TileEntityExt
     @Override public MeFactoryAeSupport getAeSupport() { if (this.aeSupport == null) this.aeSupport = new MeFactoryAeSupport(this); return this.aeSupport; }
     @Override public MeMekanismMachine getMachine() { return this.machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && MeExternalFactorySupport.pushSingleItem(this, patternDetails, inputHolder); }
+    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder) : getAeSupport().pushSingleItem(inputHolder, this.inputSlots)); }
     @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public mekanism.api.recipes.cache.CachedRecipe<mekanism.api.recipes.ItemStackToItemStackRecipe> createNewCachedRecipe(@NotNull mekanism.api.recipes.ItemStackToItemStackRecipe recipe, int cacheIndex) { return MeExternalFactorySupport.wrapRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
     @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = MeExternalFactorySupport.processSingleItemSmartPatterns(this); sendUpdatePacket |= super.onUpdateServer(); return MeExternalFactorySupport.updateServer(this, sendUpdatePacket, () -> MeExternalFactorySupport.finishSingleItemSmartPatterns(this)); }
-    @Override public void clearRemoved() { super.clearRemoved(); MeExternalFactorySupport.createNodeOnFirstTick(this, getAeSupport(), getLevel(), getBlockPos()); }
+    @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }
-    @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.saveAdditional(tag, registries); MeExternalFactorySupport.save(getAeSupport(), tag, registries); }
-    @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.loadAdditional(tag, registries); MeExternalFactorySupport.load(getAeSupport(), tag, registries); }
+    @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.saveAdditional(tag, registries); getAeSupport().saveAll(tag, registries); }
+    @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.loadAdditional(tag, registries); getAeSupport().loadAll(tag, registries); }
 }
