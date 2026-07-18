@@ -80,11 +80,13 @@ final class MeExtraFactoryBridge {
     }
 
     static boolean pushTwoItems(Owner owner, KeyCounter[] inputHolder, IInventorySlot extraSlot) {
-        return MeExternalFactorySupport.pushTwoItems(owner, inputHolder, extraSlot);
+        return owner.getAeSupport().pushTwoItems(inputHolder, owner.meInputSlots(), extraSlot);
     }
 
     static boolean pushTwoItems(Owner owner, IPatternDetails patternDetails, KeyCounter[] inputHolder, IInventorySlot extraSlot) {
-        return MeExternalFactorySupport.pushTwoItems(owner, patternDetails, inputHolder, extraSlot);
+        return owner.getAeSupport().isSmartPatternMultiplicationEnabled()
+                ? owner.getAeSupport().enqueueSmartPattern(patternDetails, inputHolder)
+                : owner.getAeSupport().pushTwoItems(inputHolder, owner.meInputSlots(), extraSlot);
     }
 
     static boolean processTwoItemsSmartPatterns(Owner owner, IInventorySlot extraSlot) {

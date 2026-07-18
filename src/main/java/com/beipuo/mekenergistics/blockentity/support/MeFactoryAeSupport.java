@@ -333,6 +333,47 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         return changed;
     }
 
+    public boolean pushTwoItems(KeyCounter[] inputHolder, List<? extends IInventorySlot> inputSlots,
+            IInventorySlot extraSlot) {
+        if (inputHolder == null || inputHolder.length != 2 || extraSlot == null) {
+            return false;
+        }
+        MeInputPort extra = MeMachineIoAdapter.itemInput(extraSlot);
+        java.util.Map<MeInputPort, Object> snapshots = new java.util.IdentityHashMap<>();
+        List<MeInputPort> main = inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList();
+        main.forEach(port -> snapshots.put(port, port.snapshot()));
+        snapshots.put(extra, extra.snapshot());
+        if (MePatternInputRouter.route(new KeyCounter[]{inputHolder[0]}, main)
+                && MePatternInputRouter.route(new KeyCounter[]{inputHolder[1]}, List.of(extra))) {
+            this.owner.saveChanges();
+            return true;
+        }
+        snapshots.forEach(MeInputPort::restore);
+        return false;
+    }
+
+    public boolean pushThreeItems(KeyCounter[] inputHolder, List<? extends IInventorySlot> inputSlots,
+            IInventorySlot secondSlot, IInventorySlot thirdSlot) {
+        if (inputHolder == null || inputHolder.length != 3 || secondSlot == null || thirdSlot == null) {
+            return false;
+        }
+        MeInputPort second = MeMachineIoAdapter.itemInput(secondSlot);
+        MeInputPort third = MeMachineIoAdapter.itemInput(thirdSlot);
+        java.util.Map<MeInputPort, Object> snapshots = new java.util.IdentityHashMap<>();
+        List<MeInputPort> main = inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList();
+        main.forEach(port -> snapshots.put(port, port.snapshot()));
+        snapshots.put(second, second.snapshot());
+        snapshots.put(third, third.snapshot());
+        if (MePatternInputRouter.route(new KeyCounter[]{inputHolder[0]}, main)
+                && MePatternInputRouter.route(new KeyCounter[]{inputHolder[1]}, List.of(second))
+                && MePatternInputRouter.route(new KeyCounter[]{inputHolder[2]}, List.of(third))) {
+            this.owner.saveChanges();
+            return true;
+        }
+        snapshots.forEach(MeInputPort::restore);
+        return false;
+    }
+
     @Override
     protected String patternOwnerName() {
         return this.owner.getMachine().name();
