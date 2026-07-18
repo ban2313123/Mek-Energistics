@@ -2,7 +2,6 @@ package com.beipuo.mekenergistics.blockentity.compat.eme.factory;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
-import com.beipuo.mekenergistics.blockentity.compat.shared.MeExternalFactorySupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismRecipeViewerTypes;
@@ -16,6 +15,7 @@ import mekanism.api.inventory.IInventorySlot;
 import mekanism.api.recipes.cache.CachedRecipe;
 import mekanism.client.recipe_viewer.type.IRecipeViewerRecipeType;
 import mekanism.common.capabilities.energy.MachineEnergyContainer;
+import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
 import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.container.MekanismContainer;
@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MeEMExtraAlloyingFactoryBlockEntity extends TileEntityEMExtraAlloyingFactory implements MeEvolvedMekanismExtrasFactoryAeMachine, MeExternalFactorySupport.Owner {
+public class MeEMExtraAlloyingFactoryBlockEntity extends TileEntityEMExtraAlloyingFactory implements MeEvolvedMekanismExtrasFactoryAeMachine {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
 
@@ -41,14 +41,14 @@ public class MeEMExtraAlloyingFactoryBlockEntity extends TileEntityEMExtraAlloyi
     @NotNull
     @Override
     protected IEnergyContainerHolder getInitialEnergyContainers(IContentsListener listener) {
-        return MeExternalFactorySupport.energyContainers((TileEntityEMExtraFactory<?>) this, listener, this::unpauseRecipeMonitors,
+        return MeFactoryAeSupport.energyContainers((TileEntityEMExtraFactory<?>) this, listener, this::unpauseRecipeMonitors,
                 container -> this.energyContainer = (MachineEnergyContainer) container);
     }
 
     @NotNull
     @Override
     protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        return MeExternalFactorySupport.withPatternSlots(super.getInitialInventory(listener), this);
+        return getAeSupport().withPatternSlots(super.getInitialInventory(listener));
     }
 
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
@@ -57,15 +57,15 @@ public class MeEMExtraAlloyingFactoryBlockEntity extends TileEntityEMExtraAlloyi
     @Override public MeFactoryAeSupport getAeSupport() { if (this.aeSupport == null) this.aeSupport = new MeFactoryAeSupport(this); return this.aeSupport; }
     @Override public MeMekanismMachine getMachine() { return this.machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && MeExternalFactorySupport.pushThreeItems(this, patternDetails, inputHolder, getExtraSlot(), getSecondExtraSlot()); }
+    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder) : getAeSupport().pushThreeItems(inputHolder, this.inputSlots, getExtraSlot(), getSecondExtraSlot())); }
     @Override public boolean isBusy() { return false; }
     @Nullable @Override public IRecipeViewerRecipeType<AlloyerRecipe> recipeViewerType() { return EvolvedMekanismRecipeViewerTypes.ALLOYING; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
-    @Override public CachedRecipe<AlloyerRecipe> createNewCachedRecipe(@NotNull AlloyerRecipe recipe, int cacheIndex) { return MeExternalFactorySupport.wrapRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
-    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = MeExternalFactorySupport.processThreeItemsSmartPatterns(this, getExtraSlot(), getSecondExtraSlot()); sendUpdatePacket |= super.onUpdateServer(); return MeExternalFactorySupport.updateServer(this, sendUpdatePacket, () -> MeExternalFactorySupport.finishThreeItemsSmartPatterns(this, getExtraSlot(), getSecondExtraSlot())); }
-    @Override public void clearRemoved() { super.clearRemoved(); MeExternalFactorySupport.createNodeOnFirstTick(this, getAeSupport(), getLevel(), getBlockPos()); }
+    @Override public CachedRecipe<AlloyerRecipe> createNewCachedRecipe(@NotNull AlloyerRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
+    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = getAeSupport().processThreeItemsSmartPatterns(getExtraSlot(), getSecondExtraSlot(), this.outputSlots, this.inputSlots); sendUpdatePacket |= super.onUpdateServer(); return getAeSupport().finishThreeItemsSmartPatterns(this.inputSlots, getExtraSlot(), getSecondExtraSlot()) || sendUpdatePacket; }
+    @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }
-    @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.saveAdditional(tag, registries); MeExternalFactorySupport.save(getAeSupport(), tag, registries); }
-    @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.loadAdditional(tag, registries); MeExternalFactorySupport.load(getAeSupport(), tag, registries); }
+    @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.saveAdditional(tag, registries); getAeSupport().saveAll(tag, registries); }
+    @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.loadAdditional(tag, registries); getAeSupport().loadAll(tag, registries); }
 }

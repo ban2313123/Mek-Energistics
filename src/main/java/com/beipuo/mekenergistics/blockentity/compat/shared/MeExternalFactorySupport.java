@@ -5,6 +5,7 @@ import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGridNode;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
@@ -44,12 +45,7 @@ public final class MeExternalFactorySupport {
     private MeExternalFactorySupport() {
     }
 
-    public interface Owner extends MeFactoryAeMachine {
-        List<IInventorySlot> meInputSlots();
-
-        List<IInventorySlot> meOutputSlots();
-
-        void unpauseRecipeMonitors();
+    public interface Owner extends MeFactoryIoOwner {
 
         @Override
         default List<IPatternDetails> getAvailablePatterns() {

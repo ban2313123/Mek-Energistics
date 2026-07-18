@@ -2,7 +2,7 @@ package com.beipuo.mekenergistics.blockentity.compat.meke.factory;
 
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 
-import com.beipuo.mekenergistics.blockentity.compat.shared.MeExternalFactorySupport;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MeExtraSawingFactoryBlockEntity extends TileEntityExtraSawingFactory implements MeExternalFactorySupport.Owner {
+public class MeExtraSawingFactoryBlockEntity extends TileEntityExtraSawingFactory implements MeFactoryIoOwner {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
 
@@ -34,7 +34,7 @@ public class MeExtraSawingFactoryBlockEntity extends TileEntityExtraSawingFactor
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @NotNull @Override protected IEnergyContainerHolder getInitialEnergyContainers(IContentsListener listener) { return MeExternalFactorySupport.energyContainers((com.jerry.mekextras.common.tile.factory.TileEntityExtraFactory<?>) this, listener, this::unpauseRecipeMonitors, container -> this.energyContainer = (mekanism.common.capabilities.energy.MachineEnergyContainer) container); }
+    @NotNull @Override protected IEnergyContainerHolder getInitialEnergyContainers(IContentsListener listener) { return MeFactoryAeSupport.energyContainers((com.jerry.mekextras.common.tile.factory.TileEntityExtraFactory<?>) this, listener, this::unpauseRecipeMonitors, container -> this.energyContainer = (mekanism.common.capabilities.energy.MachineEnergyContainer) container); }
     @NotNull @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return this.outputSlots; }
@@ -45,7 +45,7 @@ public class MeExtraSawingFactoryBlockEntity extends TileEntityExtraSawingFactor
     @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder) : getAeSupport().pushSingleItem(inputHolder, this.inputSlots)); }
     @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
-    @Override public mekanism.api.recipes.cache.CachedRecipe<mekanism.api.recipes.SawmillRecipe> createNewCachedRecipe(@NotNull mekanism.api.recipes.SawmillRecipe recipe, int cacheIndex) { return MeExternalFactorySupport.wrapRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
+    @Override public mekanism.api.recipes.cache.CachedRecipe<mekanism.api.recipes.SawmillRecipe> createNewCachedRecipe(@NotNull mekanism.api.recipes.SawmillRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
     @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = getAeSupport().processSingleItemSmartPatterns(this.outputSlots, this.inputSlots); sendUpdatePacket |= super.onUpdateServer(); return getAeSupport().processSingleItemSmartPatterns(this.outputSlots, this.inputSlots) || sendUpdatePacket; }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }

@@ -52,6 +52,9 @@ import mekanism.api.recipes.MekanismRecipe;
 import mekanism.api.recipes.cache.CachedRecipe;
 import mekanism.common.capabilities.energy.MachineEnergyContainer;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
+import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
+import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;
+import mekanism.common.tile.interfaces.ISideConfiguration;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
 import me.ramidzkh.mekae2.ae2.MekanismKey;
@@ -68,6 +71,20 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
     private final List<IInventorySlot> knownOutputSlots = new ArrayList<>();
     private final List<IChemicalTank> knownChemicalOutputTanks = new ArrayList<>();
     private final List<IExtendedFluidTank> knownFluidOutputTanks = new ArrayList<>();
+
+    /** Creates the AE-backed energy container used by external factory owners. */
+    public static <TILE extends TileEntityMekanism & ISideConfiguration> IEnergyContainerHolder energyContainers(
+            TILE tile, IContentsListener listener, Runnable unpauseRecipeMonitors,
+            java.util.function.Consumer<AeBackedFactoryEnergyContainer<TILE>> containerSetter) {
+        EnergyContainerHelper builder = EnergyContainerHelper.forSideWithConfig(tile);
+        AeBackedFactoryEnergyContainer<TILE> container = new AeBackedFactoryEnergyContainer<>(tile, () -> {
+            listener.onContentsChanged();
+            unpauseRecipeMonitors.run();
+        });
+        containerSetter.accept(container);
+        builder.addContainer(container);
+        return builder.build();
+    }
     private boolean ownerHandlesSmartPatternProcessing;
     private boolean suppressFeedSaveChanges;
     private AeOutputMode aeOutputMode = AeOutputMode.BOTH;
@@ -395,6 +412,19 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
         changed |= insertFluidTankIntoNetwork(outputTank);
         if (hasItemOutputBacklog(outputSlots) || outputTank != null && !outputTank.isEmpty()) {
+            return changed;
+        }
+        return processSmartPattern(new SingleItemPortFeeder(inputSlots)) || changed;
+    }
+
+    public boolean processSingleItemSmartPatterns(List<IInventorySlot> outputSlots,
+            List<IChemicalTank> outputTanks, List<IInventorySlot> inputSlots) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        for (IChemicalTank outputTank : outputTanks) {
+            changed |= insertChemicalTankIntoNetwork(outputTank);
+        }
+        if (hasItemOutputBacklog(outputSlots) || hasChemicalOutputBacklog(outputTanks)) {
             return changed;
         }
         return processSmartPattern(new SingleItemPortFeeder(inputSlots)) || changed;
