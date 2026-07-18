@@ -170,6 +170,32 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
         return changed;
     }
 
+    public boolean pushItemChemical(KeyCounter[] inputHolder, IInventorySlot inputSlot, IChemicalTank chemicalTank) {
+        if (inputSlot == null || chemicalTank == null) {
+            return false;
+        }
+        boolean changed = MePatternInputRouter.route(inputHolder, List.of(
+                MeMachineIoAdapter.itemInput(inputSlot), MeMachineIoAdapter.chemicalInput(chemicalTank)));
+        if (changed) {
+            this.owner.setChanged();
+        }
+        return changed;
+    }
+
+    /** Position-sensitive two-lane input for machines whose main and extra slots cannot swap. */
+    public boolean pushTwoItems(KeyCounter[] inputHolder, IInventorySlot mainSlot, IInventorySlot extraSlot) {
+        if (inputHolder == null || inputHolder.length != 2 || mainSlot == null || extraSlot == null) {
+            return false;
+        }
+        boolean changed = MePatternInputRouter.routeLanes(inputHolder, List.of(
+                List.of(MeMachineIoAdapter.itemInput(mainSlot)),
+                List.of(MeMachineIoAdapter.itemInput(extraSlot))));
+        if (changed) {
+            this.owner.setChanged();
+        }
+        return changed;
+    }
+
     private void rememberOutputSlot(OutputInventorySlot outputSlot) {
         if (outputSlot != null && !this.knownOutputSlots.contains(outputSlot)) {
             this.knownOutputSlots.add(outputSlot);

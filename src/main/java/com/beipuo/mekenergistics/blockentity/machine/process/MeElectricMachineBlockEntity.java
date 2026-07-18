@@ -95,7 +95,7 @@ public class MeElectricMachineBlockEntity extends TileEntityElectricMachine
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
+        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         OutputInventorySlot outputSlot = ((TileEntityElectricMachineAccessor) this).mekenergistics$getOutputSlot();
         return getRecipeAeSupport().drainOutputPorts(this.aeOutputMode,
@@ -116,10 +116,11 @@ public class MeElectricMachineBlockEntity extends TileEntityElectricMachine
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                java.util.List.of(MeMachineIoAdapter.itemInput(((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot())));
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         return getRecipeAeSupport().pushPatternInputs(inputHolder,
                 java.util.List.of(MeMachineIoAdapter.itemInput(((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot())));
     }

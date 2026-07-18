@@ -77,7 +77,7 @@ public class MeCombinerBlockEntity extends TileEntityCombiner implements ICrafti
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
+        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         OutputInventorySlot output = ((TileEntityCombinerAccessor) this).mekenergistics$getOutputSlot();
         return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
@@ -98,14 +98,15 @@ public class MeCombinerBlockEntity extends TileEntityCombiner implements ICrafti
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
-    }
-
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
         InputInventorySlot main = ((TileEntityCombinerAccessor) this).mekenergistics$getMainInputSlot();
         InputInventorySlot extra = ((TileEntityCombinerAccessor) this).mekenergistics$getExtraInputSlot();
-        return getRecipeAeSupport().pushPatternInputs(inputHolder, java.util.List.of(
-                MeMachineIoAdapter.itemInput(main), MeMachineIoAdapter.itemInput(extra)));
+        return getRecipeAeSupport().pushTwoItems(inputHolder, main, extra);
+    }
+
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
+        InputInventorySlot main = ((TileEntityCombinerAccessor) this).mekenergistics$getMainInputSlot();
+        InputInventorySlot extra = ((TileEntityCombinerAccessor) this).mekenergistics$getExtraInputSlot();
+        return getRecipeAeSupport().pushTwoItems(inputHolder, main, extra);
     }
 
     @Override public boolean isBusy() { return false; }

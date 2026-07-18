@@ -79,7 +79,7 @@ public class MeChemicalOxidizerBlockEntity extends TileEntityChemicalOxidizer im
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
+        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         return getRecipeAeSupport().drainOutputPorts(this.aeOutputMode,
                 java.util.List.of(MeMachineIoAdapter.chemicalOutput(this.gasTank))) || sendUpdatePacket;
@@ -100,10 +100,12 @@ public class MeChemicalOxidizerBlockEntity extends TileEntityChemicalOxidizer im
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        InputInventorySlot inputSlot = ((TileEntityChemicalOxidizerAccessor) this).mekenergistics$getInputSlot();
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                java.util.List.of(MeMachineIoAdapter.itemInput(inputSlot)));
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         InputInventorySlot inputSlot = ((TileEntityChemicalOxidizerAccessor) this).mekenergistics$getInputSlot();
         return getRecipeAeSupport().pushPatternInputs(inputHolder,
                 java.util.List.of(MeMachineIoAdapter.itemInput(inputSlot)));

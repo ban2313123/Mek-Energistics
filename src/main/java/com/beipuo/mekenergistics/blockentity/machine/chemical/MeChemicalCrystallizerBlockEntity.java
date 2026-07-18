@@ -76,7 +76,7 @@ public class MeChemicalCrystallizerBlockEntity extends TileEntityChemicalCrystal
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
+        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         OutputInventorySlot output = ((TileEntityChemicalCrystallizerAccessor) this).mekenergistics$getOutputSlot();
         return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
@@ -97,10 +97,11 @@ public class MeChemicalCrystallizerBlockEntity extends TileEntityChemicalCrystal
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                java.util.List.of(MeMachineIoAdapter.chemicalInput(this.inputTank)));
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         return getRecipeAeSupport().pushPatternInputs(inputHolder,
                 java.util.List.of(MeMachineIoAdapter.chemicalInput(this.inputTank)));
     }

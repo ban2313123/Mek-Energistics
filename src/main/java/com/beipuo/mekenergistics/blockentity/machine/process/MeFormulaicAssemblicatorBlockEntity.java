@@ -9,6 +9,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -77,7 +78,7 @@ public class MeFormulaicAssemblicatorBlockEntity extends TileEntityFormulaicAsse
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
+        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket,
                 ((TileEntityFormulaicAssemblicatorAccessor) this).mekenergistics$getOutputSlots());
@@ -91,65 +92,13 @@ public class MeFormulaicAssemblicatorBlockEntity extends TileEntityFormulaicAsse
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        return feedPatternInputs(inputHolder);
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         List<IInventorySlot> inputSlots = ((TileEntityFormulaicAssemblicatorAccessor) this).mekenergistics$getInputSlots();
-        List<ItemStack> inputs = new ArrayList<>(inputHolder.length);
-        for (KeyCounter counter : inputHolder) {
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
-            if (input == null || !input.isItem()) {
-                return false;
-            }
-            inputs.add(input.item());
-        }
-        List<ItemStack> simulatedSlots = new ArrayList<>(inputSlots.size());
-        for (IInventorySlot slot : inputSlots) {
-            simulatedSlots.add(slot.getStack().copy());
-        }
-        for (ItemStack input : inputs) {
-            if (!canInsertIntoSnapshot(input.copy(), inputSlots, simulatedSlots)) {
-                return false;
-            }
-        }
-        for (ItemStack input : inputs) {
-            ItemStack remainder = input;
-            for (IInventorySlot slot : inputSlots) {
-                remainder = slot.insertItem(remainder, Action.EXECUTE, AutomationType.INTERNAL);
-                if (remainder.isEmpty()) {
-                    break;
-                }
-            }
-        }
-        setChanged();
-        return true;
-    }
-
-    private static boolean canInsertIntoSnapshot(ItemStack stack, List<IInventorySlot> slots, List<ItemStack> snapshot) {
-        ItemStack remainder = stack;
-        for (int i = 0; i < slots.size(); i++) {
-            IInventorySlot slot = slots.get(i);
-            ItemStack current = snapshot.get(i);
-            if (remainder.isEmpty() || !slot.isItemValid(remainder)) {
-                continue;
-            }
-            if (current.isEmpty() || ItemStack.isSameItemSameComponents(current, remainder)) {
-                int limit = slot.getLimit(remainder);
-                int needed = limit - current.getCount();
-                if (needed <= 0) {
-                    continue;
-                }
-                int toAdd = Math.min(needed, remainder.getCount());
-                if (current.isEmpty()) {
-                    snapshot.set(i, remainder.copyWithCount(toAdd));
-                } else {
-                    current.grow(toAdd);
-                }
-                remainder = remainder.copyWithCount(remainder.getCount() - toAdd);
-            }
-        }
-        return remainder.isEmpty();
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
     }
 
     @Override public boolean isBusy() { return false; }

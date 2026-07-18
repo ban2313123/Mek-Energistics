@@ -97,19 +97,8 @@ public class MeChemicalDissolutionChamberBlockEntity extends TileEntityChemicalD
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(inputHolder);
-        if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
-            return false;
-        }
         InputInventorySlot inputSlot = ((TileEntityChemicalDissolutionChamberAccessor) this).mekenergistics$getInputSlot();
-        if (!inputSlot.insertItem(input.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || this.injectTank.insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).getAmount() != 0) {
-            return false;
-        }
-        inputSlot.insertItem(input.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        this.injectTank.insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.injectTank);
     }
 
     @Override public boolean isBusy() { return false; }

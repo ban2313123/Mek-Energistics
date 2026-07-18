@@ -110,14 +110,55 @@ public final class MePatternInputRouter {
             restoreInputs(snapshots);
             return false;
         }
-        restoreInputs(snapshots);
-        for (Insertion insertion : plan) {
-            if (insertion.port().insert(insertion.key(), insertion.amount(), Action.EXECUTE) != insertion.amount()) {
+        return executePlan(plan, snapshots);
+    }
+
+    /**
+     * Routes one AE counter per physical lane as one transaction. A port can
+     * appear in more than one lane, but its simulated reservations are shared
+     * across the complete assignment and all lanes roll back together.
+     */
+    public static boolean routeLanes(KeyCounter[] laneInputs,
+            List<? extends List<? extends MeInputPort>> lanePorts) {
+        if (laneInputs == null || lanePorts == null || laneInputs.length == 0
+                || laneInputs.length != lanePorts.size()) {
+            return false;
+        }
+
+        List<Insertion> plan = new ArrayList<>();
+        Map<MeInputPort, Object> snapshots = new java.util.IdentityHashMap<>();
+        for (List<? extends MeInputPort> ports : lanePorts) {
+            if (ports == null || ports.isEmpty()) {
+                return false;
+            }
+            for (MeInputPort port : ports) {
+                if (port == null) {
+                    return false;
+                }
+                snapshots.putIfAbsent(port, port.snapshot());
+            }
+        }
+
+        Map<MeInputPort, AEKey> reservedKeys = new java.util.IdentityHashMap<>();
+        Map<MeInputPort, Long> reservedAmounts = new java.util.IdentityHashMap<>();
+        for (int lane = 0; lane < laneInputs.length; lane++) {
+            Map<AEKey, Long> requests = normalize(new KeyCounter[] {laneInputs[lane]});
+            if (requests == null || requests.isEmpty()) {
+                restoreInputs(snapshots);
+                return false;
+            }
+            List<Map.Entry<AEKey, Long>> requestList = new ArrayList<>(requests.entrySet());
+            int planSize = plan.size();
+            if (!assign(requestList, 0, requestList.get(0).getValue(), lanePorts.get(lane), plan,
+                    reservedKeys, reservedAmounts)) {
+                while (plan.size() > planSize) {
+                    plan.remove(plan.size() - 1);
+                }
                 restoreInputs(snapshots);
                 return false;
             }
         }
-        return true;
+        return executePlan(plan, snapshots);
     }
 
     private static boolean assign(List<Map.Entry<AEKey, Long>> requests, int index, long remaining,
@@ -188,6 +229,17 @@ public final class MePatternInputRouter {
 
     private static void restoreInputs(Map<MeInputPort, Object> snapshots) {
         snapshots.forEach(MeInputPort::restore);
+    }
+
+    private static boolean executePlan(List<Insertion> plan, Map<MeInputPort, Object> snapshots) {
+        restoreInputs(snapshots);
+        for (Insertion insertion : plan) {
+            if (insertion.port().insert(insertion.key(), insertion.amount(), Action.EXECUTE) != insertion.amount()) {
+                restoreInputs(snapshots);
+                return false;
+            }
+        }
+        return true;
     }
 
     private record Insertion(MeInputPort port, AEKey key, long amount) {

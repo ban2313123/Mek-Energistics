@@ -49,6 +49,52 @@ class MeMachineIoAdapterTest {
     }
 
     @Test
+    void laneRouterKeepsLaneOrderAndCommitsAsOneTransaction() {
+        FakeInput main = new FakeInput(IRON, 8);
+        FakeInput extra = new FakeInput(IRON, 8);
+        KeyCounter first = new KeyCounter();
+        first.add(IRON, 3);
+        KeyCounter second = new KeyCounter();
+        second.add(IRON, 5);
+
+        assertTrue(MePatternInputRouter.routeLanes(
+                new KeyCounter[] {first, second}, List.of(List.of(main), List.of(extra))));
+        assertEquals(3, main.amount);
+        assertEquals(5, extra.amount);
+    }
+
+    @Test
+    void laneRouterRollsBackAllLanesWhenLaterLaneFails() {
+        FakeInput main = new FakeInput(IRON, 8);
+        FakeInput extra = new FakeInput(IRON, 8);
+        extra.failExecution = true;
+        KeyCounter first = new KeyCounter();
+        first.add(IRON, 3);
+        KeyCounter second = new KeyCounter();
+        second.add(IRON, 5);
+
+        assertFalse(MePatternInputRouter.routeLanes(
+                new KeyCounter[] {first, second}, List.of(List.of(main), List.of(extra))));
+        assertEquals(0, main.amount);
+        assertEquals(0, extra.amount);
+    }
+
+    @Test
+    void laneRouterCanBacktrackAcrossSharedPorts() {
+        FakeInput shared = new FakeInput(IRON, 5);
+        FakeInput fallback = new FakeInput(IRON, 5);
+        KeyCounter first = new KeyCounter();
+        first.add(IRON, 5);
+        KeyCounter second = new KeyCounter();
+        second.add(IRON, 5);
+
+        assertTrue(MePatternInputRouter.routeLanes(
+                new KeyCounter[] {first, second}, List.of(List.of(shared, fallback), List.of(fallback))));
+        assertEquals(5, shared.amount);
+        assertEquals(5, fallback.amount);
+    }
+
+    @Test
     void outputCollectorRollsBackDestinationAndSource() {
         FakeOutput output = new FakeOutput(IRON, 4);
         FakeInput destination = new FakeInput(IRON, 100);

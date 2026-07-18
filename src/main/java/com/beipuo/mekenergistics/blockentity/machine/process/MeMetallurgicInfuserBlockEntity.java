@@ -80,7 +80,7 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
+        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         OutputInventorySlot output = ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getOutputSlot();
         return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
@@ -101,23 +101,13 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        InputInventorySlot inputSlot = ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInputSlot();
+        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.infusionTank);
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(inputHolder);
-        if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
-            return false;
-        }
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         InputInventorySlot inputSlot = ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInputSlot();
-        if (!inputSlot.insertItem(input.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || this.infusionTank.insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).getAmount() != 0) {
-            return false;
-        }
-        inputSlot.insertItem(input.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        this.infusionTank.insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.infusionTank);
     }
 
     @Override public boolean isBusy() { return false; }
