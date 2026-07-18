@@ -7,7 +7,7 @@ import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityChemixerAccessor;
@@ -110,12 +110,12 @@ public class MeChemixerBlockEntity extends TileEntityChemixer implements ICrafti
     }
 
     private static ItemStack itemInput(KeyCounter counter) {
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(counter);
+        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
         return input != null && input.isItem() ? input.item() : ItemStack.EMPTY;
     }
 
     private static ChemicalStack chemicalInput(KeyCounter counter) {
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(counter);
+        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
         return input != null && input.isChemical() ? input.chemical() : ChemicalStack.EMPTY;
     }
 

@@ -3,7 +3,7 @@ package com.beipuo.mekenergistics.blockentity.factory;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
@@ -85,8 +85,8 @@ public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory im
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
-        MeFactoryPatternInput first = MeFactoryPatternInput.single(inputHolder[0]);
-        MeFactoryPatternInput second = MeFactoryPatternInput.single(inputHolder[1]);
+        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput first = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[0]);
+        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput second = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[1]);
         if (first == null || second == null || !first.isItem() || !second.isItem()) {
             return false;
         }
@@ -141,8 +141,8 @@ public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory im
             if (oneCraftInputs == null || oneCraftInputs.length != 2) {
                 return 0;
             }
-            MeFactoryPatternInput first = MeFactoryPatternInput.single(oneCraftInputs[0]);
-            MeFactoryPatternInput second = MeFactoryPatternInput.single(oneCraftInputs[1]);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput first = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(oneCraftInputs[0]);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput second = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(oneCraftInputs[1]);
             if (first == null || second == null || !first.isItem() || !second.isItem()) {
                 return 0;
             }

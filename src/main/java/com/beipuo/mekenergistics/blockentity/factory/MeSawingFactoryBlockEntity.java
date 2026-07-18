@@ -3,7 +3,7 @@ package com.beipuo.mekenergistics.blockentity.factory;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
@@ -84,7 +84,7 @@ public class MeSawingFactoryBlockEntity extends TileEntitySawingFactory implemen
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
         if (inputHolder == null || inputHolder.length != 1
-                || MeFactoryPatternInput.singleItem(inputHolder[0]).isEmpty()) {
+                || com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.singleItem(inputHolder[0]).isEmpty()) {
             return false;
         }
         return getAeSupport().pushPatternInputs(inputHolder,
@@ -116,7 +116,7 @@ public class MeSawingFactoryBlockEntity extends TileEntitySawingFactory implemen
             if (oneCraftInputs == null || oneCraftInputs.length != 1) {
                 return 0;
             }
-            ItemStack input = MeFactoryPatternInput.singleItem(oneCraftInputs[0]);
+            ItemStack input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.singleItem(oneCraftInputs[0]);
             return input.isEmpty() ? 0 : MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(inputSlots, input);
         }
     }

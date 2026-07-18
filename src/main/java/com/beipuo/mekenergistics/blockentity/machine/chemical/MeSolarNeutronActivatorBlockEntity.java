@@ -6,7 +6,7 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import appeng.api.crafting.IPatternDetails;
@@ -81,7 +81,7 @@ public class MeSolarNeutronActivatorBlockEntity extends TileEntitySolarNeutronAc
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(inputHolder[0]);
+        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[0]);
         if (input == null || !input.isChemical()) {
             return false;
         }

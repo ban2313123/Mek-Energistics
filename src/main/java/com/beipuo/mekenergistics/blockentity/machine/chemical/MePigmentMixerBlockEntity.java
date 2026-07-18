@@ -7,7 +7,7 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeChemicalInputHelper;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import appeng.api.crafting.IPatternDetails;
@@ -105,7 +105,7 @@ public class MePigmentMixerBlockEntity extends TileEntityPigmentMixer implements
     }
 
     private ChemicalStack getChemical(KeyCounter counter) {
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(counter);
+        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
         return input == null || !input.isChemical() ? ChemicalStack.EMPTY : input.chemical();
     }
 

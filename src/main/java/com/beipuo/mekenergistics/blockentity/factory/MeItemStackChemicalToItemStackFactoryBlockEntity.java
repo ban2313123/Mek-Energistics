@@ -3,7 +3,7 @@ package com.beipuo.mekenergistics.blockentity.factory;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
@@ -101,7 +101,7 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
-        MeFactoryPatternInput input = MeFactoryPatternInput.separate(inputHolder);
+        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(inputHolder);
         if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
             return false;
         }
@@ -166,7 +166,7 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
 
         @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            MeFactoryPatternInput input = MeFactoryPatternInput.separate(oneCraftInputs);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(oneCraftInputs);
             if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
                 return 0;
             }

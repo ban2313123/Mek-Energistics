@@ -7,7 +7,7 @@ import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntitySolidifierAccessor;
@@ -79,7 +79,7 @@ public class MeSolidifierBlockEntity extends TileEntitySolidifier implements ICr
         FluidStack firstFluid = FluidStack.EMPTY;
         FluidStack secondFluid = FluidStack.EMPTY;
         for (KeyCounter counter : inputHolder) {
-            MeFactoryPatternInput input = MeFactoryPatternInput.single(counter);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
             if (input == null) {
                 return false;
             }

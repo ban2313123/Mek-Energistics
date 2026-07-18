@@ -6,7 +6,7 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;

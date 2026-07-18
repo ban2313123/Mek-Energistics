@@ -1,15 +1,98 @@
 package com.beipuo.mekenergistics.blockentity.support.io;
 
 import appeng.api.stacks.AEKey;
+import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import mekanism.api.Action;
+import mekanism.api.chemical.ChemicalStack;
+import me.ramidzkh.mekae2.ae2.MekanismKey;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
 
 public final class MePatternInputRouter {
     private MePatternInputRouter() {
+    }
+
+    /** Normalized single-key input used by machines with position-sensitive ports. */
+    public record PatternInput(ItemStack item, ChemicalStack chemical, FluidStack fluid) {
+        public boolean isItem() {
+            return !this.item.isEmpty() && this.chemical.isEmpty() && this.fluid.isEmpty();
+        }
+
+        public boolean isChemical() {
+            return this.item.isEmpty() && !this.chemical.isEmpty() && this.fluid.isEmpty();
+        }
+
+        public boolean isFluid() {
+            return this.item.isEmpty() && this.chemical.isEmpty() && !this.fluid.isEmpty();
+        }
+
+        @Nullable
+        public static PatternInput single(KeyCounter counter) {
+            if (counter == null || counter.isEmpty()) {
+                return null;
+            }
+            PatternInput input = null;
+            for (var entry : counter) {
+                AEKey key = entry.getKey();
+                long amount = entry.getLongValue();
+                PatternInput next;
+                if (key instanceof AEItemKey itemKey && amount > 0 && amount <= Integer.MAX_VALUE) {
+                    next = new PatternInput(itemKey.toStack((int) amount), ChemicalStack.EMPTY, FluidStack.EMPTY);
+                } else if (key instanceof MekanismKey chemicalKey && amount > 0) {
+                    next = new PatternInput(ItemStack.EMPTY, chemicalKey.getStack().copyWithAmount(amount), FluidStack.EMPTY);
+                } else if (key instanceof AEFluidKey fluidKey && amount > 0 && amount <= Integer.MAX_VALUE) {
+                    next = new PatternInput(ItemStack.EMPTY, ChemicalStack.EMPTY, fluidKey.toStack((int) amount));
+                } else {
+                    return null;
+                }
+                if (input != null) {
+                    return null;
+                }
+                input = next;
+            }
+            return input;
+        }
+
+        public static ItemStack singleItem(KeyCounter counter) {
+            PatternInput input = single(counter);
+            return input != null && input.isItem() ? input.item() : ItemStack.EMPTY;
+        }
+
+        @Nullable
+        public static PatternInput separate(KeyCounter[] counters) {
+            if (counters == null || counters.length == 0) {
+                return null;
+            }
+            ItemStack item = ItemStack.EMPTY;
+            ChemicalStack chemical = ChemicalStack.EMPTY;
+            FluidStack fluid = FluidStack.EMPTY;
+            for (KeyCounter counter : counters) {
+                PatternInput input = single(counter);
+                if (input == null) {
+                    return null;
+                }
+                if (input.isItem()) {
+                    if (!item.isEmpty()) return null;
+                    item = input.item();
+                } else if (input.isChemical()) {
+                    if (!chemical.isEmpty()) return null;
+                    chemical = input.chemical();
+                } else if (input.isFluid()) {
+                    if (!fluid.isEmpty()) return null;
+                    fluid = input.fluid();
+                } else {
+                    return null;
+                }
+            }
+            return new PatternInput(item, chemical, fluid);
+        }
     }
 
     public static boolean route(KeyCounter[] inputHolders, List<? extends MeInputPort> ports) {

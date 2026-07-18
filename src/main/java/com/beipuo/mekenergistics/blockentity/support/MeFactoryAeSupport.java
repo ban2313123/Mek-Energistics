@@ -583,7 +583,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            MeFactoryPatternInput input = MeFactoryPatternInput.single(oneCraftInputs == null || oneCraftInputs.length == 0
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(oneCraftInputs == null || oneCraftInputs.length == 0
                     ? null : oneCraftInputs[0]);
             return input == null || !input.isItem()
                     ? 0 : MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, input.item());
@@ -606,7 +606,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            MeFactoryPatternInput input = MeFactoryPatternInput.separate(oneCraftInputs);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(oneCraftInputs);
             if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
                 return 0;
             }
@@ -629,7 +629,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            MeFactoryPatternInput input = MeFactoryPatternInput.single(oneCraftInputs == null || oneCraftInputs.length == 0
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(oneCraftInputs == null || oneCraftInputs.length == 0
                     ? null : oneCraftInputs[0]);
             if (input == null || !input.isChemical()) {
                 return 0;
@@ -658,7 +658,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            MeFactoryPatternInput input = MeFactoryPatternInput.separate(oneCraftInputs);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(oneCraftInputs);
             if (input == null || input.fluid().isEmpty() || input.chemical().isEmpty() || !input.item().isEmpty()) {
                 return 0;
             }
@@ -689,7 +689,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            MeFactoryPatternInput input = MeFactoryPatternInput.separate(oneCraftInputs);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(oneCraftInputs);
             if (input == null || input.item().isEmpty() || input.fluid().isEmpty() || input.chemical().isEmpty()) {
                 return 0;
             }
@@ -713,8 +713,8 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override public long maxAcceptedCopies(KeyCounter[] inputs) {
             if (inputs == null || inputs.length != 2) return 0;
-            MeFactoryPatternInput first = MeFactoryPatternInput.single(inputs[0]);
-            MeFactoryPatternInput second = MeFactoryPatternInput.single(inputs[1]);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput first = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[0]);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput second = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[1]);
             if (first == null || second == null || !first.isItem() || !second.isItem()) return 0;
             return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, first.item()),
                     MeFactoryInventoryInsert.acceptedCopiesIntoSlot(this.extraSlot, second.item()));
@@ -736,9 +736,9 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override public long maxAcceptedCopies(KeyCounter[] inputs) {
             if (inputs == null || inputs.length != 3) return 0;
-            MeFactoryPatternInput first = MeFactoryPatternInput.single(inputs[0]);
-            MeFactoryPatternInput second = MeFactoryPatternInput.single(inputs[1]);
-            MeFactoryPatternInput third = MeFactoryPatternInput.single(inputs[2]);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput first = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[0]);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput second = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[1]);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput third = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[2]);
             if (first == null || second == null || third == null || !first.isItem() || !second.isItem() || !third.isItem()) return 0;
             return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, first.item()),
                     Math.min(MeFactoryInventoryInsert.acceptedCopiesIntoSlot(this.secondSlot, second.item()),

@@ -6,7 +6,7 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
+
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import appeng.api.crafting.IPatternDetails;
@@ -98,7 +98,7 @@ public class MeFormulaicAssemblicatorBlockEntity extends TileEntityFormulaicAsse
         List<IInventorySlot> inputSlots = ((TileEntityFormulaicAssemblicatorAccessor) this).mekenergistics$getInputSlots();
         List<ItemStack> inputs = new ArrayList<>(inputHolder.length);
         for (KeyCounter counter : inputHolder) {
-            MeFactoryPatternInput input = MeFactoryPatternInput.single(counter);
+            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
             if (input == null || !input.isItem()) {
                 return false;
             }
