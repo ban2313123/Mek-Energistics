@@ -279,15 +279,15 @@ final class MeExtraFactoryBridge {
     }
 
     static void createNodeOnFirstTick(TileEntityMekanism tile, MeFactoryAeSupport support, Level level, BlockPos pos) {
-        MeExternalFactorySupport.createNodeOnFirstTick(tile, support, level, pos);
+        support.createNodeOnFirstTick(tile);
     }
 
     static void save(MeFactoryAeSupport support, CompoundTag tag, HolderLookup.Provider registries) {
-        MeExternalFactorySupport.save(support, tag, registries);
+        support.saveAll(tag, registries);
     }
 
     static void load(MeFactoryAeSupport support, CompoundTag tag, HolderLookup.Provider registries) {
-        MeExternalFactorySupport.load(support, tag, registries);
+        support.loadAll(tag, registries);
     }
 
     static <RECIPE extends MekanismRecipe<?>> CachedRecipe<RECIPE> wrapRecipeEnergy(
