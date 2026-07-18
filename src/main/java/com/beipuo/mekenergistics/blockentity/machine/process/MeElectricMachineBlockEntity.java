@@ -8,6 +8,7 @@ import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityElectricMachineAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -97,7 +98,8 @@ public class MeElectricMachineBlockEntity extends TileEntityElectricMachine
         boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         OutputInventorySlot outputSlot = ((TileEntityElectricMachineAccessor) this).mekenergistics$getOutputSlot();
-        return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, outputSlot);
+        return getRecipeAeSupport().drainOutputPorts(this.aeOutputMode,
+                java.util.List.of(MeMachineIoAdapter.itemOutput(outputSlot))) || sendUpdatePacket;
     }
 
     @NotNull
@@ -118,7 +120,8 @@ public class MeElectricMachineBlockEntity extends TileEntityElectricMachine
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        return getRecipeAeSupport().pushSingleItem(inputHolder, ((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot());
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                java.util.List.of(MeMachineIoAdapter.itemInput(((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot())));
     }
 
     @Override

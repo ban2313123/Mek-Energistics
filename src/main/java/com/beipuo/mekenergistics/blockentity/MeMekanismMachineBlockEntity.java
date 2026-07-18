@@ -7,6 +7,10 @@ import com.beipuo.mekenergistics.blockentity.support.MeLegacyMachineAeHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeNetworkEnergyHelper;
 import com.beipuo.mekenergistics.blockentity.support.MePatternTerminalNames;
 import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
@@ -93,7 +97,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     private static final String TAG_PATTERN_TERMINAL_NAME = "PatternTerminalName";
 
     private IInventorySlot[] inventorySlots;
-    private final IManagedGridNode mainNode;
+    private IManagedGridNode mainNode;
     private final IActionSource actionSource;
     private final List<IPatternDetails> patterns = new ArrayList<>();
     private final MeMekanismMachineAeOutput aeOutput;
@@ -106,18 +110,15 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     private int patternPriority = 0;
     private AeOutputMode aeOutputMode = AeOutputMode.BOTH;
     private String patternTerminalName = "";
+    private CompoundTag retainedNodeData;
+    private boolean nodeDestroyed;
 
     public MeMekanismMachineBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(ModBlocks.getMachineBlock(machine), pos, state);
         this.machine = machine;
         this.actionSource = IActionSource.ofMachine(this);
         this.aeOutput = new MeMekanismMachineAeOutput(this);
-        this.mainNode = GridHelper.createManagedNode(this, this)
-                .setInWorldNode(true)
-                .setTagName("node")
-                .setFlags(GridFlags.REQUIRE_CHANNEL)
-                .addService(ICraftingProvider.class, this)
-                .addService(appeng.api.networking.ticking.IGridTickable.class, this.aeOutput);
+        this.mainNode = createMainNode();
         IInventorySlot[] inventorySlots = slots();
         List<IInventorySlot> inputSlots = new ArrayList<>();
         inputSlots.add(inventorySlots[INPUT_SLOT]);
@@ -664,19 +665,45 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     @Override
     public void clearRemoved() {
         super.clearRemoved();
+        if (this.nodeDestroyed) {
+            this.mainNode = createMainNode();
+            if (this.retainedNodeData != null) {
+                this.mainNode.loadFromNBT(this.retainedNodeData);
+            }
+            this.nodeDestroyed = false;
+        }
         MeLegacyMachineAeHelper.createOnFirstTick(this, this.mainNode, this::updatePatterns);
     }
 
     @Override
     public void setRemoved() {
-        MeLegacyMachineAeHelper.destroyNode(this.mainNode);
+        retainAndDestroyNode();
         super.setRemoved();
     }
 
     @Override
     public void onChunkUnloaded() {
-        MeLegacyMachineAeHelper.destroyNode(this.mainNode);
+        retainAndDestroyNode();
         super.onChunkUnloaded();
+    }
+
+    private IManagedGridNode createMainNode() {
+        return GridHelper.createManagedNode(this, this)
+                .setInWorldNode(true)
+                .setTagName("node")
+                .setFlags(GridFlags.REQUIRE_CHANNEL)
+                .addService(ICraftingProvider.class, this)
+                .addService(appeng.api.networking.ticking.IGridTickable.class, this.aeOutput);
+    }
+
+    private void retainAndDestroyNode() {
+        if (this.nodeDestroyed) {
+            return;
+        }
+        this.retainedNodeData = new CompoundTag();
+        this.mainNode.saveToNBT(this.retainedNodeData);
+        MeLegacyMachineAeHelper.destroyNode(this.mainNode);
+        this.nodeDestroyed = true;
     }
 
     @Override
@@ -690,6 +717,42 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
 
     public IActionSource getActionSource() {
         return this.actionSource;
+    }
+
+    List<MeInputPort> getAeInputPorts(int inputCount) {
+        List<MeInputPort> ports = new ArrayList<>();
+        switch (this.machine.slotLayout()) {
+            case SINGLE_ITEM, SAWING -> ports.add(MeMachineIoAdapter.itemInput(slots()[INPUT_SLOT]));
+            case DOUBLE_ITEM -> {
+                ports.add(MeMachineIoAdapter.itemInput(slots()[INPUT_SLOT]));
+                ports.add(MeMachineIoAdapter.itemInput(slots()[SECONDARY_INPUT_SLOT]));
+            }
+            case ITEM_CHEMICAL -> {
+                if (inputCount == 1) {
+                    ports.add(MeMachineIoAdapter.itemInput(slots()[SECONDARY_INPUT_SLOT]));
+                } else {
+                    ports.add(MeMachineIoAdapter.itemInput(slots()[INPUT_SLOT]));
+                    if (this.chemicalTank != null) {
+                        ports.add(MeMachineIoAdapter.chemicalInput(this.chemicalTank));
+                    }
+                }
+            }
+        }
+        return ports;
+    }
+
+    List<MeOutputPort> getAeOutputPorts() {
+        List<MeOutputPort> ports = new ArrayList<>();
+        if (slots()[OUTPUT_SLOT] instanceof OutputInventorySlot output) {
+            ports.add(MeMachineIoAdapter.itemOutput(output));
+        }
+        if (slots()[SECONDARY_OUTPUT_SLOT] instanceof OutputInventorySlot output) {
+            ports.add(MeMachineIoAdapter.itemOutput(output));
+        }
+        if (this.chemicalTank != null) {
+            ports.add(MeMachineIoAdapter.chemicalOutput(this.chemicalTank));
+        }
+        return ports;
     }
 
     @Override
@@ -755,7 +818,11 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
             return MeLegacyMachineAeHelper.enqueueSmartPattern(this.smartPatternMultiplication, patternDetails,
                     inputHolder, this::setChanged, this.aeOutput::alertTicker);
         }
-        return MeMekanismMachinePatternInput.push(this, patternDetails, inputHolder);
+        boolean inserted = MePatternInputRouter.route(inputHolder, getAeInputPorts(inputHolder.length));
+        if (inserted) {
+            setChanged();
+        }
+        return inserted;
     }
 
     @Override
@@ -775,7 +842,8 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         tag.putInt(TAG_AE_OUTPUT_MODE, this.aeOutputMode.ordinal());
         tag.remove(TAG_PATTERN_TERMINAL_NAME);
         tag.putInt(SerializationConstants.PROGRESS, this.operatingTicks);
-        MeLegacyMachineAeHelper.saveAeState(tag, registries, this.smartPatternMultiplication, this.mainNode);
+        MeLegacyMachineAeHelper.saveAeState(tag, registries, this.smartPatternMultiplication, this.mainNode,
+                this.retainedNodeData);
     }
 
     @Override

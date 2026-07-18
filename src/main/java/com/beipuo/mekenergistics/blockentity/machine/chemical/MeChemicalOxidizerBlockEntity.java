@@ -9,6 +9,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -80,7 +81,8 @@ public class MeChemicalOxidizerBlockEntity extends TileEntityChemicalOxidizer im
     protected boolean onUpdateServer() {
         boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::pushPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
-        return getRecipeAeSupport().drainChemicalOutputs(this.aeOutputMode, sendUpdatePacket, this.gasTank);
+        return getRecipeAeSupport().drainOutputPorts(this.aeOutputMode,
+                java.util.List.of(MeMachineIoAdapter.chemicalOutput(this.gasTank))) || sendUpdatePacket;
     }
 
     @NotNull
@@ -102,17 +104,9 @@ public class MeChemicalOxidizerBlockEntity extends TileEntityChemicalOxidizer im
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        MeFactoryPatternInput input = MeFactoryPatternInput.single(inputHolder[0]);
-        if (input == null || !input.isItem()) {
-            return false;
-        }
         InputInventorySlot inputSlot = ((TileEntityChemicalOxidizerAccessor) this).mekenergistics$getInputSlot();
-        if (!inputSlot.insertItem(input.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        inputSlot.insertItem(input.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushPatternInputs(inputHolder,
+                java.util.List.of(MeMachineIoAdapter.itemInput(inputSlot)));
     }
 
     @Override public boolean isBusy() { return false; }

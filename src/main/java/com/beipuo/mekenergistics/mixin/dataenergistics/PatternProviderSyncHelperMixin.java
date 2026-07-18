@@ -1,8 +1,7 @@
 package com.beipuo.mekenergistics.mixin.dataenergistics;
 
 import appeng.helpers.patternprovider.PatternContainer;
-import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,7 +22,7 @@ public abstract class PatternProviderSyncHelperMixin {
     }
 
     private static void mekenergistics$skipMekanismTileReflectionIfNeeded(PatternContainer provider, CallbackInfoReturnable<Boolean> cir) {
-        if (provider instanceof MeAeMachine || provider instanceof MeFactoryAeMachine) {
+        if (provider instanceof MeAeSupportOwner) {
             cir.setReturnValue(false);
         }
     }

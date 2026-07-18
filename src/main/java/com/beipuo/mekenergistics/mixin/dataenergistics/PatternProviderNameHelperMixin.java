@@ -1,7 +1,6 @@
 package com.beipuo.mekenergistics.mixin.dataenergistics;
 
-import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,6 +31,6 @@ public abstract class PatternProviderNameHelperMixin {
     }
 
     private static boolean mekenergistics$isMePatternProvider(Object target) {
-        return target instanceof MeAeMachine || target instanceof MeFactoryAeMachine;
+        return target instanceof MeAeSupportOwner;
     }
 }

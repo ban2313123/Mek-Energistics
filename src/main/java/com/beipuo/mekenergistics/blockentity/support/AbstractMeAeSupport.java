@@ -20,6 +20,9 @@ import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
 import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -171,6 +174,36 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
         this.owner.saveChanges();
         alertAeTicker();
         return true;
+    }
+
+    public final boolean pushPatternInputs(KeyCounter[] inputHolder, List<? extends MeInputPort> inputPorts) {
+        boolean changed = MePatternInputRouter.route(inputHolder, inputPorts);
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
+    }
+
+    public final boolean drainOutputPorts(com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode,
+            List<? extends MeOutputPort> outputPorts) {
+        boolean changed = false;
+        for (MeOutputPort output : outputPorts) {
+            AEKey key = output.key();
+            if (key == null || output.amount() <= 0
+                    || key instanceof appeng.api.stacks.AEItemKey && !mode.items()
+                    || !(key instanceof appeng.api.stacks.AEItemKey) && !mode.chemicals()) {
+                continue;
+            }
+            long inserted = insertIntoNetwork(key, output.amount());
+            if (inserted > 0) {
+                output.extract(inserted, mekanism.api.Action.EXECUTE);
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
     }
 
     public boolean processSmartPattern(MeSmartPatternMultiplication.Feeder feeder) {

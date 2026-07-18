@@ -11,9 +11,8 @@ import appeng.api.stacks.AEKey;
 import appeng.api.storage.MEStorage;
 import java.util.ArrayList;
 import java.util.List;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import mekanism.api.Action;
-import mekanism.api.chemical.ChemicalStack;
-import me.ramidzkh.mekae2.ae2.MekanismKey;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,9 +30,7 @@ final class MeMekanismMachineAeOutput implements IGridTickable {
         this.owner.processSmartPatternWork();
         processPendingCraftingOutputs();
         processPendingKeyOutputs();
-        insertOutputSlotIntoNetwork(MeMekanismMachineBlockEntity.OUTPUT_SLOT);
-        insertOutputSlotIntoNetwork(MeMekanismMachineBlockEntity.SECONDARY_OUTPUT_SLOT);
-        insertChemicalTankIntoNetwork();
+        processDeclaredOutputs();
         boolean hasWork = hasWork();
         if (hasWork) {
             alertTicker();
@@ -48,11 +45,37 @@ final class MeMekanismMachineAeOutput implements IGridTickable {
         if (!this.pendingCraftingOutputs.isEmpty() || !this.pendingKeyOutputs.isEmpty()) {
             return true;
         }
-        if (this.owner.getAeOutputMode().items() && (!this.owner.getStack(MeMekanismMachineBlockEntity.OUTPUT_SLOT).isEmpty()
-                || !this.owner.getStack(MeMekanismMachineBlockEntity.SECONDARY_OUTPUT_SLOT).isEmpty())) {
-            return true;
+        if (this.owner.getAeOutputMode().items()) {
+            for (MeOutputPort output : this.owner.getAeOutputPorts()) {
+                if (output.key() instanceof appeng.api.stacks.AEItemKey && output.amount() > 0) {
+                    return true;
+                }
+            }
         }
-        return this.owner.getAeOutputMode().chemicals() && this.owner.getChemicalTank() != null && !this.owner.getChemicalTank().isEmpty();
+        if (this.owner.getAeOutputMode().chemicals()) {
+            for (MeOutputPort output : this.owner.getAeOutputPorts()) {
+                if (!(output.key() instanceof appeng.api.stacks.AEItemKey) && output.key() != null && output.amount() > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void processDeclaredOutputs() {
+        for (MeOutputPort output : this.owner.getAeOutputPorts()) {
+            AEKey key = output.key();
+            if (key == null || output.amount() <= 0
+                    || key instanceof appeng.api.stacks.AEItemKey && !this.owner.getAeOutputMode().items()
+                    || !(key instanceof appeng.api.stacks.AEItemKey) && !this.owner.getAeOutputMode().chemicals()) {
+                continue;
+            }
+            long inserted = insertIntoNetwork(key, output.amount());
+            if (inserted > 0) {
+                output.extract(inserted, Action.EXECUTE);
+                this.owner.setChanged();
+            }
+        }
     }
 
     private long insertIntoNetwork(ItemStack stack) {
@@ -85,44 +108,6 @@ final class MeMekanismMachineAeOutput implements IGridTickable {
 
         IStorageService storageService = grid.getService(IStorageService.class);
         return storageService == null ? null : storageService.getInventory();
-    }
-
-    private void insertOutputSlotIntoNetwork(int slot) {
-        if (!this.owner.getAeOutputMode().items()) {
-            return;
-        }
-        ItemStack output = this.owner.getStack(slot);
-        if (output.isEmpty()) {
-            return;
-        }
-
-        long inserted = insertIntoNetwork(output);
-        if (inserted <= 0) {
-            return;
-        }
-
-        output.shrink((int) inserted);
-        this.owner.setStack(slot, output.isEmpty() ? ItemStack.EMPTY : output);
-    }
-
-    private void insertChemicalTankIntoNetwork() {
-        if (!this.owner.getAeOutputMode().chemicals()) {
-            return;
-        }
-        ChemicalStack stack = this.owner.getChemicalStack();
-        if (stack.isEmpty()) {
-            return;
-        }
-        MekanismKey key = MekanismKey.of(stack);
-        if (key == null) {
-            return;
-        }
-        long inserted = insertIntoNetwork(key, stack.getAmount());
-        if (inserted <= 0) {
-            return;
-        }
-        this.owner.getChemicalTank().shrinkStack(inserted, Action.EXECUTE);
-        this.owner.setChanged();
     }
 
     private void processPendingCraftingOutputs() {

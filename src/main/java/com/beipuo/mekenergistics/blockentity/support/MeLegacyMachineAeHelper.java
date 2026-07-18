@@ -85,9 +85,19 @@ public final class MeLegacyMachineAeHelper {
 
     public static void saveAeState(CompoundTag tag, HolderLookup.Provider registries,
             MeSmartPatternMultiplication smartPatternMultiplication, IManagedGridNode mainNode) {
+        saveAeState(tag, registries, smartPatternMultiplication, mainNode, null);
+    }
+
+    public static void saveAeState(CompoundTag tag, HolderLookup.Provider registries,
+            MeSmartPatternMultiplication smartPatternMultiplication, IManagedGridNode mainNode,
+            CompoundTag retainedNodeData) {
         smartPatternMultiplication.saveConfig(tag);
         smartPatternMultiplication.savePending(tag, registries);
-        mainNode.saveToNBT(tag);
+        if (retainedNodeData != null && retainedNodeData.contains("node")) {
+            tag.put("node", retainedNodeData.getCompound("node").copy());
+        } else {
+            mainNode.saveToNBT(tag);
+        }
     }
 
     public static void loadAeState(CompoundTag tag, HolderLookup.Provider registries,

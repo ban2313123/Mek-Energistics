@@ -8,7 +8,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record CycleAeOutputModePacket(BlockPos pos) implements CustomPacketPayload {
@@ -29,10 +28,8 @@ public record CycleAeOutputModePacket(BlockPos pos) implements CustomPacketPaylo
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            BlockEntity blockEntity = player.level().getBlockEntity(this.pos);
-            if (blockEntity instanceof MeAeMachine machine) {
-                machine.cycleAeOutputMode();
-            }
+            ServerPacketTarget.find(player, this.pos, MeAeMachine.class)
+                    .ifPresent(MeAeMachine::cycleAeOutputMode);
         });
     }
 }

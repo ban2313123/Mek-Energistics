@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.network.packet;
 
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import mekanism.common.lib.transmitter.TransmissionType;
 import net.minecraft.core.BlockPos;
@@ -10,7 +11,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record CycleAeOutputTypePacket(BlockPos pos, TransmissionType transmissionType) implements CustomPacketPayload {
@@ -32,12 +32,13 @@ public record CycleAeOutputTypePacket(BlockPos pos, TransmissionType transmissio
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            BlockEntity blockEntity = player.level().getBlockEntity(this.pos);
-            if (blockEntity instanceof MeAeMachine machine) {
-                machine.cycleAeOutputMode(this.transmissionType);
-            } else if (blockEntity instanceof MeFactoryAeMachine machine) {
-                machine.cycleAeOutputMode(this.transmissionType);
-            }
+            ServerPacketTarget.find(player, this.pos, MeAeSupportOwner.class).ifPresent(owner -> {
+                if (owner instanceof MeAeMachine machine) {
+                    machine.cycleAeOutputMode(this.transmissionType);
+                } else if (owner instanceof MeFactoryAeMachine machine) {
+                    machine.cycleAeOutputMode(this.transmissionType);
+                }
+            });
         });
     }
 }

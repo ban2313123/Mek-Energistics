@@ -29,6 +29,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -149,33 +150,12 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
     public boolean insertOutputSlotsIntoNetwork(List<IInventorySlot> outputSlots) {
         rememberOutputSlots(outputSlots);
-        if (!this.aeOutputMode.items()) {
-            return false;
-        }
-        IGrid grid = getGrid();
-        MEStorage storage = getNetworkStorage(grid);
-        if (storage == null) {
-            return false;
-        }
         boolean changed = false;
         for (IInventorySlot outputSlot : outputSlots) {
-            ItemStack output = outputSlot.getStack();
-            if (output.isEmpty()) {
-                continue;
+            if (outputSlot != null) {
+                changed |= drainOutputPorts(this.aeOutputMode,
+                        List.of(MeMachineIoAdapter.itemOutput(outputSlot)));
             }
-            AEItemKey key = AEItemKey.of(output);
-            if (key == null) {
-                continue;
-            }
-            long inserted = StorageHelper.poweredInsert(grid.getEnergyService(), storage, key, output.getCount(), this.actionSource);
-            if (inserted > 0) {
-                output.shrink((int) inserted);
-                outputSlot.setStack(output.isEmpty() ? ItemStack.EMPTY : output);
-                changed = true;
-            }
-        }
-        if (changed) {
-            this.owner.saveChanges();
         }
         return changed;
     }
@@ -191,40 +171,18 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
     public boolean insertChemicalTankIntoNetwork(IChemicalTank tank) {
         rememberChemicalTank(tank);
-        if (!this.aeOutputMode.chemicals()) {
+        if (tank == null) {
             return false;
         }
-        if (tank == null || tank.isEmpty()) {
-            return false;
-        }
-        ChemicalStack stack = tank.getStack();
-        MekanismKey key = MekanismKey.of(stack);
-        long inserted = insertIntoNetwork(key, stack.getAmount());
-        if (inserted <= 0) {
-            return false;
-        }
-        tank.shrinkStack(inserted, Action.EXECUTE);
-        this.owner.saveChanges();
-        return true;
+        return drainOutputPorts(this.aeOutputMode, List.of(MeMachineIoAdapter.chemicalOutput(tank)));
     }
 
     public boolean insertFluidTankIntoNetwork(IExtendedFluidTank tank) {
         rememberFluidTank(tank);
-        if (!this.aeOutputMode.chemicals()) {
+        if (tank == null) {
             return false;
         }
-        if (tank == null || tank.isEmpty()) {
-            return false;
-        }
-        FluidStack stack = tank.getFluid();
-        AEFluidKey key = AEFluidKey.of(stack);
-        long inserted = insertIntoNetwork(key, stack.getAmount());
-        if (inserted <= 0) {
-            return false;
-        }
-        tank.shrinkStack((int) Math.min(Integer.MAX_VALUE, inserted), Action.EXECUTE);
-        this.owner.saveChanges();
-        return true;
+        return drainOutputPorts(this.aeOutputMode, List.of(MeMachineIoAdapter.fluidOutput(tank)));
     }
 
     private void rememberOutputSlots(List<IInventorySlot> outputSlots) {

@@ -5,6 +5,7 @@ import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryPatternInput;
 import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -90,22 +91,8 @@ public class MeItemStackToItemStackFactoryBlockEntity extends TileEntityItemStac
     }
 
     private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
-        ItemStack input = MeFactoryPatternInput.singleItem(inputHolder[0]);
-        if (input.isEmpty()) {
-            return false;
-        }
-        List<ItemStack> snapshot = knownFits ? MeFactoryInventoryInsert.snapshotSlots(this.inputSlots) : null;
-        boolean inserted = knownFits
-                ? MeFactoryInventoryInsert.insertAcrossSlotsKnownFits(this.inputSlots, input)
-                : MeFactoryInventoryInsert.insertAcrossSlots(this.inputSlots, input);
-        if (inserted) {
-            saveChanges();
-            return true;
-        }
-        if (knownFits) {
-            MeFactoryInventoryInsert.restoreSlots(this.inputSlots, snapshot);
-        }
-        return false;
+        return getAeSupport().pushPatternInputs(inputHolder,
+                this.inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
     }
 
     @NotNull

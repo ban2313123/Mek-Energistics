@@ -84,3 +84,17 @@ config="${mod_id}.mixins.json"
     versionRange="*"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="extendedae"
+    type="optional"
+    versionRange="*"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="data_energistics"
+    type="optional"
+    versionRange="*"
+    ordering="AFTER"
+    side="BOTH"

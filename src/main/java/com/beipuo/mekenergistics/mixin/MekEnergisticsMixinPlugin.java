@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.mixin;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import net.neoforged.fml.loading.LoadingModList;
 import org.objectweb.asm.tree.ClassNode;
@@ -8,6 +9,15 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
+    private static final Map<String, String> OPTIONAL_MIXINS = Map.of(
+            ".TileEntityAlloyerAccessor", "evolvedmekanism",
+            ".TileEntitySolidifierAccessor", "evolvedmekanism",
+            ".TileEntityMelterAccessor", "evolvedmekanism",
+            ".TileEntityChemixerAccessor", "evolvedmekanism",
+            ".extendedae.ContainerRenamerMixin", "extendedae",
+            ".dataenergistics.PatternProviderSyncHelperMixin", "data_energistics",
+            ".dataenergistics.PatternProviderNameHelperMixin", "data_energistics");
+
     @Override
     public void onLoad(String mixinPackage) {
     }
@@ -19,20 +29,10 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (mixinClassName.endsWith(".TileEntityAlloyerAccessor")
-                || mixinClassName.endsWith(".TileEntitySolidifierAccessor")
-                || mixinClassName.endsWith(".TileEntityMelterAccessor")
-                || mixinClassName.endsWith(".TileEntityChemixerAccessor")) {
-            return isModLoaded("evolvedmekanism");
-        }
-        if (mixinClassName.endsWith(".extendedae.ContainerRenamerMixin")) {
-            return isModLoaded("extendedae");
-        }
-        if (mixinClassName.endsWith(".dataenergistics.PatternProviderSyncHelperMixin")) {
-            return isModLoaded("data_energistics");
-        }
-        if (mixinClassName.endsWith(".dataenergistics.PatternProviderNameHelperMixin")) {
-            return isModLoaded("data_energistics");
+        for (var entry : OPTIONAL_MIXINS.entrySet()) {
+            if (mixinClassName.endsWith(entry.getKey())) {
+                return isModLoaded(entry.getValue());
+            }
         }
         return true;
     }

@@ -27,6 +27,7 @@ import appeng.api.storage.StorageHelper;
 import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -83,56 +84,35 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
 
     public boolean insertOutputSlotIntoNetwork(OutputInventorySlot outputSlot, AeOutputMode mode) {
         rememberOutputSlot(outputSlot);
-        return mode.items() && insertOutputStackIntoNetwork(outputSlot);
+        if (outputSlot == null) {
+            return false;
+        }
+        return drainOutputPorts(mode, List.of(MeMachineIoAdapter.itemOutput(outputSlot)));
     }
 
     public boolean insertOutputSlotsIntoNetwork(AeOutputMode mode, OutputInventorySlot... outputSlots) {
         boolean changed = false;
         for (OutputInventorySlot outputSlot : outputSlots) {
             rememberOutputSlot(outputSlot);
-            if (mode.items()) {
-                changed |= insertOutputStackIntoNetwork(outputSlot);
-            }
+            changed |= drainOutputPorts(mode, List.of(MeMachineIoAdapter.itemOutput(outputSlot)));
         }
         return changed;
     }
 
     public boolean insertChemicalTankIntoNetwork(IChemicalTank tank, AeOutputMode mode) {
         rememberChemicalTank(tank);
-        if (!mode.chemicals() || tank == null || tank.isEmpty()) {
+        if (tank == null) {
             return false;
         }
-        ChemicalStack stack = tank.getStack();
-        MekanismKey key = MekanismKey.of(stack);
-        if (key == null) {
-            return false;
-        }
-        long inserted = insertIntoNetwork(key, stack.getAmount());
-        if (inserted <= 0) {
-            return false;
-        }
-        tank.shrinkStack(inserted, Action.EXECUTE);
-        this.owner.setChanged();
-        return true;
+        return drainOutputPorts(mode, List.of(MeMachineIoAdapter.chemicalOutput(tank)));
     }
 
     public boolean insertFluidTankIntoNetwork(IExtendedFluidTank tank, AeOutputMode mode) {
         rememberFluidTank(tank);
-        if (!mode.items() || tank == null || tank.isEmpty()) {
+        if (tank == null) {
             return false;
         }
-        FluidStack stack = tank.getFluid();
-        AEFluidKey key = AEFluidKey.of(stack);
-        if (key == null) {
-            return false;
-        }
-        long inserted = insertIntoNetwork(key, stack.getAmount());
-        if (inserted <= 0) {
-            return false;
-        }
-        tank.shrinkStack((int) Math.min(Integer.MAX_VALUE, inserted), Action.EXECUTE);
-        this.owner.setChanged();
-        return true;
+        return drainOutputPorts(mode, List.of(MeMachineIoAdapter.fluidOutput(tank)));
     }
 
     public boolean drainOutputs(AeOutputMode mode, boolean sendUpdatePacket, OutputInventorySlot... outputSlots) {
@@ -256,32 +236,6 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
             alertAeTicker();
         }
         return hadWork && !hasWork;
-    }
-
-    private boolean insertOutputStackIntoNetwork(OutputInventorySlot outputSlot) {
-        if (outputSlot == null) {
-            return false;
-        }
-        ItemStack output = outputSlot.getStack();
-        if (output.isEmpty()) {
-            return false;
-        }
-        long inserted = insertIntoNetwork(output);
-        if (inserted <= 0) {
-            return false;
-        }
-        output.shrink((int) inserted);
-        outputSlot.setStack(output.isEmpty() ? ItemStack.EMPTY : output);
-        this.owner.setChanged();
-        return true;
-    }
-
-    private long insertIntoNetwork(ItemStack stack) {
-        AEItemKey key = AEItemKey.of(stack);
-        if (key == null) {
-            return 0;
-        }
-        return insertIntoNetwork(key, stack.getCount());
     }
 
     @Override

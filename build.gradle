@@ -45,6 +45,10 @@ base {
     archivesName = mod_id
 }
 
+def debugRuns = providers.gradleProperty('mekenergistics.debugRuns')
+        .map { it.toBoolean() }
+        .orElse(false)
+
 // Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
@@ -96,17 +100,13 @@ neoForge {
 
         // applies to all the run configs above
         configureEach {
-            // Recommended logging data for a userdev environment
-            // The markers can be added/remove as needed separated by commas.
-            // "SCAN": For mods scan.
-            // "REGISTRIES": For firing of registry events.
-            // "REGISTRYDUMP": For getting the contents of all registries.
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-
-            // Recommended logging level for the console
-            // You can set various levels here.
-            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-            logLevel = org.slf4j.event.Level.DEBUG
+            // Use -Pmekenergistics.debugRuns=true to enable registry markers and DEBUG logging.
+            if (debugRuns.get()) {
+                systemProperty 'forge.logging.markers', 'REGISTRIES'
+                logLevel = org.slf4j.event.Level.DEBUG
+            } else {
+                logLevel = org.slf4j.event.Level.INFO
+            }
         }
     }
 

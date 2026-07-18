@@ -110,7 +110,8 @@ public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.
     }
 
     default MeRecipeMachineAeSupport<?> getRecipeAeSupport() {
-        return null;
+        throw new IllegalStateException("AE machine must provide a recipe support adapter: "
+                + getClass().getName());
     }
 
     default List<IPatternDetails> getAvailablePatterns() {
