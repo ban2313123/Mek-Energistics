@@ -161,6 +161,7 @@ dependencies {
     localRuntime "curse.maven:mekanism-more-machine-1275257:7919872"
     localRuntime "curse.maven:jade-324717:7545219"
     localRuntime "curse.maven:building-gadgets-298187:6850515"
+    // Mekanism Unleashed conflicts with Mekanism Empowered; enable only one.
     // localRuntime "curse.maven:mekanism-unleashed-1072209:7801278"
     localRuntime "curse.maven:advancedae-1084104:7849217"
     localRuntime "curse.maven:omni-cells-1359517:8050965"
