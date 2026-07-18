@@ -374,6 +374,96 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         return false;
     }
 
+    public boolean processSingleItemSmartPatterns(List<IInventorySlot> outputSlots,
+            List<IInventorySlot> inputSlots) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        if (hasItemOutputBacklog(outputSlots)) {
+            return changed;
+        }
+        return processSmartPattern(new SingleItemPortFeeder(inputSlots)) || changed;
+    }
+
+    public boolean finishSingleItemSmartPatterns(List<IInventorySlot> inputSlots) {
+        markOwnerHandlesSmartPatternProcessing();
+        return processSmartPattern(new SingleItemPortFeeder(inputSlots));
+    }
+
+    public boolean processItemChemicalSmartPatterns(IChemicalTank inputTank,
+            List<IInventorySlot> outputSlots, List<IChemicalTank> outputTanks,
+            List<IInventorySlot> inputSlots) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        for (IChemicalTank outputTank : outputTanks) {
+            changed |= insertChemicalTankIntoNetwork(outputTank);
+        }
+        if (hasItemOutputBacklog(outputSlots) || hasChemicalOutputBacklog(outputTanks)) {
+            return changed;
+        }
+        return processSmartPattern(new ItemChemicalPortFeeder(inputSlots, inputTank)) || changed;
+    }
+
+    public boolean finishItemChemicalSmartPatterns(List<IInventorySlot> inputSlots,
+            IChemicalTank inputTank) {
+        markOwnerHandlesSmartPatternProcessing();
+        return processSmartPattern(new ItemChemicalPortFeeder(inputSlots, inputTank));
+    }
+
+    private boolean hasChemicalOutputBacklog(List<IChemicalTank> outputTanks) {
+        for (IChemicalTank outputTank : outputTanks) {
+            if (outputTank != null && !outputTank.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private final class SingleItemPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final List<IInventorySlot> inputSlots;
+
+        private SingleItemPortFeeder(List<IInventorySlot> inputSlots) {
+            this.inputSlots = inputSlots;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            return pushSingleItem(oneCraftInputs, this.inputSlots);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            MeFactoryPatternInput input = MeFactoryPatternInput.single(oneCraftInputs == null || oneCraftInputs.length == 0
+                    ? null : oneCraftInputs[0]);
+            return input == null || !input.isItem()
+                    ? 0 : MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, input.item());
+        }
+    }
+
+    private final class ItemChemicalPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final List<IInventorySlot> inputSlots;
+        private final IChemicalTank inputTank;
+
+        private ItemChemicalPortFeeder(List<IInventorySlot> inputSlots, IChemicalTank inputTank) {
+            this.inputSlots = inputSlots;
+            this.inputTank = inputTank;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            return pushItemChemical(oneCraftInputs, this.inputSlots, this.inputTank);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            MeFactoryPatternInput input = MeFactoryPatternInput.separate(oneCraftInputs);
+            if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
+                return 0;
+            }
+            return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, input.item()),
+                    MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(this.inputTank, input.chemical()));
+        }
+    }
+
     @Override
     protected String patternOwnerName() {
         return this.owner.getMachine().name();
