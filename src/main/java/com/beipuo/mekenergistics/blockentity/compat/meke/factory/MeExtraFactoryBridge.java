@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.blockentity.compat.meke.factory;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.compat.shared.MeExternalFactorySupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import mekanism.api.inventory.IInventorySlot;
@@ -14,12 +15,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
+import java.util.List;
 
 final class MeExtraFactoryBridge {
     private MeExtraFactoryBridge() {
     }
 
-    interface Owner extends MeExternalFactorySupport.Owner {
+    interface Owner extends MeFactoryAeMachine, MeExternalFactorySupport.Owner {
+        List<IInventorySlot> meInputSlots();
+        List<IInventorySlot> meOutputSlots();
+        void unpauseRecipeMonitors();
     }
 
     static IInventorySlotHolder withPatternSlots(IInventorySlotHolder original, Owner owner) {
