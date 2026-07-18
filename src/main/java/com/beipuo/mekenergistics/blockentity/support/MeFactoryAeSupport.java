@@ -22,6 +22,7 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
 import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
@@ -30,6 +31,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -256,6 +258,15 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             alertAeTicker();
         }
         return hadWork && !hasWork;
+    }
+
+    public boolean pushSingleItem(KeyCounter[] inputHolder, List<? extends IInventorySlot> inputSlots) {
+        boolean changed = MePatternInputRouter.route(inputHolder,
+                inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
     }
 
     @Override
