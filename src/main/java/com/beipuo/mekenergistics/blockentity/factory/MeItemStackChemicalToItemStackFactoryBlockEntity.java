@@ -93,18 +93,10 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
         if (this.aeSupport.isSmartPatternMultiplicationEnabled()) {
             return this.aeSupport.enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        return this.aeSupport.pushItemChemical(inputHolder, this.inputSlots, getChemicalTank());
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        return pushPatternInputs(inputHolder, false);
-    }
-
-    private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(inputHolder);
-        if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
-            return false;
-        }
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         List<MeInputPort> ports = new ArrayList<>(this.inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
         ports.add(MeMachineIoAdapter.chemicalInput(getChemicalTank()));
         return getAeSupport().pushPatternInputs(inputHolder, ports);
@@ -161,7 +153,7 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
     private final class ItemChemicalInputFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
         @Override
         public boolean feed(KeyCounter[] oneCraftInputs) {
-            return pushPatternInputs(oneCraftInputs, true);
+            return feedPatternInputs(oneCraftInputs);
         }
 
         @Override

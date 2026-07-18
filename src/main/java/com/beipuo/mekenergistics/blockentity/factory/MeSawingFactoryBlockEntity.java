@@ -75,18 +75,10 @@ public class MeSawingFactoryBlockEntity extends TileEntitySawingFactory implemen
         if (this.aeSupport.isSmartPatternMultiplicationEnabled()) {
             return this.aeSupport.enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
+        return this.aeSupport.pushSingleItem(inputHolder, this.inputSlots);
     }
 
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        return pushPatternInputs(inputHolder, false);
-    }
-
-    private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
-        if (inputHolder == null || inputHolder.length != 1
-                || com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.singleItem(inputHolder[0]).isEmpty()) {
-            return false;
-        }
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         return getAeSupport().pushPatternInputs(inputHolder,
                 this.inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
     }
@@ -108,7 +100,7 @@ public class MeSawingFactoryBlockEntity extends TileEntitySawingFactory implemen
     private final class ItemInputFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
         @Override
         public boolean feed(KeyCounter[] oneCraftInputs) {
-            return pushPatternInputs(oneCraftInputs, true);
+            return feedPatternInputs(oneCraftInputs);
         }
 
         @Override

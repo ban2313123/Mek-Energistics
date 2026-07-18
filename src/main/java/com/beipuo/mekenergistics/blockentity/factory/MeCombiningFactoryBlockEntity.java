@@ -77,43 +77,13 @@ public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory im
         if (this.aeSupport.isSmartPatternMultiplicationEnabled()) {
             return this.aeSupport.enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return pushPatternInputs(inputHolder);
-    }
-
-    private boolean pushPatternInputs(KeyCounter[] inputHolder) {
-        return pushPatternInputs(inputHolder, false);
-    }
-
-    private boolean pushPatternInputs(KeyCounter[] inputHolder, boolean knownFits) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput first = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[0]);
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput second = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[1]);
-        if (first == null || second == null || !first.isItem() || !second.isItem()) {
-            return false;
-        }
-        ItemStack main = first.item();
-        ItemStack extra = second.item();
         InputInventorySlot extraSlot = ((TileEntityCombiningFactoryAccessor) this).mekenergistics$getExtraSlot();
-        boolean canInsert = knownFits || MeFactoryInventoryInsert.canInsertAcrossSlots(this.inputSlots, main);
-        if (canInsert && extraSlot.insertItem(extra.copy(), Action.SIMULATE, mekanism.api.AutomationType.INTERNAL).isEmpty()) {
-            List<ItemStack> inputSnapshot = MeFactoryInventoryInsert.snapshotSlots(this.inputSlots);
-            ItemStack extraSnapshot = extraSlot.getStack().copy();
-            boolean extraInserted = extraSlot.insertItem(extra, Action.EXECUTE, mekanism.api.AutomationType.INTERNAL).isEmpty();
-            boolean mainInserted = extraInserted && insertMainInput(main, knownFits);
-            if (!extraInserted || !mainInserted) {
-                extraSlot.setStack(extraSnapshot);
-                MeFactoryInventoryInsert.restoreSlots(this.inputSlots, inputSnapshot);
-                return false;
-            }
-            saveChanges();
-            return true;
-        }
-        return false;
+        return this.aeSupport.pushTwoItems(inputHolder, this.inputSlots, extraSlot);
     }
 
-    private boolean insertMainInput(ItemStack main, boolean knownFits) {
-        return knownFits
-                ? MeFactoryInventoryInsert.insertAcrossSlotsKnownFits(this.inputSlots, main)
-                : MeFactoryInventoryInsert.insertAcrossSlots(this.inputSlots, main);
+    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
+        InputInventorySlot extraSlot = ((TileEntityCombiningFactoryAccessor) this).mekenergistics$getExtraSlot();
+        return this.aeSupport.pushTwoItems(inputHolder, this.inputSlots, extraSlot);
     }
 
     @Override public boolean isBusy() { return false; }
@@ -133,7 +103,7 @@ public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory im
     private final class CombiningInputFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
         @Override
         public boolean feed(KeyCounter[] oneCraftInputs) {
-            return pushPatternInputs(oneCraftInputs, true);
+            return feedPatternInputs(oneCraftInputs);
         }
 
         @Override
