@@ -88,21 +88,8 @@ public class MePressurizedReactionChamberBlockEntity extends TileEntityPressuriz
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(inputHolder);
-        if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || input.fluid().isEmpty()) {
-            return false;
-        }
         InputInventorySlot inputSlot = ((TileEntityPressurizedReactionChamberAccessor) this).mekenergistics$getInputSlot();
-        if (!inputSlot.insertItem(input.item().copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()
-                || this.inputGasTank.insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).getAmount() != 0
-                || this.inputFluidTank.fill(input.fluid().copy(), FluidAction.SIMULATE) != input.fluid().getAmount()) {
-            return false;
-        }
-        inputSlot.insertItem(input.item(), Action.EXECUTE, AutomationType.INTERNAL);
-        this.inputGasTank.insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL);
-        this.inputFluidTank.fill(input.fluid(), FluidAction.EXECUTE);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushItemFluidChemical(inputHolder, inputSlot, this.inputFluidTank, this.inputGasTank);
     }
 
     @Override public boolean isBusy() { return false; }

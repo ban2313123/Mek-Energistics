@@ -7,10 +7,8 @@ import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MePatternSlotTransfer;
 import com.beipuo.mekenergistics.common.MeLangEntry;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
-import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismCompat;
-import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismExtrasCompat;
 import com.beipuo.mekenergistics.compat.extendedae.ExtendedAeRenamerCompat;
-import com.beipuo.mekenergistics.compat.meke.MekanismExtrasCompat;
+import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
 import com.beipuo.mekenergistics.item.MeInstallerUpgradeHandler;
 import com.beipuo.mekenergistics.item.MeTierInstallerItem;
 import com.beipuo.mekenergistics.registry.ModBlockTypes;
@@ -35,7 +33,6 @@ import mekanism.common.block.interfaces.IHasDescription;
 import mekanism.common.block.interfaces.ITypeBlock;
 import mekanism.common.content.blocktype.BlockType;
 import mekanism.common.content.blocktype.BlockTypeTile;
-import mekanism.common.item.ItemTierInstaller;
 import mekanism.common.resource.BlockResourceInfo;
 import mekanism.common.registration.impl.TileEntityTypeRegistryObject;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -247,16 +244,7 @@ public class MeMekanismMachineBlock extends Block implements IHasDescription, IT
     }
 
     private static boolean isInstaller(ItemStack stack) {
-        if (stack.getItem() instanceof MeTierInstallerItem || stack.getItem() instanceof ItemTierInstaller) {
-            return true;
-        }
-        if (ModList.get().isLoaded("mekanism_extras") && MekanismExtrasCompat.isInstaller(stack)) {
-            return true;
-        }
-        if (ModList.get().isLoaded("evolvedmekanism") && EvolvedMekanismCompat.isInstaller(stack)) {
-            return true;
-        }
-        return ModList.get().isLoaded("emextras") && EvolvedMekanismExtrasCompat.isInstaller(stack);
+        return stack.getItem() instanceof MeTierInstallerItem || CompatMachineProviders.isInstaller(stack);
     }
 
     private static boolean isQuartzCuttingKnife(ItemStack stack) {

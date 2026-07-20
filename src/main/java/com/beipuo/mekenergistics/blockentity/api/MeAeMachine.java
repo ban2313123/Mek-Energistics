@@ -20,7 +20,6 @@ import java.util.List;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.tile.base.TileEntityMekanism;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -148,14 +147,6 @@ public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.
     @Nullable
     @Override
     default IGridNode getActionableNode() {
-        IManagedGridNode node = getMainNode();
-        IGridNode gridNode = node == null ? null : node.getNode();
-        return gridNode != null && gridNode.isActive() ? gridNode : null;
-    }
-
-    @Nullable
-    @Override
-    default IGridNode getGridNode(Direction dir) {
         IManagedGridNode node = getMainNode();
         IGridNode gridNode = node == null ? null : node.getNode();
         return gridNode != null && gridNode.isActive() ? gridNode : null;

@@ -28,12 +28,11 @@ import org.jetbrains.annotations.Nullable;
 
 public class MeAlloyingFactoryBlockEntity extends TileEntityAlloyingFactory implements MeFactoryIoOwner {
     private final MeMekanismMachine machine;
-    private final MeFactoryAeSupport aeSupport;
+    private MeFactoryAeSupport aeSupport;
 
     public MeAlloyingFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(ModBlocks.getMachineBlock(machine), pos, state);
         this.machine = machine;
-        this.aeSupport = new MeFactoryAeSupport(this);
     }
 
     @NotNull
@@ -55,7 +54,12 @@ public class MeAlloyingFactoryBlockEntity extends TileEntityAlloyingFactory impl
         return getAeSupport().withPatternSlots(super.getInitialInventory(listener));
     }
 
-    @Override public MeFactoryAeSupport getAeSupport() { return this.aeSupport; }
+    @Override public MeFactoryAeSupport getAeSupport() {
+        if (this.aeSupport == null) {
+            this.aeSupport = new MeFactoryAeSupport(this);
+        }
+        return this.aeSupport;
+    }
     @Override public MeMekanismMachine getMachine() { return this.machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
@@ -66,10 +70,10 @@ public class MeAlloyingFactoryBlockEntity extends TileEntityAlloyingFactory impl
     @Nullable @Override public IRecipeViewerRecipeType<AlloyerRecipe> recipeViewerType() { return EvolvedMekanismRecipeViewerTypes.ALLOYING; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public CachedRecipe<AlloyerRecipe> createNewCachedRecipe(@NotNull AlloyerRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
-    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = getAeSupport().processThreeItemsSmartPatterns(getExtraSlot(), getSecondExtraSlot(), this.outputSlots, this.inputSlots); sendUpdatePacket |= super.onUpdateServer(); return getAeSupport().finishThreeItemsSmartPatterns(this.inputSlots, getExtraSlot(), getSecondExtraSlot()) || sendUpdatePacket; }
+    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = super.onUpdateServer(); sendUpdatePacket |= getAeSupport().processThreeItemsSmartPatterns(getExtraSlot(), getSecondExtraSlot(), this.outputSlots, this.inputSlots); return sendUpdatePacket; }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
-    @Override public void setRemoved() { this.aeSupport.destroy(); super.setRemoved(); }
-    @Override public void onChunkUnloaded() { this.aeSupport.destroy(); super.onChunkUnloaded(); }
+    @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
+    @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }
     @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.saveAdditional(tag, registries); getAeSupport().saveAll(tag, registries); }
     @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.loadAdditional(tag, registries); getAeSupport().loadAll(tag, registries); }
 }

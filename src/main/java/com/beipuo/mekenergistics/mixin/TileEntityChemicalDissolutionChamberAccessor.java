@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.mixin;
 
 import mekanism.common.capabilities.energy.MachineEnergyContainer;
 import mekanism.common.inventory.slot.InputInventorySlot;
+import mekanism.common.inventory.slot.chemical.ChemicalInventorySlot;
 import mekanism.common.tile.machine.TileEntityChemicalDissolutionChamber;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
@@ -10,6 +11,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface TileEntityChemicalDissolutionChamberAccessor {
     @Accessor("inputSlot")
     InputInventorySlot mekenergistics$getInputSlot();
+
+    @Accessor("gasInputSlot")
+    ChemicalInventorySlot mekenergistics$getGasInputSlot();
 
     @Accessor("energyContainer")
     void mekenergistics$setEnergyContainer(MachineEnergyContainer<TileEntityChemicalDissolutionChamber> energyContainer);

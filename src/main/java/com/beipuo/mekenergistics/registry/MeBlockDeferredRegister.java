@@ -3,6 +3,7 @@ package com.beipuo.mekenergistics.registry;
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.item.MeMachineBlockItem;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -68,75 +69,26 @@ public final class MeBlockDeferredRegister {
     }
 
     private static AttachedSideConfig defaultSideConfig(MeMekanismMachine machine) {
-        if (machine.factoryType() != null && machine.isFactory()) {
-            return switch (machine.factoryType()) {
-                case SMELTING, ENRICHING, CRUSHING, SAWING -> AttachedSideConfig.ELECTRIC_MACHINE;
-                case COMPRESSING, INFUSING -> AttachedSideConfig.ADVANCED_MACHINE;
-                case COMBINING -> AttachedSideConfig.EXTRA_MACHINE;
-                case PURIFYING, INJECTING -> AttachedSideConfig.ADVANCED_MACHINE_INPUT_ONLY;
-            };
-        }
-        if (machine.moreMachineFactoryTypeName() != null) {
-            return switch (machine.moreMachineFactoryTypeName()) {
-                case "stamping" -> AttachedSideConfig.EXTRA_MACHINE;
-                case "planting", "replicating" -> AttachedSideConfig.ADVANCED_MACHINE_INPUT_ONLY;
-                default -> AttachedSideConfig.ELECTRIC_MACHINE;
-            };
-        }
-        if (machine.moreMachineAdvancedFactoryTypeName() != null) {
-            return switch (machine.moreMachineAdvancedFactoryTypeName()) {
-                case "oxidizing", "pigment_extracting" -> AttachedSideConfig.CHEMICAL_OUT_MACHINE;
-                case "dissolving" -> AttachedSideConfig.DISSOLUTION;
-                case "washing" -> AttachedSideConfig.WASHER;
-                case "pressurised_reacting" -> AttachedSideConfig.REACTION;
-                case "crystallizing" -> AttachedSideConfig.CRYSTALLIZER;
-                case "centrifuging" -> AttachedSideConfig.CENTRIFUGE;
-                case "liquifying" -> AttachedSideConfig.LIQUIFIER;
-                case "painting" -> AttachedSideConfig.PAINTING;
-                default -> AttachedSideConfig.ELECTRIC_MACHINE;
-            };
-        }
-        return switch (machine) {
-            case PLANTING_STATION, REPLICATOR ->
-                    AttachedSideConfig.ADVANCED_MACHINE_INPUT_ONLY;
-            case ENRICHMENT_CHAMBER, CRUSHER, ENERGIZED_SMELTER, PRECISION_SAWMILL ->
-                    AttachedSideConfig.ELECTRIC_MACHINE;
-            case OSMIUM_COMPRESSOR, METALLURGIC_INFUSER ->
-                    AttachedSideConfig.ADVANCED_MACHINE;
-            case ALLOYER, COMBINER, FORMULAIC_ASSEMBLICATOR ->
-                    AttachedSideConfig.EXTRA_MACHINE;
-            case PURIFICATION_CHAMBER, CHEMICAL_INJECTION_CHAMBER, ANTIPROTONIC_NUCLEOSYNTHESIZER ->
-                    AttachedSideConfig.ADVANCED_MACHINE_INPUT_ONLY;
-            case PRESSURIZED_REACTION_CHAMBER ->
-                    AttachedSideConfig.REACTION;
-            case CHEMICAL_CRYSTALLIZER ->
-                    AttachedSideConfig.CRYSTALLIZER;
-            case CHEMICAL_DISSOLUTION_CHAMBER ->
-                    AttachedSideConfig.DISSOLUTION;
-            case CHEMICAL_INFUSER ->
-                    AttachedSideConfig.CHEMICAL_INFUSING;
-            case CHEMICAL_OXIDIZER, PIGMENT_EXTRACTOR ->
-                    AttachedSideConfig.CHEMICAL_OUT_MACHINE;
-            case CHEMICAL_WASHER ->
-                    AttachedSideConfig.WASHER;
-            case ROTARY_CONDENSENTRATOR ->
-                    AttachedSideConfig.ROTARY;
-            case ELECTROLYTIC_SEPARATOR ->
-                    AttachedSideConfig.SEPARATOR;
-            case SOLAR_NEUTRON_ACTIVATOR ->
-                    AttachedSideConfig.SNA;
-            case ISOTOPIC_CENTRIFUGE ->
-                    AttachedSideConfig.CENTRIFUGE;
-            case NUTRITIONAL_LIQUIFIER ->
-                    AttachedSideConfig.LIQUIFIER;
-            case PIGMENT_MIXER ->
-                    AttachedSideConfig.PIGMENT_MIXER;
-            case PAINTING_MACHINE ->
-                    AttachedSideConfig.PAINTING;
-            case OREDICTIONIFICATOR ->
-                    new AttachedSideConfig(java.util.Map.of(TransmissionType.ITEM, AttachedSideConfig.LightConfigInfo.OUT_NO_EJECT));
-            default ->
-                    AttachedSideConfig.ELECTRIC_MACHINE;
+        return switch (CompatMachineCatalog.get(machine).sideConfigProfile()) {
+            case ELECTRIC -> AttachedSideConfig.ELECTRIC_MACHINE;
+            case ADVANCED -> AttachedSideConfig.ADVANCED_MACHINE;
+            case EXTRA -> AttachedSideConfig.EXTRA_MACHINE;
+            case ADVANCED_INPUT_ONLY -> AttachedSideConfig.ADVANCED_MACHINE_INPUT_ONLY;
+            case CHEMICAL_OUT -> AttachedSideConfig.CHEMICAL_OUT_MACHINE;
+            case DISSOLUTION -> AttachedSideConfig.DISSOLUTION;
+            case WASHER -> AttachedSideConfig.WASHER;
+            case REACTION -> AttachedSideConfig.REACTION;
+            case CRYSTALLIZER -> AttachedSideConfig.CRYSTALLIZER;
+            case CENTRIFUGE -> AttachedSideConfig.CENTRIFUGE;
+            case LIQUIFIER -> AttachedSideConfig.LIQUIFIER;
+            case PAINTING -> AttachedSideConfig.PAINTING;
+            case CHEMICAL_INFUSING -> AttachedSideConfig.CHEMICAL_INFUSING;
+            case ROTARY -> AttachedSideConfig.ROTARY;
+            case SEPARATOR -> AttachedSideConfig.SEPARATOR;
+            case SOLAR_NEUTRON_ACTIVATOR -> AttachedSideConfig.SNA;
+            case PIGMENT_MIXER -> AttachedSideConfig.PIGMENT_MIXER;
+            case OREDICTIONIFICATOR -> new AttachedSideConfig(
+                    java.util.Map.of(TransmissionType.ITEM, AttachedSideConfig.LightConfigInfo.OUT_NO_EJECT));
         };
     }
 }

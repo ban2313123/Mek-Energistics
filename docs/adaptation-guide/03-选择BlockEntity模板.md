@@ -12,7 +12,7 @@ BlockEntity 注册入口在 `ModBlockEntities.registerMachine(machine)`，核心
 - 有 AE 样板能力：实现 `MeAeMachine`、`ICraftingProvider`、`IActionHost`，并注册 `AECapabilities.IN_WORLD_GRID_NODE_HOST`。
 - 无 AE 样板能力：使用 `noAe(...)`，只注册 ME 方块、物品、Mek GUI 和基础功能。
 
-工厂机器通常实现 `MeFactoryAeMachine`，通过 `MeFactoryAeSupport` 接入 AE。外部模组工厂（MekMM advanced factories、Mek Extras factories）走 `MeExternalFactorySupport`。普通机器多数通过 `MeRecipeMachineAeSupport` 接入 AE。
+工厂机器通常实现 `MeFactoryIoOwner`，通过 `MeFactoryAeSupport` 接入 AE。MekMM、Mek Extras 和 Evolved Mekanism 工厂均使用同一共同 support。普通机器多数通过 `MeRecipeMachineAeSupport` 接入 AE。
 
 新增模板时建议先复制最接近的现有类：
 

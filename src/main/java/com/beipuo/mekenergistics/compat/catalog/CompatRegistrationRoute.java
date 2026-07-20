@@ -1,0 +1,16 @@
+package com.beipuo.mekenergistics.compat.catalog;
+
+public enum CompatRegistrationRoute {
+    MEKANISM_MACHINE,
+    MEKANISM_FACTORY,
+    EMEK_MACHINE,
+    EMEK_FACTORY,
+    MEKE_FACTORY,
+    MEKMM_MACHINE,
+    MEKMM_FACTORY,
+    MEKMM_ADVANCED_FACTORY,
+    MEKE_MEKMM_FACTORY,
+    MEKE_MEKMM_ADVANCED_FACTORY,
+    EMEKE_FACTORY,
+    EMEKE_ADVANCED_FACTORY
+}

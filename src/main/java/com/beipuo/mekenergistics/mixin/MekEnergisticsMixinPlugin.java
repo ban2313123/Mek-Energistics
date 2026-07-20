@@ -9,14 +9,18 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
-    private static final Map<String, String> OPTIONAL_MIXINS = Map.of(
-            ".TileEntityAlloyerAccessor", "evolvedmekanism",
-            ".TileEntitySolidifierAccessor", "evolvedmekanism",
-            ".TileEntityMelterAccessor", "evolvedmekanism",
-            ".TileEntityChemixerAccessor", "evolvedmekanism",
-            ".extendedae.ContainerRenamerMixin", "extendedae",
-            ".dataenergistics.PatternProviderSyncHelperMixin", "data_energistics",
-            ".dataenergistics.PatternProviderNameHelperMixin", "data_energistics");
+    private static final Map<String, String> OPTIONAL_MIXINS = Map.ofEntries(
+            Map.entry(".TileEntityAlloyerAccessor", "evolvedmekanism"),
+            Map.entry(".TileEntitySolidifierAccessor", "evolvedmekanism"),
+            Map.entry(".TileEntityMelterAccessor", "evolvedmekanism"),
+            Map.entry(".TileEntityChemixerAccessor", "evolvedmekanism"),
+            Map.entry(".TileEntityEMExtraDissolvingFactoryAccessor", "emextras"),
+            Map.entry(".TileEntityChemicalReplicatorAccessor", "mekmm"),
+            Map.entry(".TileEntityFluidReplicatorAccessor", "mekmm"),
+            Map.entry(".TileEntityLargeAntiprotonicNucleosynthesizerAccessor", "mekmm"),
+            Map.entry(".extendedae.ContainerRenamerMixin", "extendedae"),
+            Map.entry(".dataenergistics.PatternProviderSyncHelperMixin", "data_energistics"),
+            Map.entry(".dataenergistics.PatternProviderNameHelperMixin", "data_energistics"));
 
     @Override
     public void onLoad(String mixinPackage) {

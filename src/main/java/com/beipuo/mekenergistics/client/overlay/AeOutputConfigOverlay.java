@@ -143,13 +143,14 @@ public final class AeOutputConfigOverlay {
     }
 
     private static boolean canToggle(TransmissionType type) {
-        return type == TransmissionType.ITEM || type == TransmissionType.CHEMICAL;
+        return type == TransmissionType.ITEM || type == TransmissionType.CHEMICAL || type == TransmissionType.FLUID;
     }
 
     private static boolean isTypeEnabled(AeOutputMode mode, TransmissionType type) {
         return switch (type) {
             case ITEM -> mode.items();
             case CHEMICAL -> mode.chemicals();
+            case FLUID -> mode.fluids();
             default -> false;
         };
     }

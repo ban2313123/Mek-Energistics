@@ -128,12 +128,14 @@ public class MeAdvancedElectricMachineBlockEntity extends TileEntityAdvancedElec
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
         InputInventorySlot inputSlot = ((TileEntityAdvancedElectricMachineAccessor) this).mekenergistics$getInputSlot();
-        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.chemicalTank);
+        return getRecipeAeSupport().pushItemChemicalOrConversion(inputHolder, inputSlot, this.chemicalTank,
+                ((TileEntityAdvancedElectricMachineAccessor) this).mekenergistics$getSecondarySlot());
     }
 
     private boolean feedPatternInputs(KeyCounter[] inputHolder) {
         InputInventorySlot inputSlot = ((TileEntityAdvancedElectricMachineAccessor) this).mekenergistics$getInputSlot();
-        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.chemicalTank);
+        return getRecipeAeSupport().pushItemChemicalOrConversion(inputHolder, inputSlot, this.chemicalTank,
+                ((TileEntityAdvancedElectricMachineAccessor) this).mekenergistics$getSecondarySlot());
     }
 
     @Override

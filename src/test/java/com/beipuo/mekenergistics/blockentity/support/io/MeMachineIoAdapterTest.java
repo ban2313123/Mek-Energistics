@@ -32,7 +32,9 @@ class MeMachineIoAdapterTest {
         assertTrue(MePatternInputRouter.route(new KeyCounter[] { counter }, List.of(first, second)));
         assertEquals(3, first.amount);
         assertEquals(5, second.amount);
-        assertEquals(2, first.simulations);
+        assertEquals(1, first.simulations);
+        assertEquals(0, first.restores);
+        assertEquals(0, second.restores);
     }
 
     @Test
@@ -46,6 +48,8 @@ class MeMachineIoAdapterTest {
         assertFalse(MePatternInputRouter.route(new KeyCounter[] { counter }, List.of(first, second)));
         assertEquals(0, first.amount);
         assertEquals(0, second.amount);
+        assertEquals(1, first.restores);
+        assertEquals(1, second.restores);
     }
 
     @Test
@@ -95,6 +99,111 @@ class MeMachineIoAdapterTest {
     }
 
     @Test
+    void laneRouterAccountsForReservationsWhenOnePortServesMultipleLanes() {
+        FakeInput shared = new FakeInput(IRON, 8);
+        KeyCounter first = new KeyCounter();
+        first.add(IRON, 3);
+        KeyCounter second = new KeyCounter();
+        second.add(IRON, 3);
+
+        assertTrue(MePatternInputRouter.routeLanes(
+                new KeyCounter[] {first, second}, List.of(List.of(shared), List.of(shared))));
+        assertEquals(6, shared.amount);
+    }
+
+    @Test
+    void sharedLaneCapacityPredictionMatchesTransaction() {
+        FakeInput shared = new FakeInput(IRON, 8);
+        KeyCounter first = new KeyCounter();
+        first.add(IRON, 1);
+        KeyCounter second = new KeyCounter();
+        second.add(IRON, 1);
+
+        long copies = MePatternInputRouter.maxAcceptedLaneCopies(
+                new KeyCounter[] {first, second}, List.of(List.of(shared), List.of(shared)));
+        assertEquals(4, copies);
+        assertTrue(MePatternInputRouter.routeLanes(new KeyCounter[] {
+                scale(first, copies), scale(second, copies)
+        }, List.of(List.of(shared), List.of(shared))));
+        assertEquals(8, shared.amount);
+    }
+
+    @Test
+    void capacityPredictionMatchesLaneTransaction() {
+        FakeInput main = new FakeInput(IRON, 12);
+        FakeInput extra = new FakeInput(IRON, 4);
+        KeyCounter first = new KeyCounter();
+        first.add(IRON, 3);
+        KeyCounter second = new KeyCounter();
+        second.add(IRON, 1);
+
+        long copies = MePatternInputRouter.maxAcceptedLaneCopies(
+                new KeyCounter[] {first, second}, List.of(List.of(main), List.of(extra)));
+        assertEquals(4, copies);
+        assertEquals(0, main.restores);
+        assertEquals(0, extra.restores);
+        assertTrue(MePatternInputRouter.routeLanes(new KeyCounter[] {
+                scale(first, copies), scale(second, copies)
+        }, List.of(List.of(main), List.of(extra))));
+        assertEquals(12, main.amount);
+        assertEquals(4, extra.amount);
+    }
+
+    @Test
+    void capacityProbeAggregatesAutoSortedFactorySlotsWithoutWritingThem() {
+        FakeInput first = new FakeInput(IRON, 4_096);
+        FakeInput second = new FakeInput(IRON, 4_096);
+        first.amount = 3_840;
+        second.amount = 3_584;
+        KeyCounter counter = new KeyCounter();
+        counter.add(IRON, 1);
+
+        assertEquals(768, MePatternInputRouter.maxAcceptedCopies(
+                new KeyCounter[] {counter}, List.of(first, second)));
+        assertEquals(3_840, first.amount);
+        assertEquals(3_584, second.amount);
+        assertEquals(0, first.restores);
+        assertEquals(0, second.restores);
+        assertEquals(1, first.simulations);
+        assertEquals(1, second.simulations);
+    }
+
+    @Test
+    void groupedFactoryInputUsesTheCapacityOfEveryProcessSlot() {
+        FakeInput first = new FakeInput(IRON, 4_096);
+        FakeInput second = new FakeInput(IRON, 4_096);
+        MeInputPort factoryInput = MeMachineIoAdapter.groupedInput(List.of(first, second));
+        KeyCounter counter = new KeyCounter();
+        counter.add(IRON, 8_192);
+
+        assertTrue(MePatternInputRouter.route(new KeyCounter[] {counter}, List.of(factoryInput)));
+        assertEquals(4_096, first.amount);
+        assertEquals(4_096, second.amount);
+    }
+
+    @Test
+    void groupedFactoryInputRollsBackEveryProcessSlot() {
+        FakeInput first = new FakeInput(IRON, 4);
+        FakeInput second = new FakeInput(IRON, 4);
+        second.failExecution = true;
+        MeInputPort factoryInput = MeMachineIoAdapter.groupedInput(List.of(first, second));
+        KeyCounter counter = new KeyCounter();
+        counter.add(IRON, 8);
+
+        assertFalse(MePatternInputRouter.route(new KeyCounter[] {counter}, List.of(factoryInput)));
+        assertEquals(0, first.amount);
+        assertEquals(0, second.amount);
+        assertEquals(1, first.restores);
+        assertEquals(1, second.restores);
+    }
+
+    private static KeyCounter scale(KeyCounter source, long copies) {
+        KeyCounter result = new KeyCounter();
+        source.forEach(entry -> result.add(entry.getKey(), entry.getLongValue() * copies));
+        return result;
+    }
+
+    @Test
     void outputCollectorRollsBackDestinationAndSource() {
         FakeOutput output = new FakeOutput(IRON, 4);
         FakeInput destination = new FakeInput(IRON, 100);
@@ -105,11 +214,21 @@ class MeMachineIoAdapterTest {
         assertEquals(0, destination.amount);
     }
 
+    @Test
+    void routerRejectsMultipleKeysInOneLane() {
+        KeyCounter counter = new KeyCounter();
+        counter.add(IRON, 1);
+        counter.add(new FakeKey("gold"), 1);
+        assertFalse(MePatternInputRouter.route(new KeyCounter[] {counter},
+                List.of(new FakeInput(IRON, 4))));
+    }
+
     private static final class FakeInput implements MeInputPort {
         private final AEKey key;
         private final long capacity;
         private long amount;
         private int simulations;
+        private int restores;
         private boolean failExecution;
 
         private FakeInput(AEKey key, long capacity) {
@@ -126,7 +245,7 @@ class MeMachineIoAdapterTest {
             return Math.max(0, accepted);
         }
         @Override public Object snapshot() { return amount; }
-        @Override public void restore(Object snapshot) { amount = (long) snapshot; }
+        @Override public void restore(Object snapshot) { restores++; amount = (long) snapshot; }
     }
 
     private static final class FakeOutput implements MeOutputPort {

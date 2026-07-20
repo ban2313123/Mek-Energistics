@@ -63,7 +63,7 @@ public class MeExtraAlloyingFactoryBlockEntity extends TileEntityExtraAlloyingFa
     @Nullable @Override public IRecipeViewerRecipeType<AlloyerRecipe> recipeViewerType() { return EvolvedMekanismRecipeViewerTypes.ALLOYING; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public CachedRecipe<AlloyerRecipe> createNewCachedRecipe(@NotNull AlloyerRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
-    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = getAeSupport().processThreeItemsSmartPatterns(getExtraSlot(), getSecondExtraSlot(), this.outputSlots, this.inputSlots); sendUpdatePacket |= super.onUpdateServer(); return getAeSupport().finishThreeItemsSmartPatterns(this.inputSlots, getExtraSlot(), getSecondExtraSlot()) || sendUpdatePacket; }
+    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = super.onUpdateServer(); sendUpdatePacket |= getAeSupport().processThreeItemsSmartPatterns(getExtraSlot(), getSecondExtraSlot(), this.outputSlots, this.inputSlots); return sendUpdatePacket; }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

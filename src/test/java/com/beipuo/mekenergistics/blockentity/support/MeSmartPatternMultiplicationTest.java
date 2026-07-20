@@ -8,7 +8,13 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import mekanism.api.Action;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -117,6 +123,88 @@ class MeSmartPatternMultiplicationTest {
         assertEquals(32_768, feeder.acceptedCopies);
         assertEquals(1_024, feeder.feedCalls);
         assertFalse(multiplication.hasPendingWork());
+    }
+
+    @Test
+    void highSpeedFactoryRefillsCapacityAfterEveryRecipeTick() {
+        FakeKey inputKey = new FakeKey("high_speed_factory_input");
+        MeSmartPatternMultiplication multiplication = new MeSmartPatternMultiplication();
+        assertTrue(multiplication.enqueueForTesting(inputKey, List.of(new GenericStack(inputKey, 1)), 1_000_000));
+
+        RouterBackedFactoryFeeder feeder = new RouterBackedFactoryFeeder(inputKey, 17, 4_096);
+        for (int tick = 0; tick < 8; tick++) {
+            feeder.autoBalance();
+            feeder.consumeFromEverySlot(256);
+            assertTrue(multiplication.processNext(feeder));
+            assertEquals(17L * 4_096, feeder.loaded(),
+                    "smart input should refill all parallel factory slots after tick " + tick);
+        }
+
+        assertTrue(multiplication.hasPendingWork());
+    }
+
+    @Test
+    void activeFactoryInputRefillsEvenWhenRoundRobinCursorMovesPastScanBudget() {
+        FakeKey hotKey = new FakeKey("hot_factory_input");
+        FakeKey blockedKey = new FakeKey("blocked_factory_input");
+        MeSmartPatternMultiplication multiplication = new MeSmartPatternMultiplication();
+        assertTrue(multiplication.enqueueForTesting(hotKey, List.of(new GenericStack(hotKey, 1)), 100_000));
+        for (int i = 0; i < 600; i++) {
+            FakeKey definition = new FakeKey("queued_pattern_" + i);
+            assertTrue(multiplication.enqueueForTesting(definition, List.of(new GenericStack(blockedKey, 1)), 1));
+        }
+
+        HotFactoryFeeder feeder = new HotFactoryFeeder(hotKey, 512);
+        assertTrue(multiplication.processNext(feeder));
+        assertEquals(512, feeder.loaded);
+
+        feeder.consume(192);
+        assertTrue(multiplication.processNext(feeder));
+        assertEquals(512, feeder.loaded,
+                "the active input must refill before scanning later queued pattern definitions");
+    }
+
+    @Test
+    void staleHotPatternsDoNotConsumeTheNormalPendingScanBudget() {
+        MeSmartPatternMultiplication multiplication = new MeSmartPatternMultiplication();
+        List<FakeKey> staleInputs = new ArrayList<>();
+        for (int i = 0; i < 256; i++) {
+            FakeKey definition = new FakeKey("stale_hot_definition_" + i);
+            FakeKey input = new FakeKey("stale_hot_input_" + i);
+            staleInputs.add(input);
+            assertTrue(multiplication.enqueueForTesting(definition, List.of(new GenericStack(input, 1)), 2));
+        }
+        FakeKey targetDefinition = new FakeKey("target_after_hot_entries");
+        FakeKey targetInput = new FakeKey("target_input_after_hot_entries");
+        assertTrue(multiplication.enqueueForTesting(
+                targetDefinition, List.of(new GenericStack(targetInput, 1)), 1));
+
+        OneShotPerKeyFeeder feeder = new OneShotPerKeyFeeder(staleInputs);
+        assertTrue(multiplication.processNext(feeder));
+        assertFalse(feeder.accepted(targetInput));
+
+        feeder.allow(targetInput);
+        assertTrue(multiplication.processNext(feeder));
+        assertTrue(feeder.accepted(targetInput),
+                "stale hot entries must not prevent the round-robin scan from reaching new orders");
+    }
+
+    @Test
+    void activeMachineInputRestoresPriorityAfterHotStateIsLost() {
+        FakeKey blockedInput = new FakeKey("blocked_before_reload");
+        FakeKey activeInput = new FakeKey("active_after_reload");
+        MeSmartPatternMultiplication multiplication = new MeSmartPatternMultiplication();
+        for (int i = 0; i < 600; i++) {
+            assertTrue(multiplication.enqueueForTesting(new FakeKey("queued_before_active_" + i),
+                    List.of(new GenericStack(blockedInput, 1)), 1));
+        }
+        assertTrue(multiplication.enqueueForTesting(new FakeKey("active_definition"),
+                List.of(new GenericStack(activeInput, 1)), 128));
+
+        ActiveInputFeeder feeder = new ActiveInputFeeder(activeInput, 128);
+        assertTrue(multiplication.processNext(feeder));
+        assertEquals(128, feeder.acceptedCopies,
+                "material already in the machine must bypass the pending scan cursor after reload");
     }
 
     @Test
@@ -287,6 +375,175 @@ class MeSmartPatternMultiplicationTest {
             }
             this.acceptedCopies += copies;
             this.feedCalls++;
+            return true;
+        }
+    }
+
+    private static final class RouterBackedFactoryFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final AEKey key;
+        private final List<FactoryInputPort> ports;
+
+        private RouterBackedFactoryFeeder(AEKey key, int slotCount, long capacityPerSlot) {
+            this.key = key;
+            this.ports = new ArrayList<>(slotCount);
+            for (int i = 0; i < slotCount; i++) {
+                this.ports.add(new FactoryInputPort(key, capacityPerSlot));
+            }
+        }
+
+        private void consumeFromEverySlot(long amount) {
+            this.ports.forEach(port -> port.amount = Math.max(0, port.amount - amount));
+        }
+
+        private void autoBalance() {
+            long total = loaded();
+            long perSlot = total / this.ports.size();
+            long remainder = total % this.ports.size();
+            for (FactoryInputPort port : this.ports) {
+                port.amount = perSlot + (remainder-- > 0 ? 1 : 0);
+            }
+        }
+
+        private long loaded() {
+            return this.ports.stream().mapToLong(port -> port.amount).sum();
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            return MePatternInputRouter.maxAcceptedCopies(oneCraftInputs, this.ports);
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            return oneCraftInputs[0].get(this.key) > 0
+                    && MePatternInputRouter.route(oneCraftInputs, this.ports);
+        }
+    }
+
+    private static final class FactoryInputPort implements MeInputPort {
+        private final AEKey key;
+        private final long capacity;
+        private long amount;
+
+        private FactoryInputPort(AEKey key, long capacity) {
+            this.key = key;
+            this.capacity = capacity;
+        }
+
+        @Override
+        public boolean supports(AEKey key) {
+            return this.key.equals(key);
+        }
+
+        @Override
+        public long insert(AEKey key, long amount, Action action) {
+            if (!supports(key) || amount <= 0) {
+                return 0;
+            }
+            long accepted = Math.min(amount, this.capacity - this.amount);
+            if (action.execute()) {
+                this.amount += accepted;
+            }
+            return Math.max(0, accepted);
+        }
+
+        @Override
+        public Object snapshot() {
+            return this.amount;
+        }
+
+        @Override
+        public void restore(Object snapshot) {
+            this.amount = (long) snapshot;
+        }
+    }
+
+    private static final class HotFactoryFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final AEKey acceptedKey;
+        private final long capacity;
+        private long loaded;
+
+        private HotFactoryFeeder(AEKey acceptedKey, long capacity) {
+            this.acceptedKey = acceptedKey;
+            this.capacity = capacity;
+        }
+
+        private void consume(long copies) {
+            this.loaded = Math.max(0, this.loaded - copies);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            return oneCraftInputs[0].get(this.acceptedKey) > 0 ? this.capacity - this.loaded : 0;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            long copies = oneCraftInputs[0].get(this.acceptedKey);
+            if (copies <= 0 || copies > this.capacity - this.loaded) {
+                return false;
+            }
+            this.loaded += copies;
+            return true;
+        }
+    }
+
+    private static final class OneShotPerKeyFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final Set<AEKey> allowed = new HashSet<>();
+        private final Set<AEKey> accepted = new HashSet<>();
+
+        private OneShotPerKeyFeeder(List<? extends AEKey> initiallyAllowed) {
+            this.allowed.addAll(initiallyAllowed);
+        }
+
+        private void allow(AEKey key) {
+            this.allowed.add(key);
+        }
+
+        private boolean accepted(AEKey key) {
+            return this.accepted.contains(key);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            AEKey key = oneCraftInputs[0].getFirstEntry().getKey();
+            return this.allowed.contains(key) && !this.accepted.contains(key) ? 1 : 0;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            AEKey key = oneCraftInputs[0].getFirstEntry().getKey();
+            return this.allowed.contains(key) && this.accepted.add(key);
+        }
+    }
+
+    private static final class ActiveInputFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final AEKey activeInput;
+        private final long capacity;
+        private long acceptedCopies;
+
+        private ActiveInputFeeder(AEKey activeInput, long capacity) {
+            this.activeInput = activeInput;
+            this.capacity = capacity;
+        }
+
+        @Override
+        public Iterable<AEKey> activeInputKeys() {
+            return List.of(this.activeInput);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            return oneCraftInputs[0].get(this.activeInput) > 0 ? this.capacity - this.acceptedCopies : 0;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            long copies = oneCraftInputs[0].get(this.activeInput);
+            if (copies <= 0 || copies > this.capacity - this.acceptedCopies) {
+                return false;
+            }
+            this.acceptedCopies += copies;
             return true;
         }
     }

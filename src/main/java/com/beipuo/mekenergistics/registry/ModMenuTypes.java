@@ -29,13 +29,8 @@ import com.beipuo.mekenergistics.blockentity.machine.chemical.MeSolarNeutronActi
 import com.beipuo.mekenergistics.menu.MePatternFormulaicAssemblicatorContainer;
 import com.beipuo.mekenergistics.menu.MePatternMachineContainer;
 import com.beipuo.mekenergistics.menu.MePatternMekanismTileContainer;
-import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
-import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismExtrasMenuTypes;
-import com.beipuo.mekenergistics.compat.meke.MekanismExtrasAdvancedMenuTypes;
-import com.beipuo.mekenergistics.compat.meke.MekanismExtrasMenuTypes;
-import com.beipuo.mekenergistics.compat.meke.MekanismExtrasMoreMachineMenuTypes;
-import com.beipuo.mekenergistics.compat.mekmm.MekanismMoreMachineAdvancedMenuTypes;
-import com.beipuo.mekenergistics.compat.mekmm.MekanismMoreMachineMenuTypes;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
 import com.beipuo.mekenergistics.menu.factory.MePatternFactoryContainer;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import java.util.EnumMap;
@@ -48,7 +43,6 @@ import mekanism.common.registration.impl.ContainerTypeRegistryObject;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModList;
 
 public final class ModMenuTypes {
     private static final ContainerTypeDeferredRegister MENU_TYPES = new ContainerTypeDeferredRegister(MekEnergistics.MODID);
@@ -93,12 +87,18 @@ public final class ModMenuTypes {
             registerPatternTileContainer("me_nutritional_liquifier", MeNutritionalLiquifierBlockEntity.class);
     public static final ContainerTypeRegistryObject<MekanismTileContainer<MeAntiprotonicNucleosynthesizerBlockEntity>> ME_ANTIPROTONIC_NUCLEOSYNTHESIZER =
             registerPatternTileContainer("me_antiprotonic_nucleosynthesizer", MeAntiprotonicNucleosynthesizerBlockEntity.class, 10, 27);
+    public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER =
+            optionalHolder("me_large_antiprotonic_nucleosynthesizer");
     public static final ContainerTypeRegistryObject<MekanismTileContainer<MePigmentExtractorBlockEntity>> ME_PIGMENT_EXTRACTOR =
             registerPatternTileContainer("me_pigment_extractor", MePigmentExtractorBlockEntity.class);
     public static final ContainerTypeRegistryObject<MekanismTileContainer<MePigmentMixerBlockEntity>> ME_PIGMENT_MIXER =
             registerPatternTileContainer("me_pigment_mixer", MePigmentMixerBlockEntity.class);
     public static final ContainerTypeRegistryObject<MekanismTileContainer<MePaintingMachineBlockEntity>> ME_PAINTING_MACHINE =
             registerPatternTileContainer("me_painting_machine", MePaintingMachineBlockEntity.class);
+    public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_EM_EXTRA_ADVANCED_FACTORY =
+            optionalHolder("me_em_extra_advanced_factory");
+    public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_EM_EXTRA_MORE_MACHINE_FACTORY =
+            optionalHolder("me_em_extra_more_machine_factory");
     public static final ContainerTypeRegistryObject<MePatternFactoryContainer> ME_FACTORY =
             registerFactoryContainer();
     public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_MORE_MACHINE_FACTORY =
@@ -116,24 +116,7 @@ public final class ModMenuTypes {
     private static final Map<MeMekanismMachine, ContainerTypeRegistryObject<?>> EXPLICIT_MACHINE_CONTAINERS = createExplicitMachineContainers();
 
     static {
-        if (ModList.get().isLoaded("mekmm")) {
-            MekanismMoreMachineMenuTypes.register(MENU_TYPES);
-            if (OptionalCompatClasses.hasMekmmAdvancedFactories()) {
-                MekanismMoreMachineAdvancedMenuTypes.register(MENU_TYPES);
-            }
-        }
-        if (ModList.get().isLoaded("mekanism_extras")) {
-            MekanismExtrasMenuTypes.register(MENU_TYPES);
-            if (OptionalCompatClasses.hasMekanismExtrasMoreMachineFactories()) {
-                MekanismExtrasMoreMachineMenuTypes.register(MENU_TYPES);
-            }
-            if (OptionalCompatClasses.hasMekanismExtrasAdvancedFactories()) {
-                MekanismExtrasAdvancedMenuTypes.register(MENU_TYPES);
-            }
-        }
-        if (ModList.get().isLoaded("emextras")) {
-            EvolvedMekanismExtrasMenuTypes.register(MENU_TYPES);
-        }
+        CompatMachineProviders.available().forEach(provider -> provider.registerMenus(MENU_TYPES));
     }
 
     private ModMenuTypes() {
@@ -224,6 +207,7 @@ public final class ModMenuTypes {
         containers.put(MeMekanismMachine.ISOTOPIC_CENTRIFUGE, ME_ISOTOPIC_CENTRIFUGE);
         containers.put(MeMekanismMachine.NUTRITIONAL_LIQUIFIER, ME_NUTRITIONAL_LIQUIFIER);
         containers.put(MeMekanismMachine.ANTIPROTONIC_NUCLEOSYNTHESIZER, ME_ANTIPROTONIC_NUCLEOSYNTHESIZER);
+        containers.put(MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER, ME_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER);
         containers.put(MeMekanismMachine.PIGMENT_EXTRACTOR, ME_PIGMENT_EXTRACTOR);
         containers.put(MeMekanismMachine.PIGMENT_MIXER, ME_PIGMENT_MIXER);
         containers.put(MeMekanismMachine.PAINTING_MACHINE, ME_PAINTING_MACHINE);
@@ -232,17 +216,13 @@ public final class ModMenuTypes {
 
     public static ContainerTypeRegistryObject<? extends MekanismTileContainer<? extends TileEntityMekanism>> getMachineContainer(
             MeMekanismMachine machine) {
-        if (machine.isMoreMachineAdvancedFactory()) {
-            return machine.extraFactoryTierName() == null ? ME_ADVANCED_FACTORY : ME_EXTRA_ADVANCED_FACTORY;
-        } else if (machine.isMoreMachineFactory()) {
-            return machine.extraFactoryTierName() == null ? ME_MORE_MACHINE_FACTORY : ME_EXTRA_MORE_MACHINE_FACTORY;
-        } else if (machine.extraFactoryTierName() != null && (machine.factoryType() != null || "alloying".equals(machine.customFactoryTypeName()))) {
-            return ME_EXTRA_FACTORY;
-        } else if (machine.isEvolvedMekanismExtrasFactory()) {
-            return ME_EM_EXTRA_FACTORY;
-        } else if (machine.isFactory()) {
-            return ME_FACTORY;
-        } else if (machine.slotLayout() == MeMekanismMachine.SlotLayout.SINGLE_ITEM && machine.hasRecipeLogic()) {
+        var spec = CompatMachineCatalog.get(machine);
+        return asMachineContainer(CompatMachineProviders.get(spec.provider()).menuType(spec));
+    }
+
+    public static ContainerTypeRegistryObject<? extends MekanismTileContainer<? extends TileEntityMekanism>> getCoreMachineContainer(
+            MeMekanismMachine machine) {
+        if (machine.slotLayout() == MeMekanismMachine.SlotLayout.SINGLE_ITEM && machine.hasRecipeLogic()) {
             return ME_ELECTRIC_MACHINE;
         } else if (machine.hasAdvancedChemicalInput()) {
             return ME_ADVANCED_ELECTRIC_MACHINE;

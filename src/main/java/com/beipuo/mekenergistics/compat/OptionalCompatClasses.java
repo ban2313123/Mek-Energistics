@@ -12,6 +12,12 @@ public final class OptionalCompatClasses {
             "com/jerry/mekextras/common/integration/mekaf/tile/factory/base/TileEntityExtraAdvancedFactoryBase.class";
     private static final String MEKE_EXTRA_MORE_MACHINE_FACTORY =
             "com/jerry/mekextras/common/integration/mekmm/tile/factory/TileEntityExtraMoreMachineFactory.class";
+    private static final String MEKMM_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER =
+            "com/jerry/meklm/common/tile/machine/TileEntityLargeAntiprotonicNucleosynthesizer.class";
+    private static final String EMEKE_ADVANCED_FACTORY =
+            "io/github/masyumero/emextras/common/integration/mekaf/tile/factory/base/TileEntityEMExtraAdvancedFactoryBase.class";
+    private static final String EMEKE_MORE_MACHINE_FACTORY =
+            "io/github/masyumero/emextras/common/integration/mekmm/tile/factory/TileEntityEMExtraMoreMachineFactory.class";
 
     private OptionalCompatClasses() {
     }
@@ -86,12 +92,24 @@ public final class OptionalCompatClasses {
         return hasMekmm() && hasClassResource(MEKAF_ITEM_TO_CHEMICAL_FACTORY);
     }
 
+    public static boolean hasMekmmLargeMachines() {
+        return hasMekmm() && hasClassResource(MEKMM_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER);
+    }
+
     public static boolean hasMekanismExtrasAdvancedFactories() {
         return hasMekanismExtras() && hasMekmmAdvancedFactories() && hasClassResource(MEKE_EXTRA_ADVANCED_FACTORY);
     }
 
     public static boolean hasMekanismExtrasMoreMachineFactories() {
         return hasMekanismExtras() && hasMekmm() && hasClassResource(MEKE_EXTRA_MORE_MACHINE_FACTORY);
+    }
+
+    public static boolean hasEvolvedMekanismExtrasAdvancedFactories() {
+        return hasEvolvedMekanismExtras() && hasMekmmAdvancedFactories() && hasClassResource(EMEKE_ADVANCED_FACTORY);
+    }
+
+    public static boolean hasEvolvedMekanismExtrasMoreMachineFactories() {
+        return hasEvolvedMekanismExtras() && hasMekmm() && hasClassResource(EMEKE_MORE_MACHINE_FACTORY);
     }
 
     private static boolean hasClassResource(String path) {

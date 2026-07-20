@@ -110,6 +110,10 @@
       "required": false
     },
     {
+      "id": "mekenergistics:me_large_antiprotonic_nucleosynthesizer",
+      "required": false
+    },
+    {
       "id": "mekenergistics:me_pigment_extractor",
       "required": false
     },
@@ -838,6 +842,10 @@
       "required": false
     },
     {
+      "id": "mekenergistics:me_basic_pressing_factory",
+      "required": false
+    },
+    {
       "id": "mekenergistics:me_basic_lathing_factory",
       "required": false
     },
@@ -859,6 +867,10 @@
     },
     {
       "id": "mekenergistics:me_advanced_stamping_factory",
+      "required": false
+    },
+    {
+      "id": "mekenergistics:me_advanced_pressing_factory",
       "required": false
     },
     {
@@ -886,6 +898,10 @@
       "required": false
     },
     {
+      "id": "mekenergistics:me_elite_pressing_factory",
+      "required": false
+    },
+    {
       "id": "mekenergistics:me_elite_lathing_factory",
       "required": false
     },
@@ -907,6 +923,10 @@
     },
     {
       "id": "mekenergistics:me_ultimate_stamping_factory",
+      "required": false
+    },
+    {
+      "id": "mekenergistics:me_ultimate_pressing_factory",
       "required": false
     },
     {

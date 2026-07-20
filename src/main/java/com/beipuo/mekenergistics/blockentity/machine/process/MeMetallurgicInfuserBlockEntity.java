@@ -55,7 +55,9 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
         }
         return this.aeSupport;
     }
-    private AeOutputMode aeOutputMode = AeOutputMode.BOTH;
+    // A new infuser defaults to reaction mode; enabling chemical AE output
+    // turns it into the item-to-chemical conversion role.
+    private AeOutputMode aeOutputMode = AeOutputMode.ITEMS;
 
     public MeMetallurgicInfuserBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(pos, state);
@@ -83,7 +85,11 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
         boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
         sendUpdatePacket |= super.onUpdateServer();
         OutputInventorySlot output = ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getOutputSlot();
-        return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
+        boolean changed = getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
+        if (this.aeOutputMode.chemicals()) {
+            changed |= getRecipeAeSupport().drainChemicalOutputs(this.aeOutputMode, false, this.infusionTank);
+        }
+        return changed;
     }
 
     @NotNull
@@ -95,17 +101,23 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
 
     @Override
     public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 2) {
+        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null) {
             return false;
         }
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        InputInventorySlot inputSlot = ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInputSlot();
-        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.infusionTank);
+        return feedPatternInputs(inputHolder);
     }
 
     private boolean feedPatternInputs(KeyCounter[] inputHolder) {
+        if (this.aeOutputMode.chemicals()) {
+            if (inputHolder == null || inputHolder.length != 1) {
+                return false;
+            }
+            return getRecipeAeSupport().pushSingleItem(inputHolder,
+                    ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInfusionSlot());
+        }
         InputInventorySlot inputSlot = ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInputSlot();
         return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.infusionTank);
     }
@@ -120,6 +132,11 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
     @Override public void onChunkUnloaded() { getRecipeAeSupport().destroyNode(); super.onChunkUnloaded(); }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); getRecipeAeSupport().addAeTrackers(container, this::getAeOutputMode, mode -> this.aeOutputMode = mode, true); }
     @Override public void saveAdditional(CompoundTag tag, HolderLookup.@NotNull Provider registries) { super.saveAdditional(tag, registries); getRecipeAeSupport().saveAeState(tag, registries, this.aeOutputMode); }
-    @Override public void loadAdditional(CompoundTag tag, HolderLookup.@NotNull Provider registries) { super.loadAdditional(tag, registries); this.aeOutputMode = getRecipeAeSupport().loadAeState(tag, registries); }
+    @Override public void loadAdditional(CompoundTag tag, HolderLookup.@NotNull Provider registries) {
+        super.loadAdditional(tag, registries);
+        this.aeOutputMode = tag.contains("AeOutputMode")
+                ? getRecipeAeSupport().loadAeState(tag, registries)
+                : AeOutputMode.ITEMS;
+    }
 }
 

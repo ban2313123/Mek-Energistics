@@ -98,7 +98,8 @@ public class MeChemicalDissolutionChamberBlockEntity extends TileEntityChemicalD
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
         InputInventorySlot inputSlot = ((TileEntityChemicalDissolutionChamberAccessor) this).mekenergistics$getInputSlot();
-        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.injectTank);
+        return getRecipeAeSupport().pushItemChemicalOrConversion(inputHolder, inputSlot, this.injectTank,
+                ((TileEntityChemicalDissolutionChamberAccessor) this).mekenergistics$getGasInputSlot());
     }
 
     @Override public boolean isBusy() { return false; }

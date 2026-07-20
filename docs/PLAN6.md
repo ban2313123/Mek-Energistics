@@ -2,6 +2,8 @@
 
 ## Summary
 
+> 当前状态（2026-07）：MoreMachine、Mekanism Extras、Evolved Mekanism 已迁移到共同 `MeFactoryAeSupport`；`MeExternalFactorySupport`、`MeExtraFactoryBridge`、`MeAdvancedFactorySupport` 和 `MeFactoryPatternInput` 已删除。本文中描述这些旧层的条目仅保留为历史记录，不再是待执行任务。
+
 当前基线为 `refactor/recipe-support-init-hardening`，HEAD `db934e5 Harden recipe AE support initialization`。已完成 AE support 默认委托、UI/Menu helper、pattern decode hardening、legacy/factory helper、energy wrapper、recipe/factory 构造顺序硬化。后续总目标不再盲目扩大抽象，而是按“剩余风险清零 -> 旧路径收口 -> 可维护性收尾 -> 最终验证”的顺序结束本轮重构。
 
 全程不改方块 ID、菜单 ID、注册名、NBT tag、recipe JSON、blockstate JSON、世界兼容格式；不合并 optional compat 注册/客户端类；不 Builder 化 `MeMekanismMachine`；不抽大而全的 `MeAeSupportBase`，除非最后一阶段有测试证明收益大于风险。

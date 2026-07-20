@@ -15,6 +15,8 @@ import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEKey;
+import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
@@ -210,8 +212,9 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
         for (MeOutputPort output : outputPorts) {
             AEKey key = output.key();
             if (key == null || output.amount() <= 0
-                    || key instanceof appeng.api.stacks.AEItemKey && !mode.items()
-                    || !(key instanceof appeng.api.stacks.AEItemKey) && !mode.chemicals()) {
+                    || key instanceof AEItemKey && !mode.items()
+                    || key instanceof AEFluidKey && !mode.fluids()
+                    || !(key instanceof AEItemKey) && !(key instanceof AEFluidKey) && !mode.chemicals()) {
                 continue;
             }
             long inserted = insertIntoNetwork(key, output.amount());

@@ -2,17 +2,12 @@ package com.beipuo.mekenergistics.blockentity.factory;
 
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
 
-import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
-import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
-import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.mixin.TileEntityItemStackChemicalToItemStackFactoryAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
-import mekanism.api.Action;
-import mekanism.api.AutomationType;
 import mekanism.api.IContentsListener;
 import mekanism.api.recipes.ItemStackChemicalToItemStackRecipe;
 import mekanism.api.recipes.cache.CachedRecipe;
@@ -21,7 +16,6 @@ import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.tile.factory.TileEntityItemStackChemicalToItemStackFactory;
-import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -34,7 +28,6 @@ import org.jetbrains.annotations.NotNull;
 public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntityItemStackChemicalToItemStackFactory implements MeFactoryAeMachine {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
-    private final ItemChemicalInputFeeder itemChemicalInputFeeder = new ItemChemicalInputFeeder();
 
     public MeItemStackChemicalToItemStackFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(ModBlocks.getMachineBlock(machine), pos, state);
@@ -93,13 +86,8 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
         if (this.aeSupport.isSmartPatternMultiplicationEnabled()) {
             return this.aeSupport.enqueueSmartPattern(patternDetails, inputHolder);
         }
-        return this.aeSupport.pushItemChemical(inputHolder, this.inputSlots, getChemicalTank());
-    }
-
-    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
-        List<MeInputPort> ports = new ArrayList<>(this.inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
-        ports.add(MeMachineIoAdapter.chemicalInput(getChemicalTank()));
-        return getAeSupport().pushPatternInputs(inputHolder, ports);
+        return this.aeSupport.pushItemChemicalOrConversion(inputHolder, this.inputSlots, getChemicalTank(),
+                ((TileEntityItemStackChemicalToItemStackFactoryAccessor) this).mekenergistics$getExtraSlot());
     }
 
     @Override
@@ -109,9 +97,10 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = this.aeSupport.processSmartPatternIfOutputsClear(this.itemChemicalInputFeeder, this.outputSlots);
-        sendUpdatePacket |= super.onUpdateServer();
-        return this.aeSupport.processSmartPatternAfterOutputDrain(this.itemChemicalInputFeeder, this.outputSlots, sendUpdatePacket);
+        boolean sendUpdatePacket = super.onUpdateServer();
+        return this.aeSupport.processItemChemicalOrConversionSmartPatterns(
+                getChemicalTank(), ((TileEntityItemStackChemicalToItemStackFactoryAccessor) this).mekenergistics$getExtraSlot(),
+                this.outputSlots, List.of(), this.inputSlots) || sendUpdatePacket;
     }
 
     @Override
@@ -150,21 +139,4 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
         this.aeSupport.loadAll(tag, registries);
     }
 
-    private final class ItemChemicalInputFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
-        @Override
-        public boolean feed(KeyCounter[] oneCraftInputs) {
-            return feedPatternInputs(oneCraftInputs);
-        }
-
-        @Override
-        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(oneCraftInputs);
-            if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
-                return 0;
-            }
-            long itemCopies = MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(inputSlots, input.item());
-            long chemicalCopies = MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(getChemicalTank(), input.chemical());
-            return Math.min(itemCopies, chemicalCopies);
-        }
-    }
 }

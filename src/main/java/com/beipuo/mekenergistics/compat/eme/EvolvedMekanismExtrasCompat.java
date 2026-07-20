@@ -5,6 +5,16 @@ import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraAlloyin
 import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraCombiningFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraItemStackChemicalToItemStackFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraItemStackToItemStackFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraDissolvingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraWashingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraCrystallizingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraPressurizedReactingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraCentrifugingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraLiquifyingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraPaintingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraPlantingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraReplicatingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraItemToChemicalFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraSawingFactoryBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
@@ -21,9 +31,16 @@ import io.github.masyumero.emextras.common.content.blocktype.EMExtraFactoryType;
 import io.github.masyumero.emextras.api.tier.EMExtraTier;
 import io.github.masyumero.emextras.common.item.EMExtraItemTierInstaller;
 import io.github.masyumero.emextras.common.tier.EMExtraFactoryTier;
+import com.jerry.mekaf.common.content.blocktype.AdvancedFactoryType;
+import com.jerry.mekaf.common.block.attribute.AttributeAdvancedFactoryType;
+import com.jerry.mekmm.common.content.blocktype.MoreMachineFactoryType;
+import com.jerry.mekmm.common.block.attribute.MoreMachineAttributeFactoryType;
+import io.github.masyumero.emextras.common.integration.mekaf.content.blocktype.EMExtraAdvancedFactory;
+import io.github.masyumero.emextras.common.integration.mekmm.content.blocktype.EMExtraMoreMachineFactory;
 import java.util.Locale;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeFactoryType;
+import mekanism.common.block.attribute.AttributeGui;
 import mekanism.common.block.attribute.AttributeStateFacing;
 import mekanism.common.block.attribute.AttributeUpgradeSupport;
 import mekanism.common.block.attribute.Attributes;
@@ -45,6 +62,9 @@ public final class EvolvedMekanismExtrasCompat {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerFactoryMachine(
             MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
+        if (machine.isEvolvedMekanismExtrasAdvancedFactory()) {
+            return registerAdvancedFactoryMachine(machine, registrar);
+        }
         if ("alloying".equals(machine.customFactoryTypeName())) {
             return registrar.register(machine, MeEMExtraAlloyingFactoryBlockEntity::new);
         }
@@ -57,8 +77,30 @@ public final class EvolvedMekanismExtrasCompat {
         return (TileEntityTypeRegistryObject) registered;
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerAdvancedFactoryMachine(
+            MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
+        TileEntityTypeRegistryObject<?> registered = switch (machine.customFactoryTypeName()) {
+            case "oxidizing", "pigment_extracting" -> registrar.register(machine, MeEMExtraItemToChemicalFactoryBlockEntity::new);
+            case "dissolving" -> registrar.register(machine, MeEMExtraDissolvingFactoryBlockEntity::new);
+            case "painting" -> registrar.register(machine, MeEMExtraPaintingFactoryBlockEntity::new);
+            case "planting" -> registrar.register(machine, MeEMExtraPlantingFactoryBlockEntity::new);
+            case "replicating" -> registrar.register(machine, MeEMExtraReplicatingFactoryBlockEntity::new);
+            case "washing" -> registrar.register(machine, MeEMExtraWashingFactoryBlockEntity::new);
+            case "crystallizing" -> registrar.register(machine, MeEMExtraCrystallizingFactoryBlockEntity::new);
+            case "pressurised_reacting" -> registrar.register(machine, MeEMExtraPressurizedReactingFactoryBlockEntity::new);
+            case "centrifuging" -> registrar.register(machine, MeEMExtraCentrifugingFactoryBlockEntity::new);
+            case "liquifying" -> registrar.register(machine, MeEMExtraLiquifyingFactoryBlockEntity::new);
+            default -> throw new IllegalStateException("Unknown EMEKE advanced factory: " + machine.customFactoryTypeName());
+        };
+        return (TileEntityTypeRegistryObject) registered;
+    }
+
     public static <TILE extends TileEntityMekanism> BlockTypeTile<TILE> createFactoryBlockType(
             MeMekanismMachine machine, TileEntityTypeRegistryObject<TILE> tileType) {
+        if (machine.isEvolvedMekanismExtrasAdvancedFactory()) {
+            return createAdvancedFactoryBlockType(machine, tileType);
+        }
         EMExtraFactoryType type = emExtraFactoryType(machine.factoryTypeName());
         var builder = BlockTypeTile.BlockTileBuilder
                 .createBlock(() -> tileType, machine::translationKey)
@@ -78,6 +120,30 @@ public final class EvolvedMekanismExtrasCompat {
             builder.with(new MeUpgradeableAttribute(() -> ModBlocks.getMachineBlock(upgradeTarget).get()));
         }
         return builder.build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <TILE extends TileEntityMekanism> BlockTypeTile<TILE> createAdvancedFactoryBlockType(
+            MeMekanismMachine machine, TileEntityTypeRegistryObject<TILE> tileType) {
+        EMExtraFactoryTier tier = emExtraTier(machine);
+        if ("oxidizing".equals(machine.customFactoryTypeName())
+                || "pigment_extracting".equals(machine.customFactoryTypeName())
+                || "dissolving".equals(machine.customFactoryTypeName())
+                || "painting".equals(machine.customFactoryTypeName())
+                || "washing".equals(machine.customFactoryTypeName())
+                || "crystallizing".equals(machine.customFactoryTypeName())
+                || "pressurised_reacting".equals(machine.customFactoryTypeName())
+                || "centrifuging".equals(machine.customFactoryTypeName())
+                || "liquifying".equals(machine.customFactoryTypeName())) {
+            var builder = EMExtraAdvancedFactory.EMExtraAdvancedFactoryBuilder.createAdvancedFactory(
+                    () -> tileType, AdvancedFactoryType.valueOf(machine.customFactoryTypeName().toUpperCase(Locale.ROOT)), tier);
+            builder.replace(new AttributeGui(() -> ModMenuTypes.ME_EM_EXTRA_ADVANCED_FACTORY, null));
+            return (BlockTypeTile<TILE>) builder.build();
+        }
+        var builder = EMExtraMoreMachineFactory.EMExtraMoreMachineFactoryBuilder.createMoreMachineFactory(
+                () -> tileType, MoreMachineFactoryType.valueOf(machine.customFactoryTypeName().equals("planting") ? "PLANTING_STATION" : "REPLICATING"), tier);
+        builder.replace(new AttributeGui(() -> ModMenuTypes.ME_EM_EXTRA_MORE_MACHINE_FACTORY, null));
+        return (BlockTypeTile<TILE>) builder.build();
     }
 
     private static AttributeUpgradeSupport emExtraUpgradeSupport(String typeName) {
@@ -107,7 +173,31 @@ public final class EvolvedMekanismExtrasCompat {
     }
 
     @Nullable
-    public static MeMekanismMachine getFactoryTarget(BlockState state) {
+    public static MeMekanismMachine getAdvancedFactoryTarget(BlockState state) {
+        EMExtraFactoryTier advancedTier = EMExtraAttribute.getEMExtraTier(state.getBlock(), EMExtraFactoryTier.class);
+        if (advancedTier == null) {
+            return null;
+        }
+        AttributeAdvancedFactoryType advanced = Attribute.get(state, AttributeAdvancedFactoryType.class);
+        return advanced == null ? null : MeMekanismMachine.getEvolvedMekanismExtrasFactory(
+                advancedTier.name().toLowerCase(Locale.ROOT),
+                advanced.getAdvancedFactoryType().getRegistryNameComponent());
+    }
+
+    @Nullable
+    public static MeMekanismMachine getMoreMachineFactoryTarget(BlockState state) {
+        EMExtraFactoryTier advancedTier = EMExtraAttribute.getEMExtraTier(state.getBlock(), EMExtraFactoryTier.class);
+        if (advancedTier == null) {
+            return null;
+        }
+        MoreMachineAttributeFactoryType moreMachine = Attribute.get(state, MoreMachineAttributeFactoryType.class);
+        return moreMachine == null ? null : MeMekanismMachine.getEvolvedMekanismExtrasFactory(
+                advancedTier.name().toLowerCase(Locale.ROOT),
+                moreMachine.getMoreMachineFactoryType().getRegistryNameComponent());
+    }
+
+    @Nullable
+    public static MeMekanismMachine getBaseFactoryTarget(BlockState state) {
         EMExtraAttributeFactoryType typeAttribute = Attribute.get(state, EMExtraAttributeFactoryType.class);
         EMExtraFactoryTier tier = EMExtraAttribute.getEMExtraTier(state.getBlock(), EMExtraFactoryTier.class);
         if (typeAttribute == null || tier == null) {

@@ -3,20 +3,27 @@ package com.beipuo.mekenergistics.blockentity.api;
 import mekanism.common.lib.transmitter.TransmissionType;
 
 public enum AeOutputMode {
-    BOTH("AE: All", true, true),
-    ITEMS("AE: Item", true, false),
-    CHEMICALS("AE: Chem", false, true),
-    NONE("AE: Off", false, false);
+    // Keep the original four entries in the same order for old NBT.
+    BOTH("AE: Item/Chem", true, true, false),
+    ITEMS("AE: Item", true, false, false),
+    CHEMICALS("AE: Chem", false, true, false),
+    NONE("AE: Off", false, false, false),
+    ALL("AE: All", true, true, true),
+    ITEMS_FLUIDS("AE: Item/Fluid", true, false, true),
+    CHEMICALS_FLUIDS("AE: Chem/Fluid", false, true, true),
+    FLUIDS("AE: Fluid", false, false, true);
 
     private static final AeOutputMode[] VALUES = values();
     private final String label;
     private final boolean items;
     private final boolean chemicals;
+    private final boolean fluids;
 
-    AeOutputMode(String label, boolean items, boolean chemicals) {
+    AeOutputMode(String label, boolean items, boolean chemicals, boolean fluids) {
         this.label = label;
         this.items = items;
         this.chemicals = chemicals;
+        this.fluids = fluids;
     }
 
     public String label() {
@@ -31,21 +38,30 @@ public enum AeOutputMode {
         return this.chemicals;
     }
 
+    public boolean fluids() {
+        return this.fluids;
+    }
+
     public AeOutputMode next() {
         return VALUES[(ordinal() + 1) % VALUES.length];
     }
 
     public AeOutputMode toggle(TransmissionType type) {
         return switch (type) {
-            case ITEM -> byFlags(!this.items, this.chemicals);
-            case CHEMICAL -> byFlags(this.items, !this.chemicals);
+            case ITEM -> byFlags(!this.items, this.chemicals, this.fluids);
+            case CHEMICAL -> byFlags(this.items, !this.chemicals, this.fluids);
+            case FLUID -> byFlags(this.items, this.chemicals, !this.fluids);
             default -> this;
         };
     }
 
     private static AeOutputMode byFlags(boolean items, boolean chemicals) {
+        return byFlags(items, chemicals, false);
+    }
+
+    private static AeOutputMode byFlags(boolean items, boolean chemicals, boolean fluids) {
         for (AeOutputMode mode : VALUES) {
-            if (mode.items == items && mode.chemicals == chemicals) {
+            if (mode.items == items && mode.chemicals == chemicals && mode.fluids == fluids) {
                 return mode;
             }
         }

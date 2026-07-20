@@ -5,7 +5,9 @@ import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import java.util.List;
+import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -23,7 +25,23 @@ public final class MeMekanismMachineAeSupport extends AbstractMeAeSupport<MeMeka
         if (isSmartPatternMultiplicationEnabled()) {
             return enqueueSmartPattern(patternDetails, inputHolder);
         }
-        boolean inserted = MePatternInputRouter.route(inputHolder, this.owner.getAeInputPorts(inputHolder == null ? 0 : inputHolder.length));
+        boolean inserted;
+        if (inputHolder != null && inputHolder.length == 2
+                && this.owner.getMachine().slotLayout() == com.beipuo.mekenergistics.common.machine.MeMekanismMachine.SlotLayout.ITEM_CHEMICAL
+                && MeChemicalInputCapability.forMachineType(this.owner.getMachine().factoryTypeName()).acceptsConversionCarrier()
+                && this.owner.getChemicalTank() != null) {
+            IInventorySlot primary = this.owner.getAePrimaryInputSlot();
+            var secondary = List.of(MeMachineIoAdapter.chemicalInput(this.owner.getChemicalTank()),
+                    MeMachineIoAdapter.itemInput(this.owner.getAeConversionSlot()));
+            inserted = MePatternInputRouter.routeLanes(inputHolder,
+                    List.of(List.of(MeMachineIoAdapter.itemInput(primary)), secondary));
+            if (!inserted) {
+                inserted = MePatternInputRouter.routeLanes(inputHolder,
+                        List.of(secondary, List.of(MeMachineIoAdapter.itemInput(primary))));
+            }
+        } else {
+            inserted = MePatternInputRouter.route(inputHolder, this.owner.getAeInputPorts(inputHolder == null ? 0 : inputHolder.length));
+        }
         if (inserted) {
             this.owner.setChanged();
         }

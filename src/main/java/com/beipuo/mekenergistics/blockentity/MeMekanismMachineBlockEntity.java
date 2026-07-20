@@ -24,7 +24,6 @@ import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
-import com.beipuo.mekenergistics.compat.mekmm.MekanismMoreMachineRecipeHelper;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import mekanism.api.Action;
 import mekanism.api.AutomationType;
@@ -260,6 +259,15 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         return this.chemicalTank;
     }
 
+    /** Secondary physical input used by the generic item+chemical layout's conversion slot. */
+    public IInventorySlot getAePrimaryInputSlot() {
+        return slots()[INPUT_SLOT];
+    }
+
+    public IInventorySlot getAeConversionSlot() {
+        return slots()[SECONDARY_INPUT_SLOT];
+    }
+
     public double getScaledProgress() {
         return this.ticksRequired <= 0 ? 0 : this.operatingTicks / (double) this.ticksRequired;
     }
@@ -322,13 +330,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         if (input.isEmpty()) {
             return false;
         }
-        if (this.machine == MeMekanismMachine.RECYCLER) {
-            MekanismMoreMachineRecipeHelper.ItemResult result = MekanismMoreMachineRecipeHelper.findRecycler(this.level, input, true);
-            if (result == null) {
-                return false;
-            }
-            return result.needed() > 0 && !result.output().isEmpty() && canFitOutput(OUTPUT_SLOT, result.output());
-        }
         ItemStackToItemStackRecipe recipe = getSingleItemRecipe(input);
         if (recipe == null) {
             return false;
@@ -340,12 +341,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
 
     @Nullable
     private ItemStackToItemStackRecipe getSingleItemRecipe(ItemStack input) {
-        if (this.machine == MeMekanismMachine.CNC_LATHE) {
-            return MekanismMoreMachineRecipeHelper.findSingleItemRecipe(this.level, this.machine, input);
-        }
-        if (this.machine == MeMekanismMachine.CNC_ROLLING_MILL) {
-            return MekanismMoreMachineRecipeHelper.findSingleItemRecipe(this.level, this.machine, input);
-        }
         return switch (this.machine.factoryType()) {
             case ENRICHING -> MekanismRecipeType.ENRICHING.getInputCache().findFirstRecipe(this.level, input);
             case CRUSHING -> MekanismRecipeType.CRUSHING.getInputCache().findFirstRecipe(this.level, input);
@@ -359,13 +354,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         ItemStack secondary = getStack(SECONDARY_INPUT_SLOT);
         if (input.isEmpty() || secondary.isEmpty()) {
             return false;
-        }
-        if (this.machine == MeMekanismMachine.CNC_STAMPER) {
-            MekanismMoreMachineRecipeHelper.StamperResult result = MekanismMoreMachineRecipeHelper.findStamper(this.level, input, secondary);
-            if (result == null) {
-                return false;
-            }
-            return result.neededInput() > 0 && result.neededMold() > 0 && !result.output().isEmpty() && canFitOutput(OUTPUT_SLOT, result.output());
         }
         CombinerRecipe recipe = MekanismRecipeType.COMBINING.getInputCache().findFirstRecipe(this.level, input, secondary);
         if (recipe == null) {
@@ -423,23 +411,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         if (input.isEmpty()) {
             return;
         }
-        if (this.machine == MeMekanismMachine.RECYCLER) {
-            MekanismMoreMachineRecipeHelper.ItemResult result = MekanismMoreMachineRecipeHelper.findRecycler(this.level, input, false);
-            if (result == null) {
-                return;
-            }
-            int needed = result.needed();
-            ItemStack output = result.output();
-            if (needed <= 0 || output.isEmpty() || !canFitOutput(OUTPUT_SLOT, output)) {
-                return;
-            }
-            input.shrink(needed);
-            setStack(INPUT_SLOT, input.isEmpty() ? ItemStack.EMPTY : input);
-            addToOutput(OUTPUT_SLOT, output);
-            setChanged();
-            return;
-        }
-
         ItemStackToItemStackRecipe recipe = getSingleItemRecipe(input);
         if (recipe == null) {
             return;
@@ -462,26 +433,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         if (input.isEmpty() || secondary.isEmpty()) {
             return;
         }
-        if (this.machine == MeMekanismMachine.CNC_STAMPER) {
-            MekanismMoreMachineRecipeHelper.StamperResult result = MekanismMoreMachineRecipeHelper.findStamper(this.level, input, secondary);
-            if (result == null) {
-                return;
-            }
-            int neededInput = result.neededInput();
-            int neededSecondary = result.neededMold();
-            ItemStack output = result.output();
-            if (neededInput <= 0 || neededSecondary <= 0 || output.isEmpty() || !canFitOutput(OUTPUT_SLOT, output)) {
-                return;
-            }
-            input.shrink(neededInput);
-            secondary.shrink(neededSecondary);
-            setStack(INPUT_SLOT, input.isEmpty() ? ItemStack.EMPTY : input);
-            setStack(SECONDARY_INPUT_SLOT, secondary.isEmpty() ? ItemStack.EMPTY : secondary);
-            addToOutput(OUTPUT_SLOT, output);
-            setChanged();
-            return;
-        }
-
         CombinerRecipe recipe = MekanismRecipeType.COMBINING.getInputCache().findFirstRecipe(this.level, input, secondary);
         if (recipe == null) {
             return;
@@ -676,6 +627,10 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
             }
             if (output.key() instanceof appeng.api.stacks.AEItemKey) {
                 if (this.aeOutputMode.items()) {
+                    return true;
+                }
+            } else if (output.key() instanceof appeng.api.stacks.AEFluidKey) {
+                if (this.aeOutputMode.fluids()) {
                     return true;
                 }
             } else if (this.aeOutputMode.chemicals()) {

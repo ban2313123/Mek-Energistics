@@ -11,4 +11,6 @@ public interface MeAeSupportOwner extends ICraftingProvider, IActionHost {
     MeMekanismMachine getMachine();
 
     void saveChanges();
+
+    boolean isSmartPatternMultiplicationEnabled();
 }

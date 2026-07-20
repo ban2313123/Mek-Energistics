@@ -39,7 +39,7 @@ public class MeExtraAdvancedPressurizedReactingFactoryBlockEntity extends TileEn
     @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public mekanism.api.recipes.cache.CachedRecipe<mekanism.api.recipes.PressurizedReactionRecipe> createNewCachedRecipe(@NotNull mekanism.api.recipes.PressurizedReactionRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
-    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = getAeSupport().processItemFluidChemicalSmartPatterns(this.inputItemSlots, this.inputFluidTank, this.inputChemicalTank, this.outputItemSlots, List.of(this.outputChemicalTank)); sendUpdatePacket |= super.onUpdateServer(); return getAeSupport().processItemFluidChemicalSmartPatterns(this.inputItemSlots, this.inputFluidTank, this.inputChemicalTank, this.outputItemSlots, List.of(this.outputChemicalTank)) || sendUpdatePacket; }
+    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = super.onUpdateServer(); sendUpdatePacket |= getAeSupport().processItemFluidChemicalSmartPatterns(this.inputItemSlots, this.inputFluidTank, this.inputChemicalTank, this.outputItemSlots, List.of(this.outputChemicalTank)); return sendUpdatePacket; }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

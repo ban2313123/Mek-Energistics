@@ -9,6 +9,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -100,40 +101,9 @@ public class MeRotaryCondensentratorBlockEntity extends TileEntityRotaryCondense
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[0]);
-        if (input == null) {
-            return false;
-        }
-        if (getMode()) {
-            return insertFluidInput(input);
-        }
-        return insertChemicalInput(input);
-    }
-
-    private boolean insertFluidInput(com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input) {
-        if (!input.isFluid()) {
-            return false;
-        }
-        FluidStack fluidInput = input.fluid();
-        if (fluidInput.isEmpty() || !this.fluidTank.insert(fluidInput.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        this.fluidTank.insert(fluidInput, Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
-    }
-
-    private boolean insertChemicalInput(com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input) {
-        if (!input.isChemical()) {
-            return false;
-        }
-        ChemicalStack chemicalInput = input.chemical();
-        if (chemicalInput.isEmpty() || this.gasTank.insert(chemicalInput.copy(), Action.SIMULATE, AutomationType.INTERNAL).getAmount() != 0) {
-            return false;
-        }
-        this.gasTank.insert(chemicalInput, Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushPatternInputs(inputHolder, java.util.List.of(
+                getMode() ? MeMachineIoAdapter.fluidInput(this.fluidTank)
+                        : MeMachineIoAdapter.chemicalInput(this.gasTank)));
     }
 
     @Override public boolean isBusy() { return false; }

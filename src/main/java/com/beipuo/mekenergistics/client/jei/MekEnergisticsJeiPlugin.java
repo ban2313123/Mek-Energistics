@@ -4,6 +4,8 @@ import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.client.jei.compat.MekanismMoreMachineJeiCompat;
 import com.beipuo.mekenergistics.client.overlay.MePatternWindowOverlay;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.registry.ModItems;
 import java.lang.reflect.InvocationTargetException;
@@ -161,11 +163,9 @@ public class MekEnergisticsJeiPlugin implements IModPlugin {
     private static List<ItemStack> hiddenStacks() {
         List<ItemStack> stacks = new ArrayList<>();
         addHiddenStack(stacks, MeMekanismMachine.SEISMIC_VIBRATOR);
-        for (MeMekanismMachine machine : MeMekanismMachine.values()) {
-            if (machine.isFactory()) {
-                addHiddenStack(stacks, machine);
-            }
-        }
+        CompatMachineCatalog.available()
+                .filter(spec -> spec.kind() != CompatMachineKind.MACHINE)
+                .forEach(spec -> addHiddenStack(stacks, spec.machine()));
         return stacks;
     }
 

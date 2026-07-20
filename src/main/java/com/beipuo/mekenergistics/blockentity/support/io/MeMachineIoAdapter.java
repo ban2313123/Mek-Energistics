@@ -4,6 +4,8 @@ import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import me.ramidzkh.mekae2.ae2.MekanismKey;
+import java.util.ArrayList;
+import java.util.List;
 import mekanism.api.Action;
 import mekanism.api.AutomationType;
 import mekanism.api.chemical.ChemicalStack;
@@ -42,6 +44,60 @@ public final class MeMachineIoAdapter {
             @Override
             public void restore(Object snapshot) {
                 slot.setStack(((ItemStack) snapshot).copy());
+            }
+        };
+    }
+
+    /**
+     * Treats the parallel item inputs of a Mekanism factory as one physical
+     * input. Mekanism performs its recipe-aware redistribution before the next
+     * processing pass; duplicating that logic here would incorrectly split
+     * recipes whose per-process input is greater than one.
+     */
+    public static MeInputPort autoSortedFactoryItemInput(List<? extends IInventorySlot> slots) {
+        return groupedInput(slots.stream().map(MeMachineIoAdapter::itemInput).toList());
+    }
+
+    static MeInputPort groupedInput(List<? extends MeInputPort> ports) {
+        List<? extends MeInputPort> inputPorts = List.copyOf(ports);
+        return new MeInputPort() {
+            @Override
+            public boolean supports(AEKey key) {
+                return inputPorts.stream().anyMatch(port -> port.supports(key));
+            }
+
+            @Override
+            public long insert(AEKey key, long amount, Action action) {
+                if (key == null || amount <= 0 || inputPorts.isEmpty()) {
+                    return 0;
+                }
+                long inserted = 0;
+                for (MeInputPort inputPort : inputPorts) {
+                    long offeredAmount = amount - inserted;
+                    if (offeredAmount <= 0) {
+                        break;
+                    }
+                    inserted += inputPort.insert(key, offeredAmount, action);
+                }
+                return inserted;
+            }
+
+            @Override
+            public Object snapshot() {
+                List<Object> snapshot = new ArrayList<>(inputPorts.size());
+                for (MeInputPort inputPort : inputPorts) {
+                    snapshot.add(inputPort.snapshot());
+                }
+                return snapshot;
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public void restore(Object snapshot) {
+                List<Object> states = (List<Object>) snapshot;
+                for (int i = 0; i < inputPorts.size(); i++) {
+                    inputPorts.get(i).restore(states.get(i));
+                }
             }
         };
     }

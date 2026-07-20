@@ -9,8 +9,6 @@ import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
-import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
-import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
@@ -28,6 +26,7 @@ import mekanism.common.inventory.container.sync.SyncableInt;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.inventory.slot.InputInventorySlot;
 import mekanism.common.inventory.slot.OutputInventorySlot;
+import mekanism.common.inventory.slot.chemical.ChemicalInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -43,6 +42,7 @@ final class MeMekmmItemChemicalMachineSupport<TILE extends TileEntityMekanism & 
     private OutputInventorySlot outputSlot;
     private OutputInventorySlot secondaryOutputSlot;
     private IChemicalTank chemicalTank;
+    private IInventorySlot conversionSlot;
 
     MeMekmmItemChemicalMachineSupport(TILE owner, MeMekanismMachine machine) {
         this.owner = owner;
@@ -76,7 +76,9 @@ final class MeMekmmItemChemicalMachineSupport<TILE extends TileEntityMekanism & 
 
     private void captureSlots(IInventorySlotHolder original) {
         for (IInventorySlot slot : original.getInventorySlots(null)) {
-            if (slot instanceof InputInventorySlot input && this.inputSlot == null) {
+            if (slot instanceof ChemicalInventorySlot conversion && this.conversionSlot == null) {
+                this.conversionSlot = conversion;
+            } else if (slot instanceof InputInventorySlot input && this.inputSlot == null) {
                 this.inputSlot = input;
             } else if (slot instanceof OutputInventorySlot output) {
                 if (this.outputSlot == null) {
@@ -102,10 +104,9 @@ final class MeMekmmItemChemicalMachineSupport<TILE extends TileEntityMekanism & 
         if (aeSupport().isSmartPatternMultiplicationEnabled()) {
             return aeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        if (this.inputSlot == null || this.chemicalTank == null
-                || !MePatternInputRouter.route(inputHolder, List.of(
-                        MeMachineIoAdapter.itemInput(this.inputSlot),
-                        MeMachineIoAdapter.chemicalInput(this.chemicalTank)))) {
+        if (this.inputSlot == null || this.chemicalTank == null || this.conversionSlot == null
+                || !aeSupport().pushItemChemicalOrConversion(inputHolder, this.inputSlot,
+                        this.chemicalTank, this.conversionSlot)) {
             return false;
         }
         this.owner.setChanged();

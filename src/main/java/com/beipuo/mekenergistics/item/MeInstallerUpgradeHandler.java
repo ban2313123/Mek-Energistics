@@ -6,17 +6,16 @@ import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MePatternSlotTransfer;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
-import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismExtrasCompat;
-import com.beipuo.mekenergistics.compat.meke.MekanismExtrasCompat;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.compat.provider.CompatMachineProvider;
+import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.Optional;
 import mekanism.api.security.IBlockSecurityUtils;
-import mekanism.api.tier.BaseTier;
 import mekanism.common.block.BlockBounding;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeHasBounding;
 import mekanism.common.block.states.BlockStateHelper;
-import mekanism.common.item.ItemTierInstaller;
 import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.interfaces.ITierUpgradable;
@@ -34,7 +33,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.Nullable;
 
 public final class MeInstallerUpgradeHandler {
@@ -77,29 +75,13 @@ public final class MeInstallerUpgradeHandler {
         if (stack.getItem() instanceof MeTierInstallerItem) {
             return null;
         }
-        if (stack.getItem() instanceof ItemTierInstaller installer) {
-            return getMekanismTarget(current, installer.getFromTier(), installer.getToTier());
-        }
-        if (ModList.get().isLoaded("mekanism_extras")) {
-            MeMekanismMachine target = MekanismExtrasCompat.getInstallerTarget(current, stack);
-            if (target != null) {
+        for (CompatMachineProvider provider : CompatMachineProviders.available().toList()) {
+            MeMekanismMachine target = provider.resolveInstallerUpgrade(current, stack);
+            if (target != null && CompatMachineCatalog.isAvailable(target)) {
                 return target;
             }
         }
-        if (ModList.get().isLoaded("emextras")) {
-            return EvolvedMekanismExtrasCompat.getInstallerTarget(current, stack);
-        }
         return null;
-    }
-
-    @Nullable
-    private static MeMekanismMachine getMekanismTarget(MeMekanismMachine current, @Nullable BaseTier fromTier, BaseTier toTier) {
-        BaseTier currentTier = current.baseTier();
-        if (currentTier != fromTier || currentTier == toTier) {
-            return null;
-        }
-        MeMekanismMachine target = fromTier == null ? current.getBasicFactory() : current.getNextFactory();
-        return target != null && target.baseTier() == toTier ? target : null;
     }
 
     private static InteractionResult upgrade(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, MeMekanismMachine target) {

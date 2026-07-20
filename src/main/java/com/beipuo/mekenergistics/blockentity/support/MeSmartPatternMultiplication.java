@@ -8,9 +8,12 @@ import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -18,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class MeSmartPatternMultiplication {
     private static final int MAX_PENDING_ENTRIES_SCANNED_PER_PASS = 256;
+    private static final int MAX_HOT_PENDING_ENTRIES = 64;
     private static final int MAX_FEED_ATTEMPTS_PER_PASS = 512;
     private static final String TAG_ENABLED = "SmartPatternMultiplication";
     private static final String TAG_PENDING = "SmartPatternMultiplicationPending";
@@ -27,7 +31,10 @@ public final class MeSmartPatternMultiplication {
     private static final String TAG_INPUT = "Input";
 
     private final List<PendingPattern> pendingPatterns = new ArrayList<>();
+    private final Set<PendingPattern> pendingSet = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Map<PendingKey, PendingPattern> pendingByKey = new HashMap<>();
+    private final Map<AEKey, Set<PendingPattern>> pendingByInputKey = new HashMap<>();
+    private final List<PendingPattern> hotPendingPatterns = new ArrayList<>();
     private boolean enabled = true;
     private int nextPendingScanIndex;
 
@@ -56,18 +63,73 @@ public final class MeSmartPatternMultiplication {
             return existing.tryMerge(pendingPattern);
         }
         this.pendingPatterns.add(pendingPattern);
+        this.pendingSet.add(pendingPattern);
         this.pendingByKey.put(pendingPattern.key(), pendingPattern);
+        indexPendingInputs(pendingPattern);
         return true;
     }
 
     public boolean processNext(Feeder feeder) {
         boolean changed = false;
-        int patternsVisited = 0;
         int feeds = 0;
         clampPendingScanIndex();
+        Set<PendingPattern> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        // The in-memory hot list is intentionally not serialized. Rebuild its most important
+        // entries from material already present in the machine so a world reload cannot move
+        // an active factory input behind hundreds of unrelated pending patterns.
+        for (AEKey activeInputKey : feeder.activeInputKeys()) {
+            Set<PendingPattern> matching = this.pendingByInputKey.get(activeInputKey);
+            if (matching != null) {
+                for (PendingPattern pendingPattern : List.copyOf(matching)) {
+                    if (containsPending(pendingPattern)) {
+                        rememberHotPending(pendingPattern);
+                    }
+                }
+            }
+        }
+
+        // Inputs already present in the machine must win the next refill pass. Otherwise a
+        // large heterogeneous queue can move the round-robin cursor hundreds of entries away
+        // from the pattern that the factory just consumed.
+        int hotPatternsVisited = 0;
+        for (PendingPattern pendingPattern : List.copyOf(this.hotPendingPatterns)) {
+            if (hotPatternsVisited >= MAX_HOT_PENDING_ENTRIES || feeds >= MAX_FEED_ATTEMPTS_PER_PASS) {
+                break;
+            }
+            if (!containsPending(pendingPattern)) {
+                forgetHotPending(pendingPattern);
+                continue;
+            }
+            hotPatternsVisited++;
+            visited.add(pendingPattern);
+            if (pendingPattern.remaining <= 0) {
+                removePending(pendingPattern);
+                changed = true;
+                continue;
+            }
+            FeedResult result = feedBestBatch(pendingPattern, feeder, MAX_FEED_ATTEMPTS_PER_PASS - feeds);
+            feeds += result.feedAttempts();
+            changed |= result.changed();
+            if (pendingPattern.remaining <= 0) {
+                removePending(pendingPattern);
+            } else if (result.changed()) {
+                rememberHotPending(pendingPattern);
+            }
+        }
+
+        int patternsVisited = 0;
         int scanBudget = Math.min(this.pendingPatterns.size(), MAX_PENDING_ENTRIES_SCANNED_PER_PASS);
-        while (!this.pendingPatterns.isEmpty() && patternsVisited++ < scanBudget && feeds < MAX_FEED_ATTEMPTS_PER_PASS) {
+        int cursorSteps = 0;
+        int maxCursorSteps = this.pendingPatterns.size();
+        while (!this.pendingPatterns.isEmpty() && patternsVisited < scanBudget
+                && cursorSteps++ < maxCursorSteps && feeds < MAX_FEED_ATTEMPTS_PER_PASS) {
             PendingPattern pendingPattern = this.pendingPatterns.get(this.nextPendingScanIndex);
+            if (!visited.add(pendingPattern)) {
+                advancePendingScanIndex();
+                continue;
+            }
+            patternsVisited++;
             if (pendingPattern.remaining <= 0) {
                 removePendingAtScanIndex();
                 changed = true;
@@ -79,6 +141,9 @@ public final class MeSmartPatternMultiplication {
             if (pendingPattern.remaining <= 0) {
                 removePendingAtScanIndex();
                 continue;
+            }
+            if (result.changed()) {
+                rememberHotPending(pendingPattern);
             }
             advancePendingScanIndex();
             // Keep scanning later pending entries. Smart multiplication favors machine throughput over strict FIFO
@@ -140,11 +205,70 @@ public final class MeSmartPatternMultiplication {
     }
 
     private void removePendingAtScanIndex() {
-        PendingPattern removed = this.pendingPatterns.remove(this.nextPendingScanIndex);
+        removePending(this.pendingPatterns.get(this.nextPendingScanIndex));
+    }
+
+    private void removePending(PendingPattern removed) {
+        int index = indexOfPending(removed);
+        if (index < 0) {
+            forgetHotPending(removed);
+            return;
+        }
+        this.pendingPatterns.remove(index);
+        this.pendingSet.remove(removed);
+        unindexPendingInputs(removed);
+        if (index < this.nextPendingScanIndex) {
+            this.nextPendingScanIndex--;
+        }
         if (this.pendingByKey.remove(removed.key(), removed)) {
             reindexFirstPendingWithKey(removed.key());
         }
+        forgetHotPending(removed);
         clampPendingScanIndex();
+    }
+
+    private boolean containsPending(PendingPattern pendingPattern) {
+        return this.pendingSet.contains(pendingPattern);
+    }
+
+    private int indexOfPending(PendingPattern pendingPattern) {
+        for (int i = 0; i < this.pendingPatterns.size(); i++) {
+            if (this.pendingPatterns.get(i) == pendingPattern) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void rememberHotPending(PendingPattern pendingPattern) {
+        forgetHotPending(pendingPattern);
+        this.hotPendingPatterns.addFirst(pendingPattern);
+        if (this.hotPendingPatterns.size() > MAX_HOT_PENDING_ENTRIES) {
+            this.hotPendingPatterns.removeLast();
+        }
+    }
+
+    private void forgetHotPending(PendingPattern pendingPattern) {
+        this.hotPendingPatterns.removeIf(candidate -> candidate == pendingPattern);
+    }
+
+    private void indexPendingInputs(PendingPattern pendingPattern) {
+        for (AEKey inputKey : pendingPattern.inputKeys()) {
+            this.pendingByInputKey.computeIfAbsent(inputKey,
+                    ignored -> Collections.newSetFromMap(new IdentityHashMap<>())).add(pendingPattern);
+        }
+    }
+
+    private void unindexPendingInputs(PendingPattern pendingPattern) {
+        for (AEKey inputKey : pendingPattern.inputKeys()) {
+            Set<PendingPattern> matching = this.pendingByInputKey.get(inputKey);
+            if (matching != null) {
+                matching.remove(pendingPattern);
+                if (matching.isEmpty()) {
+                    this.pendingByInputKey.remove(inputKey);
+                }
+            }
+        }
     }
 
     private void reindexFirstPendingWithKey(PendingKey key) {
@@ -166,7 +290,9 @@ public final class MeSmartPatternMultiplication {
             return existing.tryMerge(pendingPattern);
         }
         this.pendingPatterns.add(pendingPattern);
+        this.pendingSet.add(pendingPattern);
         this.pendingByKey.put(pendingPattern.key(), pendingPattern);
+        indexPendingInputs(pendingPattern);
         return true;
     }
 
@@ -256,7 +382,10 @@ public final class MeSmartPatternMultiplication {
 
     public void loadPending(CompoundTag tag, HolderLookup.Provider registries) {
         this.pendingPatterns.clear();
+        this.pendingSet.clear();
         this.pendingByKey.clear();
+        this.pendingByInputKey.clear();
+        this.hotPendingPatterns.clear();
         ListTag pending = tag.getList(TAG_PENDING, CompoundTag.TAG_COMPOUND);
         for (int i = 0; i < pending.size(); i++) {
             CompoundTag pendingTag = pending.getCompound(i);
@@ -290,11 +419,17 @@ public final class MeSmartPatternMultiplication {
             }
         }
         this.pendingPatterns.add(pendingPattern);
+        this.pendingSet.add(pendingPattern);
         this.pendingByKey.putIfAbsent(pendingPattern.key(), pendingPattern);
+        indexPendingInputs(pendingPattern);
     }
 
     public interface Feeder {
         boolean feed(KeyCounter[] oneCraftInputs);
+
+        default Iterable<AEKey> activeInputKeys() {
+            return List.of();
+        }
     }
 
     public interface CapacityAwareFeeder extends Feeder {
@@ -370,6 +505,14 @@ public final class MeSmartPatternMultiplication {
 
         private KeyCounter[] toKeyCounters() {
             return toKeyCounters(1);
+        }
+
+        private Iterable<AEKey> inputKeys() {
+            Set<AEKey> keys = new java.util.LinkedHashSet<>();
+            for (GenericStack input : this.inputs) {
+                keys.add(input.what());
+            }
+            return keys;
         }
 
         private KeyCounter[] toKeyCounters(long copies) {

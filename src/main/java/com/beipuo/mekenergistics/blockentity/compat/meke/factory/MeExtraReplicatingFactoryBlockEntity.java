@@ -35,11 +35,11 @@ public class MeExtraReplicatingFactoryBlockEntity extends TileEntityExtraReplica
     @Override public MeFactoryAeSupport getAeSupport() { if (this.aeSupport == null) this.aeSupport = new MeFactoryAeSupport(this); return this.aeSupport; }
     @Override public MeMekanismMachine getMachine() { return this.machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder) : getAeSupport().pushItemChemical(inputHolder, this.inputSlots, this.chemicalTank)); }
+    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder) : getAeSupport().pushItemChemicalOrConversion(inputHolder, this.inputSlots, this.chemicalTank, getExtraSlot())); }
     @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public mekanism.api.recipes.cache.CachedRecipe<com.jerry.mekmm.api.recipes.basic.MMBasicItemStackChemicalToItemStackRecipe> createNewCachedRecipe(@NotNull com.jerry.mekmm.api.recipes.basic.MMBasicItemStackChemicalToItemStackRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, getEnergyContainer(), super.createNewCachedRecipe(recipe, cacheIndex)); }
-    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = getAeSupport().processItemChemicalSmartPatterns(this.chemicalTank, this.outputSlots, List.of(), this.inputSlots); sendUpdatePacket |= super.onUpdateServer(); return getAeSupport().processItemChemicalSmartPatterns(this.chemicalTank, this.outputSlots, List.of(), this.inputSlots) || sendUpdatePacket; }
+    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = super.onUpdateServer(); sendUpdatePacket |= getAeSupport().processItemChemicalOrConversionSmartPatterns(this.chemicalTank, getExtraSlot(), this.outputSlots, List.of(), this.inputSlots); return sendUpdatePacket; }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

@@ -1,12 +1,6 @@
 package com.beipuo.mekenergistics.client;
 
-import com.beipuo.mekenergistics.client.compat.eme.EvolvedMekanismExtrasClientScreens;
-import com.beipuo.mekenergistics.client.compat.meke.MekanismExtrasAdvancedClientScreens;
-import com.beipuo.mekenergistics.client.compat.meke.MekanismExtrasClientScreens;
-import com.beipuo.mekenergistics.client.compat.meke.MekanismExtrasMoreMachineClientScreens;
-import com.beipuo.mekenergistics.client.compat.mekmm.MekanismMoreMachineAdvancedClientScreens;
-import com.beipuo.mekenergistics.client.compat.mekmm.MekanismMoreMachineClientScreens;
-import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
+import com.beipuo.mekenergistics.client.compat.provider.CompatMachineClientProviders;
 import com.beipuo.mekenergistics.client.screen.MeElectricMachineScreen;
 import com.beipuo.mekenergistics.client.screen.MeGenericMachineScreen;
 import com.beipuo.mekenergistics.client.screen.machine.MeGuiAdvancedElectricMachine;
@@ -77,7 +71,6 @@ import mekanism.common.tile.machine.TileEntitySeismicVibrator;
 import mekanism.common.tile.machine.TileEntitySolarNeutronActivator;
 import mekanism.common.tile.factory.TileEntityFactory;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.world.inventory.MenuType;
@@ -157,23 +150,6 @@ public final class ClientSetup {
         event.register((MenuType) ModMenuTypes.ME_FACTORY.get(),
                 (MenuScreens.ScreenConstructor) (menu, inv, title) ->
                         new MeGuiFactory((MekanismTileContainer<TileEntityFactory<?>>) (MekanismTileContainer<?>) menu, inv, title));
-        if (ModList.get().isLoaded("mekmm")) {
-            MekanismMoreMachineClientScreens.register(event);
-            if (OptionalCompatClasses.hasMekmmAdvancedFactories()) {
-                MekanismMoreMachineAdvancedClientScreens.register(event);
-            }
-        }
-        if (ModList.get().isLoaded("mekanism_extras")) {
-            MekanismExtrasClientScreens.register(event);
-            if (OptionalCompatClasses.hasMekanismExtrasMoreMachineFactories()) {
-                MekanismExtrasMoreMachineClientScreens.register(event);
-            }
-            if (OptionalCompatClasses.hasMekanismExtrasAdvancedFactories()) {
-                MekanismExtrasAdvancedClientScreens.register(event);
-            }
-        }
-        if (ModList.get().isLoaded("emextras")) {
-            EvolvedMekanismExtrasClientScreens.register(event);
-        }
+        CompatMachineClientProviders.available().forEach(provider -> provider.registerScreens(event));
     }
 }

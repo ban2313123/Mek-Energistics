@@ -11,9 +11,14 @@ import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeLatheBlockEn
 import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MePlantingStationBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeRecyclerBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeReplicatorBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeChemicalReplicatorBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeFluidReplicatorBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeLargeAntiprotonicNucleosynthesizerBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeRollingMillBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeStamperBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.compat.catalog.CompatRegistrationRoute;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
@@ -22,6 +27,8 @@ import com.jerry.mekmm.common.block.attribute.MoreMachineAttributeFactoryType;
 import com.jerry.mekmm.common.content.blocktype.MoreMachineBlockShapes;
 import com.jerry.mekmm.common.content.blocktype.MoreMachineFactory;
 import com.jerry.mekmm.common.content.blocktype.MoreMachineFactoryType;
+import com.jerry.mekmm.common.block.attribute.MoreMachineBounding;
+import com.jerry.meklm.common.content.blocktype.LargeMachineBlockShapes;
 import com.jerry.mekmm.common.registries.MoreMachineContainerTypes;
 import java.util.Locale;
 import mekanism.api.Upgrade;
@@ -57,6 +64,9 @@ public final class MekanismMoreMachineBaseCompat {
             case CNC_LATHE -> registrar.register(machine, MeLatheBlockEntity::new);
             case CNC_ROLLING_MILL -> registrar.register(machine, MeRollingMillBlockEntity::new);
             case REPLICATOR -> registrar.register(machine, MeReplicatorBlockEntity::new);
+            case CHEMICAL_REPLICATOR -> registrar.register(machine, MeChemicalReplicatorBlockEntity::new);
+            case FLUID_REPLICATOR -> registrar.register(machine, MeFluidReplicatorBlockEntity::new);
+            case LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER -> registrar.register(machine, MeLargeAntiprotonicNucleosynthesizerBlockEntity::new);
             default -> throw new IllegalStateException("Unknown MEKMM base machine: " + machine);
         };
         return (TileEntityTypeRegistryObject) registered;
@@ -91,14 +101,29 @@ public final class MekanismMoreMachineBaseCompat {
 
     public static <TILE extends TileEntityMekanism> BlockTypeTile<TILE> createBaseBlockType(
             MeMekanismMachine machine, TileEntityTypeRegistryObject<TILE> tileType) {
+        if (machine == MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER) {
+            return createLargeAntiprotonicBlockType(tileType);
+        }
         var builder = BlockTypeTile.BlockTileBuilder
                 .createBlock(() -> tileType, machine::translationKey)
                 .withGui(() -> baseContainer(machine))
                 .withEnergyConfig(machine.energyUsage(), machine.energyStorage())
                 .with(new AttributeStateFacing(), Attributes.ACTIVE_LIGHT, Attributes.INVENTORY, Attributes.REDSTONE, Attributes.SECURITY, Attributes.COMPARATOR)
-                .withSideConfig(new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY})
-                .withSupportedUpgrades(Upgrade.SPEED, Upgrade.ENERGY)
-                .with(new MoreMachineAttributeFactoryType(moreMachineFactoryType(machine)));
+                .withSideConfig(machine == MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER
+                        ? new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY, TransmissionType.CHEMICAL}
+                        : machine == MeMekanismMachine.CHEMICAL_REPLICATOR
+                        ? new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY, TransmissionType.CHEMICAL}
+                        : machine == MeMekanismMachine.FLUID_REPLICATOR
+                        ? new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY, TransmissionType.CHEMICAL, TransmissionType.FLUID}
+                        : new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY})
+                .withSupportedUpgrades(Upgrade.SPEED, Upgrade.ENERGY);
+        if (machine == MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER) {
+            builder.withCustomShape(LargeMachineBlockShapes.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER)
+                    .with(MoreMachineBounding.FULL_JAVA_ENTITY);
+        }
+        if (machine != MeMekanismMachine.CHEMICAL_REPLICATOR && machine != MeMekanismMachine.FLUID_REPLICATOR) {
+            builder.with(new MoreMachineAttributeFactoryType(moreMachineFactoryType(machine)));
+        }
         switch (machine) {
             case PLANTING_STATION -> builder
                     .withCustomShape(MoreMachineBlockShapes.PLANTING_STATION)
@@ -112,6 +137,22 @@ public final class MekanismMoreMachineBaseCompat {
             builder.with(new MeUpgradeableAttribute(() -> ModBlocks.getMachineBlock(upgradeTarget).get()));
         }
         return builder.build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <TILE extends TileEntityMekanism> BlockTypeTile<TILE> createLargeAntiprotonicBlockType(
+            TileEntityTypeRegistryObject<TILE> tileType) {
+        var builder = mekanism.common.content.blocktype.BlockTypeTile.BlockTileBuilder
+                .createBlock(() -> tileType, com.beipuo.mekenergistics.common.MeLangEntry.of(
+                        MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER.translationKey()))
+                .withGui(() -> ModMenuTypes.ME_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER)
+                .withEnergyConfig(MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER.energyUsage(),
+                        MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER.energyStorage())
+                .withSideConfig(TransmissionType.ITEM, TransmissionType.CHEMICAL, TransmissionType.ENERGY)
+                .withCustomShape(com.jerry.meklm.common.content.blocktype.LargeMachineBlockShapes.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER)
+                .with(com.jerry.mekmm.common.block.attribute.MoreMachineBounding.FULL_JAVA_ENTITY)
+                .withSupportedUpgrades(Upgrade.MUFFLING);
+        return (BlockTypeTile<TILE>) builder.build();
     }
 
     public static MoreMachineFactoryType moreMachineFactoryType(MeMekanismMachine machine) {
@@ -137,6 +178,9 @@ public final class MekanismMoreMachineBaseCompat {
             case CNC_LATHE -> MoreMachineContainerTypes.CNC_LATHE;
             case CNC_ROLLING_MILL -> MoreMachineContainerTypes.CNC_ROLLING_MILL;
             case REPLICATOR -> MoreMachineContainerTypes.REPLICATOR;
+            case CHEMICAL_REPLICATOR -> MoreMachineContainerTypes.CHEMIcAL_REPLICATOR;
+            case FLUID_REPLICATOR -> MoreMachineContainerTypes.FLUID_REPLICATOR;
+            case LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER -> com.jerry.meklm.common.registries.LargeMachineContainerTypes.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER;
             default -> (ContainerTypeRegistryObject) ModMenuTypes.getMachineContainer(machine);
         };
     }
@@ -203,12 +247,12 @@ public final class MekanismMoreMachineBaseCompat {
 
     @Nullable
     private static MeMekanismMachine getBaseTarget(String typeName) {
-        for (MeMekanismMachine machine : MeMekanismMachine.values()) {
-            if (typeName.equals(machine.moreMachineBaseTypeName()) && machine.isAvailable()) {
-                return machine;
-            }
-        }
-        return null;
+        return CompatMachineCatalog.available()
+                .filter(spec -> spec.route() == CompatRegistrationRoute.MEKMM_MACHINE)
+                .filter(spec -> typeName.equals(spec.machineTypeId()))
+                .map(spec -> spec.machine())
+                .findFirst()
+                .orElse(null);
     }
 
     public static void registerGridNodeHost(
@@ -228,6 +272,9 @@ public final class MekanismMoreMachineBaseCompat {
             case CNC_LATHE -> ModBlockEntities.registerGridNodeHost(event, holder, MeLatheBlockEntity.class);
             case CNC_ROLLING_MILL -> ModBlockEntities.registerGridNodeHost(event, holder, MeRollingMillBlockEntity.class);
             case REPLICATOR -> ModBlockEntities.registerGridNodeHost(event, holder, MeReplicatorBlockEntity.class);
+            case CHEMICAL_REPLICATOR -> ModBlockEntities.registerGridNodeHost(event, holder, MeChemicalReplicatorBlockEntity.class);
+            case FLUID_REPLICATOR -> ModBlockEntities.registerGridNodeHost(event, holder, MeFluidReplicatorBlockEntity.class);
+            case LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER -> ModBlockEntities.registerGridNodeHost(event, holder, MeLargeAntiprotonicNucleosynthesizerBlockEntity.class);
             default -> throw new IllegalStateException("Unknown MEKMM base machine: " + machine);
         }
     }

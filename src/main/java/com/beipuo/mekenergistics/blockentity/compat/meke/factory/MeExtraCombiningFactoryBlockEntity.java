@@ -45,7 +45,7 @@ public class MeExtraCombiningFactoryBlockEntity extends TileEntityExtraCombining
     @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public mekanism.api.recipes.cache.CachedRecipe<mekanism.api.recipes.CombinerRecipe> createNewCachedRecipe(@NotNull mekanism.api.recipes.CombinerRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
-    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = getAeSupport().processTwoItemsSmartPatterns(getExtraSlot(), this.outputSlots, this.inputSlots); sendUpdatePacket |= super.onUpdateServer(); return getAeSupport().finishTwoItemsSmartPatterns(this.inputSlots, getExtraSlot()) || sendUpdatePacket; }
+    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = super.onUpdateServer(); sendUpdatePacket |= getAeSupport().processTwoItemsSmartPatterns(getExtraSlot(), this.outputSlots, this.inputSlots); return sendUpdatePacket; }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

@@ -10,6 +10,7 @@ import appeng.api.networking.security.IActionHost;
 import appeng.me.helpers.IGridConnectedBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.MeChemicalInputCapability;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import java.util.List;
@@ -17,15 +18,18 @@ import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.container.sync.SyncableInt;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.lib.transmitter.TransmissionType;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 
 public interface MeFactoryAeMachine extends MeAeSupportOwner, IGridConnectedBlockEntity, MeSmartCableConnection, appeng.helpers.patternprovider.PatternContainer {
     MeFactoryAeSupport getAeSupport();
 
     MeMekanismMachine getMachine();
+
+    /** Capability declared by the machine's stable factory/recipe family id. */
+    default MeChemicalInputCapability getChemicalInputCapability() {
+        return MeChemicalInputCapability.forMachineType(getMachine().factoryTypeName());
+    }
 
     Level getOwnerLevel();
 
@@ -113,13 +117,6 @@ public interface MeFactoryAeMachine extends MeAeSupportOwner, IGridConnectedBloc
 
     @Override
     default IGridNode getActionableNode() {
-        IGridNode node = getMainNode().getNode();
-        return node != null && node.isActive() ? node : null;
-    }
-
-    @Nullable
-    @Override
-    default IGridNode getGridNode(Direction dir) {
         IGridNode node = getMainNode().getNode();
         return node != null && node.isActive() ? node : null;
     }

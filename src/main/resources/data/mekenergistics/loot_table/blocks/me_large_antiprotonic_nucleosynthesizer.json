@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:block",
+  "pools": [{
+    "rolls": 1,
+    "entries": [{"type": "minecraft:item", "name": "mekenergistics:me_large_antiprotonic_nucleosynthesizer"}],
+    "conditions": [{"condition": "minecraft:survives_explosion"}]
+  }]
+}

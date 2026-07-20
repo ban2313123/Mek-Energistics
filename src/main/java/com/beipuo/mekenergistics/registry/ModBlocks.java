@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.registry;
 
 import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.item.MeMachineBlockItem;
 import java.util.EnumMap;
 import java.util.Map;
@@ -16,11 +17,8 @@ public final class ModBlocks {
     private static final Map<MeMekanismMachine, MeBlockRegistryObject<MeMekanismMachineBlock, MeMachineBlockItem>> MACHINES = new EnumMap<>(MeMekanismMachine.class);
 
     static {
-        for (MeMekanismMachine machine : MeMekanismMachine.values()) {
-            if (machine.isAvailable()) {
-                MACHINES.put(machine, BLOCKS.registerMachine(machine));
-            }
-        }
+        CompatMachineCatalog.available().forEach(spec ->
+                MACHINES.put(spec.machine(), BLOCKS.registerMachine(spec.machine())));
     }
 
     public static final DeferredBlock<MeMekanismMachineBlock> ME_METALLURGIC_INFUSER = getMachineBlock(MeMekanismMachine.METALLURGIC_INFUSER);

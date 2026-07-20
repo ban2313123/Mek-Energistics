@@ -183,6 +183,57 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
         return changed;
     }
 
+    /** Routes the chemical lane to either the direct tank or Mekanism's conversion slot. */
+    public boolean pushItemChemicalOrConversion(KeyCounter[] inputHolder, IInventorySlot inputSlot,
+            IChemicalTank chemicalTank, IInventorySlot conversionSlot) {
+        if (inputHolder == null || inputHolder.length != 2 || inputSlot == null
+                || chemicalTank == null || conversionSlot == null) {
+            return false;
+        }
+        MeInputPort main = MeMachineIoAdapter.itemInput(inputSlot);
+        List<MeInputPort> secondary = List.of(MeMachineIoAdapter.chemicalInput(chemicalTank),
+                MeMachineIoAdapter.itemInput(conversionSlot));
+        boolean changed = MePatternInputRouter.routeLanes(inputHolder,
+                List.of(List.of(main), secondary));
+        if (!changed) {
+            changed = MePatternInputRouter.routeLanes(inputHolder,
+                    List.of(secondary, List.of(main)));
+        }
+        if (changed) {
+            this.owner.setChanged();
+        }
+        return changed;
+    }
+
+    public boolean pushFluidChemical(KeyCounter[] inputHolder, IExtendedFluidTank fluidTank,
+            IChemicalTank chemicalTank) {
+        if (fluidTank == null || chemicalTank == null) {
+            return false;
+        }
+        boolean changed = MePatternInputRouter.route(inputHolder, List.of(
+                MeMachineIoAdapter.fluidInput(fluidTank),
+                MeMachineIoAdapter.chemicalInput(chemicalTank)));
+        if (changed) {
+            this.owner.setChanged();
+        }
+        return changed;
+    }
+
+    public boolean pushItemFluidChemical(KeyCounter[] inputHolder, IInventorySlot inputSlot,
+            IExtendedFluidTank fluidTank, IChemicalTank chemicalTank) {
+        if (inputSlot == null || fluidTank == null || chemicalTank == null) {
+            return false;
+        }
+        boolean changed = MePatternInputRouter.route(inputHolder, List.of(
+                MeMachineIoAdapter.itemInput(inputSlot),
+                MeMachineIoAdapter.fluidInput(fluidTank),
+                MeMachineIoAdapter.chemicalInput(chemicalTank)));
+        if (changed) {
+            this.owner.setChanged();
+        }
+        return changed;
+    }
+
     /** Routes fixed-position or interchangeable lanes as one atomic input transaction. */
     public boolean pushLanes(KeyCounter[] inputHolder, List<? extends MeInputPort> lanePorts) {
         if (inputHolder == null || lanePorts == null || inputHolder.length != lanePorts.size()
@@ -250,14 +301,16 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
                     return true;
                 }
             }
-            for (IExtendedFluidTank tank : this.knownFluidOutputTanks) {
+        }
+        if (mode.chemicals()) {
+            for (IChemicalTank tank : this.knownChemicalOutputTanks) {
                 if (tank != null && !tank.isEmpty()) {
                     return true;
                 }
             }
         }
-        if (mode.chemicals()) {
-            for (IChemicalTank tank : this.knownChemicalOutputTanks) {
+        if (mode.fluids()) {
+            for (IExtendedFluidTank tank : this.knownFluidOutputTanks) {
                 if (tank != null && !tank.isEmpty()) {
                     return true;
                 }

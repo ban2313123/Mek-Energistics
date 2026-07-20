@@ -3,6 +3,7 @@ package com.beipuo.mekenergistics.mixin;
 import mekanism.common.capabilities.energy.MachineEnergyContainer;
 import mekanism.common.inventory.slot.InputInventorySlot;
 import mekanism.common.inventory.slot.OutputInventorySlot;
+import mekanism.common.inventory.slot.chemical.ChemicalInventorySlot;
 import mekanism.common.tile.prefab.TileEntityAdvancedElectricMachine;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
@@ -14,6 +15,9 @@ public interface TileEntityAdvancedElectricMachineAccessor {
 
     @Accessor("outputSlot")
     OutputInventorySlot mekenergistics$getOutputSlot();
+
+    @Accessor("secondarySlot")
+    ChemicalInventorySlot mekenergistics$getSecondarySlot();
 
     @Accessor("energyContainer")
     void mekenergistics$setEnergyContainer(MachineEnergyContainer<TileEntityAdvancedElectricMachine> energyContainer);

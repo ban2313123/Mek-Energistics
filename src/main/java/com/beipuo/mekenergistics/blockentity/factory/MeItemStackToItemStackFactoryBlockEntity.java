@@ -2,10 +2,7 @@ package com.beipuo.mekenergistics.blockentity.factory;
 
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
 
-import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
-import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -30,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 public class MeItemStackToItemStackFactoryBlockEntity extends TileEntityItemStackToItemStackFactory implements MeFactoryAeMachine {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
-    private final ItemInputFeeder itemInputFeeder = new ItemInputFeeder();
 
     public MeItemStackToItemStackFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(ModBlocks.getMachineBlock(machine), pos, state);
@@ -86,11 +82,6 @@ public class MeItemStackToItemStackFactoryBlockEntity extends TileEntityItemStac
         return this.aeSupport.pushSingleItem(inputHolder, this.inputSlots);
     }
 
-    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
-        return getAeSupport().pushPatternInputs(inputHolder,
-                this.inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
-    }
-
     @NotNull
     @Override
     public CachedRecipe<ItemStackToItemStackRecipe> createNewCachedRecipe(@NotNull ItemStackToItemStackRecipe recipe, int cacheIndex) {
@@ -104,9 +95,8 @@ public class MeItemStackToItemStackFactoryBlockEntity extends TileEntityItemStac
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = this.aeSupport.processSmartPatternIfOutputsClear(this.itemInputFeeder, this.outputSlots);
-        sendUpdatePacket |= super.onUpdateServer();
-        return this.aeSupport.processSmartPatternAfterOutputDrain(this.itemInputFeeder, this.outputSlots, sendUpdatePacket);
+        boolean sendUpdatePacket = super.onUpdateServer();
+        return this.aeSupport.processSingleItemSmartPatterns(this.outputSlots, this.inputSlots) || sendUpdatePacket;
     }
 
     @Override
@@ -145,19 +135,4 @@ public class MeItemStackToItemStackFactoryBlockEntity extends TileEntityItemStac
         this.aeSupport.loadAll(tag, registries);
     }
 
-    private final class ItemInputFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
-        @Override
-        public boolean feed(KeyCounter[] oneCraftInputs) {
-            return feedPatternInputs(oneCraftInputs);
-        }
-
-        @Override
-        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            if (oneCraftInputs == null || oneCraftInputs.length != 1) {
-                return 0;
-            }
-            ItemStack input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.singleItem(oneCraftInputs[0]);
-            return input.isEmpty() ? 0 : MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(inputSlots, input);
-        }
-    }
 }

@@ -97,18 +97,7 @@ public class MeChemicalWasherBlockEntity extends TileEntityChemicalWasher implem
         if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
             return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
         }
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(inputHolder);
-        if (input == null || !input.item().isEmpty() || input.chemical().isEmpty() || input.fluid().isEmpty()) {
-            return false;
-        }
-        if (this.inputTank.insert(input.chemical().copy(), Action.SIMULATE, AutomationType.INTERNAL).getAmount() != 0
-                || this.fluidTank.fill(input.fluid().copy(), FluidAction.SIMULATE) != input.fluid().getAmount()) {
-            return false;
-        }
-        this.inputTank.insert(input.chemical(), Action.EXECUTE, AutomationType.INTERNAL);
-        this.fluidTank.fill(input.fluid(), FluidAction.EXECUTE);
-        setChanged();
-        return true;
+        return getRecipeAeSupport().pushFluidChemical(inputHolder, this.fluidTank, this.inputTank);
     }
 
     @Override public boolean isBusy() { return false; }

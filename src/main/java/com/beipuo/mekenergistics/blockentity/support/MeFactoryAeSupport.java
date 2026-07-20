@@ -39,8 +39,10 @@ import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import mekanism.api.Action;
 import mekanism.api.IContentsListener;
 import mekanism.api.chemical.ChemicalStack;
@@ -109,17 +111,6 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             }
         }
         return changed;
-    }
-
-    public boolean processSmartPatternIfOutputsClear(MeSmartPatternMultiplication.Feeder feeder, List<IInventorySlot> outputSlots) {
-        markOwnerHandlesSmartPatternProcessing();
-        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
-        return hasItemOutputBacklog(outputSlots) ? changed : processSmartPattern(feeder) || changed;
-    }
-
-    public boolean processSmartPatternIfNoItemOutputBacklog(MeSmartPatternMultiplication.Feeder feeder, List<IInventorySlot> outputSlots) {
-        markOwnerHandlesSmartPatternProcessing();
-        return hasItemOutputBacklog(outputSlots) ? false : processSmartPattern(feeder);
     }
 
     public boolean processSmartPatternAfterOutputDrain(MeSmartPatternMultiplication.Feeder feeder, List<IInventorySlot> outputSlots, boolean changed) {
@@ -233,17 +224,21 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
     @Override
     protected boolean hasAeOutputWork() {
-        if (hasItemOutputBacklog(this.knownOutputSlots)) {
+        if (this.aeOutputMode.items() && hasItemOutputBacklog(this.knownOutputSlots)) {
             return true;
         }
-        for (IChemicalTank tank : this.knownChemicalOutputTanks) {
-            if (tank != null && !tank.isEmpty()) {
-                return true;
+        if (this.aeOutputMode.chemicals()) {
+            for (IChemicalTank tank : this.knownChemicalOutputTanks) {
+                if (tank != null && !tank.isEmpty()) {
+                    return true;
+                }
             }
         }
-        for (IExtendedFluidTank tank : this.knownFluidOutputTanks) {
-            if (tank != null && !tank.isEmpty()) {
-                return true;
+        if (this.aeOutputMode.fluids()) {
+            for (IExtendedFluidTank tank : this.knownFluidOutputTanks) {
+                if (tank != null && !tank.isEmpty()) {
+                    return true;
+                }
             }
         }
         return this.smartPatternMultiplication.hasPendingWork();
@@ -279,8 +274,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
     }
 
     public boolean pushSingleItem(KeyCounter[] inputHolder, List<? extends IInventorySlot> inputSlots) {
-        boolean changed = MePatternInputRouter.route(inputHolder,
-                inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
+        boolean changed = MePatternInputRouter.route(inputHolder, factoryItemPorts(inputSlots));
         if (changed) {
             this.owner.saveChanges();
         }
@@ -292,11 +286,34 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         if (chemicalTank == null) {
             return false;
         }
-        boolean changed = MePatternInputRouter.route(inputHolder,
-                java.util.stream.Stream.concat(
-                        inputSlots.stream().map(MeMachineIoAdapter::itemInput),
-                        java.util.stream.Stream.of(MeMachineIoAdapter.chemicalInput(chemicalTank)))
-                        .toList());
+        List<MeInputPort> ports = new ArrayList<>(factoryItemPorts(inputSlots));
+        ports.add(MeMachineIoAdapter.chemicalInput(chemicalTank));
+        boolean changed = MePatternInputRouter.route(inputHolder, ports);
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
+    }
+
+    /** Routes the second lane to either a direct chemical tank or Mekanism's conversion slot. */
+    public boolean pushItemChemicalOrConversion(KeyCounter[] inputHolder,
+            List<? extends IInventorySlot> inputSlots, IChemicalTank chemicalTank,
+            IInventorySlot conversionSlot) {
+        if (inputHolder == null || inputHolder.length != 2 || chemicalTank == null || conversionSlot == null) {
+            return false;
+        }
+        MeInputPort main = factoryItemPorts(inputSlots).isEmpty() ? null : factoryItemPorts(inputSlots).get(0);
+        if (main == null) {
+            return false;
+        }
+        List<MeInputPort> secondary = List.of(MeMachineIoAdapter.chemicalInput(chemicalTank),
+                MeMachineIoAdapter.itemInput(conversionSlot));
+        boolean changed = MePatternInputRouter.routeLanes(inputHolder,
+                List.of(List.of(main), secondary));
+        if (!changed) {
+            changed = MePatternInputRouter.routeLanes(inputHolder,
+                    List.of(secondary, List.of(main)));
+        }
         if (changed) {
             this.owner.saveChanges();
         }
@@ -335,8 +352,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
     public boolean pushItemFluidChemical(KeyCounter[] inputHolder,
             List<? extends IInventorySlot> inputSlots, IExtendedFluidTank fluidTank,
             IChemicalTank chemicalTank) {
-        List<MeInputPort> ports = new ArrayList<>(inputSlots.stream()
-                .map(MeMachineIoAdapter::itemInput).toList());
+        List<MeInputPort> ports = new ArrayList<>(factoryItemPorts(inputSlots));
         if (fluidTank != null) {
             ports.add(MeMachineIoAdapter.fluidInput(fluidTank));
         }
@@ -355,7 +371,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         if (inputHolder == null || inputHolder.length != 2 || extraSlot == null) {
             return false;
         }
-        List<MeInputPort> main = inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList();
+        List<MeInputPort> main = factoryItemPorts(inputSlots);
         MeInputPort extra = MeMachineIoAdapter.itemInput(extraSlot);
         if (MePatternInputRouter.routeLanes(inputHolder, List.of(main, List.of(extra)))) {
             this.owner.saveChanges();
@@ -369,7 +385,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         if (inputHolder == null || inputHolder.length != 3 || secondSlot == null || thirdSlot == null) {
             return false;
         }
-        List<MeInputPort> main = inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList();
+        List<MeInputPort> main = factoryItemPorts(inputSlots);
         MeInputPort second = MeMachineIoAdapter.itemInput(secondSlot);
         MeInputPort third = MeMachineIoAdapter.itemInput(thirdSlot);
         if (MePatternInputRouter.routeLanes(inputHolder, List.of(main, List.of(second), List.of(third)))) {
@@ -451,6 +467,20 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             return changed;
         }
         return processSmartPattern(new ItemChemicalPortFeeder(inputSlots, inputTank)) || changed;
+    }
+
+    public boolean processItemChemicalOrConversionSmartPatterns(IChemicalTank inputTank,
+            IInventorySlot conversionSlot, List<IInventorySlot> outputSlots,
+            List<IChemicalTank> outputTanks, List<IInventorySlot> inputSlots) {
+        markOwnerHandlesSmartPatternProcessing();
+        boolean changed = insertOutputSlotsIntoNetwork(outputSlots);
+        for (IChemicalTank outputTank : outputTanks) {
+            changed |= insertChemicalTankIntoNetwork(outputTank);
+        }
+        if (hasItemOutputBacklog(outputSlots) || hasChemicalOutputBacklog(outputTanks)) {
+            return changed;
+        }
+        return processSmartPattern(new ItemChemicalOrConversionPortFeeder(inputSlots, inputTank, conversionSlot)) || changed;
     }
 
     public boolean finishItemChemicalSmartPatterns(List<IInventorySlot> inputSlots,
@@ -557,6 +587,41 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         return false;
     }
 
+    private static Iterable<AEKey> activeInputKeys(List<? extends IInventorySlot> itemSlots,
+            IExtendedFluidTank fluidTank, List<? extends IChemicalTank> chemicalTanks,
+            IInventorySlot... extraItemSlots) {
+        Set<AEKey> keys = new LinkedHashSet<>();
+        for (IInventorySlot slot : itemSlots) {
+            if (slot != null && !slot.isEmpty()) {
+                keys.add(AEItemKey.of(slot.getStack()));
+            }
+        }
+        for (IInventorySlot slot : extraItemSlots) {
+            if (slot != null && !slot.isEmpty()) {
+                keys.add(AEItemKey.of(slot.getStack()));
+            }
+        }
+        if (fluidTank != null && !fluidTank.isEmpty()) {
+            keys.add(AEFluidKey.of(fluidTank.getFluid()));
+        }
+        for (IChemicalTank tank : chemicalTanks) {
+            if (tank != null && !tank.isEmpty()) {
+                keys.add(MekanismKey.of(tank.getStack()));
+            }
+        }
+        return keys;
+    }
+
+    private static List<IChemicalTank> optionalChemicalTank(IChemicalTank tank) {
+        return tank == null ? List.of() : List.of(tank);
+    }
+
+    private static List<MeInputPort> factoryItemPorts(List<? extends IInventorySlot> inputSlots) {
+        return inputSlots.isEmpty()
+                ? List.of()
+                : List.of(MeMachineIoAdapter.autoSortedFactoryItemInput(inputSlots));
+    }
+
     private final class SingleItemPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
         private final List<IInventorySlot> inputSlots;
 
@@ -570,11 +635,13 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         }
 
         @Override
+        public Iterable<AEKey> activeInputKeys() {
+            return MeFactoryAeSupport.activeInputKeys(this.inputSlots, null, List.of());
+        }
+
+        @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(oneCraftInputs == null || oneCraftInputs.length == 0
-                    ? null : oneCraftInputs[0]);
-            return input == null || !input.isItem()
-                    ? 0 : MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, input.item());
+            return MePatternInputRouter.maxAcceptedCopies(oneCraftInputs, factoryItemPorts(this.inputSlots));
         }
     }
 
@@ -593,13 +660,58 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         }
 
         @Override
+        public Iterable<AEKey> activeInputKeys() {
+            return MeFactoryAeSupport.activeInputKeys(
+                    this.inputSlots, null, optionalChemicalTank(this.inputTank));
+        }
+
+        @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(oneCraftInputs);
-            if (input == null || input.item().isEmpty() || input.chemical().isEmpty() || !input.fluid().isEmpty()) {
+            if (this.inputTank == null) {
                 return 0;
             }
-            return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, input.item()),
-                    MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(this.inputTank, input.chemical()));
+            List<MeInputPort> ports = new ArrayList<>(factoryItemPorts(this.inputSlots));
+            ports.add(MeMachineIoAdapter.chemicalInput(this.inputTank));
+            return MePatternInputRouter.maxAcceptedCopies(oneCraftInputs, ports);
+        }
+    }
+
+    private final class ItemChemicalOrConversionPortFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
+        private final List<IInventorySlot> inputSlots;
+        private final IChemicalTank inputTank;
+        private final IInventorySlot conversionSlot;
+
+        private ItemChemicalOrConversionPortFeeder(List<IInventorySlot> inputSlots,
+                IChemicalTank inputTank, IInventorySlot conversionSlot) {
+            this.inputSlots = inputSlots;
+            this.inputTank = inputTank;
+            this.conversionSlot = conversionSlot;
+        }
+
+        @Override
+        public boolean feed(KeyCounter[] oneCraftInputs) {
+            return pushItemChemicalOrConversion(oneCraftInputs, this.inputSlots, this.inputTank, this.conversionSlot);
+        }
+
+        @Override
+        public Iterable<AEKey> activeInputKeys() {
+            return MeFactoryAeSupport.activeInputKeys(this.inputSlots, null,
+                    optionalChemicalTank(this.inputTank), this.conversionSlot);
+        }
+
+        @Override
+        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+            if (this.inputTank == null || this.conversionSlot == null || this.inputSlots.isEmpty()) {
+                return 0;
+            }
+            MeInputPort main = factoryItemPorts(this.inputSlots).get(0);
+            List<MeInputPort> secondary = List.of(MeMachineIoAdapter.chemicalInput(this.inputTank),
+                    MeMachineIoAdapter.itemInput(this.conversionSlot));
+            long first = MePatternInputRouter.maxAcceptedLaneCopies(oneCraftInputs,
+                    List.of(List.of(main), secondary));
+            long second = MePatternInputRouter.maxAcceptedLaneCopies(oneCraftInputs,
+                    List.of(secondary, List.of(main)));
+            return Math.max(first, second);
         }
     }
 
@@ -616,17 +728,14 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         }
 
         @Override
+        public Iterable<AEKey> activeInputKeys() {
+            return MeFactoryAeSupport.activeInputKeys(List.of(), null, this.inputTanks);
+        }
+
+        @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(oneCraftInputs == null || oneCraftInputs.length == 0
-                    ? null : oneCraftInputs[0]);
-            if (input == null || !input.isChemical()) {
-                return 0;
-            }
-            long accepted = 0;
-            for (IChemicalTank tank : this.inputTanks) {
-                accepted = Math.max(accepted, MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(tank, input.chemical()));
-            }
-            return accepted;
+            return MePatternInputRouter.maxAcceptedCopies(oneCraftInputs,
+                    this.inputTanks.stream().map(MeMachineIoAdapter::chemicalInput).toList());
         }
     }
 
@@ -645,16 +754,19 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         }
 
         @Override
+        public Iterable<AEKey> activeInputKeys() {
+            return MeFactoryAeSupport.activeInputKeys(List.of(), this.fluidTank, this.inputTanks);
+        }
+
+        @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(oneCraftInputs);
-            if (input == null || input.fluid().isEmpty() || input.chemical().isEmpty() || !input.item().isEmpty()) {
+            if (this.fluidTank == null) {
                 return 0;
             }
-            long chemical = 0;
-            for (IChemicalTank tank : this.inputTanks) {
-                chemical = Math.max(chemical, MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(tank, input.chemical()));
-            }
-            return Math.min(chemical, MeFactoryInventoryInsert.acceptedCopiesIntoFluidTank(this.fluidTank, input.fluid()));
+            List<MeInputPort> ports = new ArrayList<>();
+            ports.add(MeMachineIoAdapter.fluidInput(this.fluidTank));
+            ports.addAll(this.inputTanks.stream().map(MeMachineIoAdapter::chemicalInput).toList());
+            return MePatternInputRouter.maxAcceptedCopies(oneCraftInputs, ports);
         }
     }
 
@@ -676,15 +788,20 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         }
 
         @Override
+        public Iterable<AEKey> activeInputKeys() {
+            return MeFactoryAeSupport.activeInputKeys(
+                    this.inputSlots, this.fluidTank, optionalChemicalTank(this.chemicalTank));
+        }
+
+        @Override
         public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.separate(oneCraftInputs);
-            if (input == null || input.item().isEmpty() || input.fluid().isEmpty() || input.chemical().isEmpty()) {
+            if (this.fluidTank == null || this.chemicalTank == null) {
                 return 0;
             }
-            long items = MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, input.item());
-            long fluid = MeFactoryInventoryInsert.acceptedCopiesIntoFluidTank(this.fluidTank, input.fluid());
-            long chemical = MeFactoryInventoryInsert.acceptedCopiesIntoChemicalTank(this.chemicalTank, input.chemical());
-            return Math.min(items, Math.min(fluid, chemical));
+            List<MeInputPort> ports = new ArrayList<>(factoryItemPorts(this.inputSlots));
+            ports.add(MeMachineIoAdapter.fluidInput(this.fluidTank));
+            ports.add(MeMachineIoAdapter.chemicalInput(this.chemicalTank));
+            return MePatternInputRouter.maxAcceptedCopies(oneCraftInputs, ports);
         }
     }
 
@@ -699,13 +816,15 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override public boolean feed(KeyCounter[] inputs) { return pushTwoItems(inputs, this.inputSlots, this.extraSlot); }
 
+        @Override public Iterable<AEKey> activeInputKeys() {
+            return MeFactoryAeSupport.activeInputKeys(this.inputSlots, null, List.of(), this.extraSlot);
+        }
+
         @Override public long maxAcceptedCopies(KeyCounter[] inputs) {
-            if (inputs == null || inputs.length != 2) return 0;
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput first = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[0]);
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput second = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[1]);
-            if (first == null || second == null || !first.isItem() || !second.isItem()) return 0;
-            return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, first.item()),
-                    MeFactoryInventoryInsert.acceptedCopiesIntoSlot(this.extraSlot, second.item()));
+            if (this.extraSlot == null) return 0;
+            return MePatternInputRouter.maxAcceptedLaneCopies(inputs, List.of(
+                    factoryItemPorts(this.inputSlots),
+                    List.of(MeMachineIoAdapter.itemInput(this.extraSlot))));
         }
     }
 
@@ -722,15 +841,17 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
         @Override public boolean feed(KeyCounter[] inputs) { return pushThreeItems(inputs, this.inputSlots, this.secondSlot, this.thirdSlot); }
 
+        @Override public Iterable<AEKey> activeInputKeys() {
+            return MeFactoryAeSupport.activeInputKeys(
+                    this.inputSlots, null, List.of(), this.secondSlot, this.thirdSlot);
+        }
+
         @Override public long maxAcceptedCopies(KeyCounter[] inputs) {
-            if (inputs == null || inputs.length != 3) return 0;
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput first = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[0]);
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput second = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[1]);
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput third = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputs[2]);
-            if (first == null || second == null || third == null || !first.isItem() || !second.isItem() || !third.isItem()) return 0;
-            return Math.min(MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(this.inputSlots, first.item()),
-                    Math.min(MeFactoryInventoryInsert.acceptedCopiesIntoSlot(this.secondSlot, second.item()),
-                            MeFactoryInventoryInsert.acceptedCopiesIntoSlot(this.thirdSlot, third.item())));
+            if (this.secondSlot == null || this.thirdSlot == null) return 0;
+            return MePatternInputRouter.maxAcceptedLaneCopies(inputs, List.of(
+                    factoryItemPorts(this.inputSlots),
+                    List.of(MeMachineIoAdapter.itemInput(this.secondSlot)),
+                    List.of(MeMachineIoAdapter.itemInput(this.thirdSlot))));
         }
     }
 

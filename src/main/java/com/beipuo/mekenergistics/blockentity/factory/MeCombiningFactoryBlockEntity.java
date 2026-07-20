@@ -2,16 +2,12 @@ package com.beipuo.mekenergistics.blockentity.factory;
 
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
-import com.beipuo.mekenergistics.blockentity.support.MeFactoryInventoryInsert;
 
-import com.beipuo.mekenergistics.blockentity.support.MeSmartPatternMultiplication;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityCombiningFactoryAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
-import java.util.List;
-import mekanism.api.Action;
 import mekanism.api.IContentsListener;
 import mekanism.api.recipes.CombinerRecipe;
 import mekanism.api.recipes.cache.CachedRecipe;
@@ -32,7 +28,6 @@ import org.jetbrains.annotations.NotNull;
 public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory implements MeFactoryAeMachine {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
-    private final CombiningInputFeeder combiningInputFeeder = new CombiningInputFeeder();
 
     public MeCombiningFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(ModBlocks.getMachineBlock(machine), pos, state);
@@ -81,17 +76,13 @@ public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory im
         return this.aeSupport.pushTwoItems(inputHolder, this.inputSlots, extraSlot);
     }
 
-    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
-        InputInventorySlot extraSlot = ((TileEntityCombiningFactoryAccessor) this).mekenergistics$getExtraSlot();
-        return this.aeSupport.pushTwoItems(inputHolder, this.inputSlots, extraSlot);
-    }
-
     @Override public boolean isBusy() { return false; }
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = this.aeSupport.processSmartPatternIfOutputsClear(this.combiningInputFeeder, this.outputSlots);
-        sendUpdatePacket |= super.onUpdateServer();
-        return this.aeSupport.processSmartPatternAfterOutputDrain(this.combiningInputFeeder, this.outputSlots, sendUpdatePacket);
+        boolean sendUpdatePacket = super.onUpdateServer();
+        InputInventorySlot extraSlot = ((TileEntityCombiningFactoryAccessor) this).mekenergistics$getExtraSlot();
+        return this.aeSupport.processTwoItemsSmartPatterns(extraSlot, this.outputSlots, this.inputSlots)
+                || sendUpdatePacket;
     }
     @Override public void clearRemoved() { super.clearRemoved(); this.aeSupport.createNodeOnFirstTick(this); }
     @Override public void setRemoved() { this.aeSupport.destroy(); super.setRemoved(); }
@@ -100,26 +91,4 @@ public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory im
     @Override public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.saveAdditional(tag, registries); this.aeSupport.saveAll(tag, registries); }
     @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) { super.loadAdditional(tag, registries); this.aeSupport.loadAll(tag, registries); }
 
-    private final class CombiningInputFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
-        @Override
-        public boolean feed(KeyCounter[] oneCraftInputs) {
-            return feedPatternInputs(oneCraftInputs);
-        }
-
-        @Override
-        public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-            if (oneCraftInputs == null || oneCraftInputs.length != 2) {
-                return 0;
-            }
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput first = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(oneCraftInputs[0]);
-            com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput second = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(oneCraftInputs[1]);
-            if (first == null || second == null || !first.isItem() || !second.isItem()) {
-                return 0;
-            }
-            long mainCopies = MeFactoryInventoryInsert.acceptedCopiesAcrossSlots(inputSlots, first.item());
-            InputInventorySlot extraSlot = ((TileEntityCombiningFactoryAccessor) MeCombiningFactoryBlockEntity.this).mekenergistics$getExtraSlot();
-            long extraCopies = MeFactoryInventoryInsert.acceptedCopiesIntoSlot(extraSlot, second.item());
-            return Math.min(mainCopies, extraCopies);
-        }
-    }
 }
