@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.function.LongSupplier;
 import org.jetbrains.annotations.Nullable;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.compat.catalog.CompatRegistrationRoute;
@@ -856,113 +857,24 @@ public enum MeMekanismMachine {
 
     @Nullable
     public MeMekanismMachine getBasicFactory() {
-        if (this == ISOTOPIC_CENTRIFUGE) {
-            return getMoreMachineAdvancedFactory(FactoryTier.BASIC, "centrifuging");
-        }
-        String moreMachineFactoryType = moreMachineFactoryTypeName();
-        if (moreMachineFactoryType != null) {
-            return extraFactoryTierName() == null
-                    ? getMoreMachineFactory(FactoryTier.BASIC, moreMachineFactoryType)
-                    : getExtraMoreMachineFactory("absolute", moreMachineFactoryType);
-        }
-        String moreMachineAdvancedFactoryType = moreMachineAdvancedFactoryTypeName();
-        if (moreMachineAdvancedFactoryType != null) {
-            return extraFactoryTierName() == null
-                    ? getMoreMachineAdvancedFactory(FactoryTier.BASIC, moreMachineAdvancedFactoryType)
-                    : getExtraMoreMachineAdvancedFactory("absolute", moreMachineAdvancedFactoryType);
-        }
-        String moreMachineBaseType = moreMachineBaseTypeName();
-        if (moreMachineBaseType != null) {
-            return getMoreMachineFactory(FactoryTier.BASIC, moreMachineBaseType);
-        }
-        String customFactoryType = customFactoryTypeName();
-        if (customFactoryType != null) {
-            return getFactory(FactoryTier.BASIC, customFactoryType);
-        }
-        return factoryType == null ? null : getFactory(FactoryTier.BASIC, factoryType);
+        return CompatFactoryTierGraph.basicFactory(this);
     }
 
     @Nullable
     public MeMekanismMachine getNextFactory() {
-        String moreMachineFactoryType = moreMachineFactoryTypeName();
-        if (moreMachineFactoryType != null) {
-            if (factoryTier == FactoryTier.ULTIMATE) {
-                return getExtraMoreMachineFactory("absolute", moreMachineFactoryType);
-            }
-            if (extraFactoryTierName() != null) {
-                String nextTier = getNextExtraFactoryTier(extraFactoryTierName());
-                return nextTier == null ? null : getExtraMoreMachineFactory(nextTier, moreMachineFactoryType);
-            }
-            if (factoryTier == null) {
-                return null;
-            }
-            return getMoreMachineFactory(FactoryTier.values()[factoryTier.ordinal() + 1], moreMachineFactoryType);
-        }
-        String moreMachineAdvancedFactoryType = moreMachineAdvancedFactoryTypeName();
-        if (moreMachineAdvancedFactoryType != null) {
-            if (factoryTier == FactoryTier.ULTIMATE) {
-                return getExtraMoreMachineAdvancedFactory("absolute", moreMachineAdvancedFactoryType);
-            }
-            if (extraFactoryTierName() != null) {
-                String nextTier = getNextExtraFactoryTier(extraFactoryTierName());
-                return nextTier == null ? null : getExtraMoreMachineAdvancedFactory(nextTier, moreMachineAdvancedFactoryType);
-            }
-            if (factoryTier == null) {
-                return null;
-            }
-            return getMoreMachineAdvancedFactory(FactoryTier.values()[factoryTier.ordinal() + 1], moreMachineAdvancedFactoryType);
-        }
-        String customFactoryType = customFactoryTypeName();
-        if (factoryType == null && customFactoryType == null) {
-            return null;
-        }
-        if ("alloying".equals(customFactoryType)) {
-            if (factoryTier == FactoryTier.ULTIMATE) {
-                return getEvolvedFactory("overclocked", customFactoryType);
-            }
-            if (factoryTier != null) {
-                return getFactory(FactoryTier.values()[factoryTier.ordinal() + 1], customFactoryType);
-            }
-        }
-        if (extraFactoryTierName() != null) {
-            return getNextExtraFactory(extraFactoryTierName(), factoryTypeName());
-        }
-        if (emExtraFactoryTierName() != null) {
-            String nextTier = getNextEvolvedMekanismExtrasFactoryTier(emExtraFactoryTierName());
-            return nextTier == null ? null : getEvolvedMekanismExtrasFactory(nextTier, factoryTypeName());
-        }
-        if (factoryTier == FactoryTier.ULTIMATE) {
-            MeMekanismMachine evolvedTarget = getEvolvedFactory("overclocked", factoryTypeName());
-            return evolvedTarget != null ? evolvedTarget : getExtraFactory("absolute", factoryTypeName());
-        }
-        if (isEvolvedMekanismFactory()) {
-            String nextTier = getNextEvolvedFactoryTier(this.tierId);
-            return nextTier == null ? getEvolvedMekanismExtrasFactory("absolute_overclocked", factoryTypeName()) : getEvolvedFactory(nextTier, factoryTypeName());
-        }
-        if (factoryTier == null) {
-            return null;
-        }
-        return getFactory(FactoryTier.values()[factoryTier.ordinal() + 1], factoryType);
+        return CompatFactoryTierGraph.nextFactory(this);
     }
 
     @Nullable
     public static MeMekanismMachine getBaseMachine(FactoryType type) {
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (!machine.isFactory() && machine.factoryType == type) {
-                return machine;
-            }
-        }
-        return null;
+        return type == null ? null : CompatFactoryTierGraph.findBaseMachine(
+                CompatMod.MEKANISM, type.getRegistryNameComponent());
     }
 
     @Nullable
     public static MeMekanismMachine getFactory(FactoryTier tier, FactoryType type) {
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.factoryTier() == tier && machine.factoryType == type) {
-                return machine;
-            }
-        }
-        return null;
+        return tier == null || type == null ? null : CompatFactoryTierGraph.findFactory(
+                CompatMod.MEKANISM, tier.name().toLowerCase(Locale.ROOT), type.getRegistryNameComponent());
     }
 
     @Nullable
@@ -972,16 +884,7 @@ public enum MeMekanismMachine {
 
     @Nullable
     public static MeMekanismMachine getEvolvedFactory(String tierName, String typeName) {
-        if (tierName == null || typeName == null || OptionalCompatClasses.getEvolvedFactoryTier(tierName) == null) {
-            return null;
-        }
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.provider == CompatMod.EMEK && tierName.equals(machine.tierId)
-                    && typeName.equals(machine.factoryTypeName())) {
-                return machine;
-            }
-        }
-        return null;
+        return CompatFactoryTierGraph.findFactory(CompatMod.EMEK, tierName, typeName);
     }
 
     @Nullable
@@ -989,12 +892,9 @@ public enum MeMekanismMachine {
         if (tier == null || typeName == null) {
             return null;
         }
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.factoryTier() == tier && typeName.equals(machine.factoryTypeName())) {
-                return machine;
-            }
-        }
-        return null;
+        String tierName = tier.name().toLowerCase(Locale.ROOT);
+        MeMekanismMachine core = CompatFactoryTierGraph.findFactory(CompatMod.MEKANISM, tierName, typeName);
+        return core != null ? core : CompatFactoryTierGraph.findFactory(CompatMod.EMEK, tierName, typeName);
     }
 
     @Nullable
@@ -1004,72 +904,31 @@ public enum MeMekanismMachine {
 
     @Nullable
     public static MeMekanismMachine getEvolvedMekanismExtrasFactory(String tierName, String typeName) {
-        if (tierName == null || typeName == null || OptionalCompatClasses.getEvolvedMekanismExtrasFactoryTier(tierName) == null) {
-            return null;
-        }
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.provider == CompatMod.EMEKE && tierName.equals(machine.tierId)
-                    && typeName.equals(machine.factoryTypeName())) {
-                return machine;
-            }
-        }
-        return null;
+        return CompatFactoryTierGraph.findFactory(CompatMod.EMEKE, tierName, typeName);
     }
 
     @Nullable
     public static MeMekanismMachine getMoreMachineFactory(FactoryTier tier, String typeName) {
-        if (tier == null || typeName == null) {
-            return null;
-        }
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.registrationRoute == CompatRegistrationRoute.MEKMM_FACTORY && machine.factoryTier == tier
-                    && typeName.equals(machine.machineTypeId)) {
-                return machine;
-            }
-        }
-        return null;
+        return tier == null ? null : CompatFactoryTierGraph.findFactory(
+                CompatRegistrationRoute.MEKMM_FACTORY, tier.name().toLowerCase(Locale.ROOT), typeName);
     }
 
     @Nullable
     public static MeMekanismMachine getExtraMoreMachineFactory(String tierName, String typeName) {
-        if (tierName == null || typeName == null) {
-            return null;
-        }
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.registrationRoute == CompatRegistrationRoute.MEKE_MEKMM_FACTORY
-                    && tierName.equals(machine.tierId) && typeName.equals(machine.machineTypeId)) {
-                return machine;
-            }
-        }
-        return null;
+        return CompatFactoryTierGraph.findFactory(
+                CompatRegistrationRoute.MEKE_MEKMM_FACTORY, tierName, typeName);
     }
 
     @Nullable
     public static MeMekanismMachine getMoreMachineAdvancedFactory(FactoryTier tier, String typeName) {
-        if (tier == null || typeName == null) {
-            return null;
-        }
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.registrationRoute == CompatRegistrationRoute.MEKMM_ADVANCED_FACTORY
-                    && machine.factoryTier == tier && typeName.equals(machine.machineTypeId)) {
-                return machine;
-            }
-        }
-        return null;
+        return tier == null ? null : CompatFactoryTierGraph.findFactory(
+                CompatRegistrationRoute.MEKMM_ADVANCED_FACTORY, tier.name().toLowerCase(Locale.ROOT), typeName);
     }
 
     @Nullable
     public static MeMekanismMachine getExtraMoreMachineAdvancedFactory(String tierName, String typeName) {
-        if (tierName == null || typeName == null) {
-            return null;
-        }
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.registrationRoute == CompatRegistrationRoute.MEKE_MEKMM_ADVANCED_FACTORY
-                    && tierName.equals(machine.tierId) && typeName.equals(machine.machineTypeId)) {
-                return machine;
-            }
-        }
-        return null;
+        return CompatFactoryTierGraph.findFactory(
+                CompatRegistrationRoute.MEKE_MEKMM_ADVANCED_FACTORY, tierName, typeName);
     }
 
     @Nullable
@@ -1079,72 +938,17 @@ public enum MeMekanismMachine {
 
     @Nullable
     public static MeMekanismMachine getExtraFactory(String tierName, String typeName) {
-        if (tierName == null || typeName == null) {
-            return null;
-        }
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.registrationRoute == CompatRegistrationRoute.MEKE_FACTORY
-                    && tierName.equals(machine.tierId) && typeName.equals(machine.factoryTypeName())) {
-                return machine;
-            }
-        }
-        return null;
+        return CompatFactoryTierGraph.findFactory(CompatRegistrationRoute.MEKE_FACTORY, tierName, typeName);
     }
 
     @Nullable
     public static MeMekanismMachine getByRegistryName(String registryName) {
-        for (MeMekanismMachine machine : availableMachines()) {
-            if (machine.registryName().equals(registryName)) {
-                return machine;
-            }
-        }
-        return null;
-    }
-
-    private static Iterable<MeMekanismMachine> availableMachines() {
-        return CompatMachineCatalog.available().map(spec -> spec.machine()).toList();
-    }
-
-    @Nullable
-    private static MeMekanismMachine getNextExtraFactory(String tierName, String typeName) {
-        String next = getNextExtraFactoryTier(tierName);
-        return next == null ? null : getExtraFactory(next, typeName);
-    }
-
-    @Nullable
-    private static String getNextExtraFactoryTier(String tierName) {
-        return switch (tierName) {
-            case "absolute" -> "supreme";
-            case "supreme" -> "cosmic";
-            case "cosmic" -> "infinite";
-            default -> null;
-        };
+        return CompatFactoryTierGraph.findByRegistryName(registryName);
     }
 
     @Nullable
     private FactoryTier evolvedFactoryTier() {
         return isEvolvedMekanismFactory() ? OptionalCompatClasses.getEvolvedFactoryTier(this.tierId) : null;
-    }
-
-    @Nullable
-    private static String getNextEvolvedFactoryTier(String tierName) {
-        return switch (tierName) {
-            case "overclocked" -> "quantum";
-            case "quantum" -> "dense";
-            case "dense" -> "multiversal";
-            case "multiversal" -> "creative";
-            default -> null;
-        };
-    }
-
-    @Nullable
-    private static String getNextEvolvedMekanismExtrasFactoryTier(String tierName) {
-        return switch (tierName) {
-            case "absolute_overclocked" -> "supreme_quantum";
-            case "supreme_quantum" -> "cosmic_dense";
-            case "cosmic_dense" -> "infinite_multiversal";
-            default -> null;
-        };
     }
 
     private static String capitalize(String name) {

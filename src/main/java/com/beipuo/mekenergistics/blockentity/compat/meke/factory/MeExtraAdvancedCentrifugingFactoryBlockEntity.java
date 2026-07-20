@@ -1,7 +1,5 @@
 package com.beipuo.mekenergistics.blockentity.compat.meke.factory;
 
-import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -32,15 +30,15 @@ public class MeExtraAdvancedCentrifugingFactoryBlockEntity extends TileEntityExt
     @NotNull @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return Collections.emptyList(); }
     @Override public List<IInventorySlot> meOutputSlots() { return Collections.emptyList(); }
+    @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalInputTanks() { return this.inputChemicalTanks; }
+    @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalOutputTanks() { return java.util.Arrays.asList(this.outputTank); }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
     @Override public MeFactoryAeSupport getAeSupport() { if (this.aeSupport == null) this.aeSupport = new MeFactoryAeSupport(this); return this.aeSupport; }
     @Override public MeMekanismMachine getMachine() { return this.machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder) : getAeSupport().pushChemical(inputHolder, this.inputChemicalTanks)); }
-    @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public mekanism.api.recipes.cache.CachedRecipe<mekanism.api.recipes.ChemicalToChemicalRecipe> createNewCachedRecipe(@NotNull mekanism.api.recipes.ChemicalToChemicalRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
-    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = super.onUpdateServer(); sendUpdatePacket |= getAeSupport().processChemicalSmartPatterns(this.inputChemicalTanks, List.of(), this.outputChemicalTanks); return sendUpdatePacket; }
+    @Override protected boolean onUpdateServer() { return getAeSupport().processPatternIo(super.onUpdateServer()); }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

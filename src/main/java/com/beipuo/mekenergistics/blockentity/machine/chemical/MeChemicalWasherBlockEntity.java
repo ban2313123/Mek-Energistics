@@ -9,6 +9,9 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -78,8 +81,7 @@ public class MeChemicalWasherBlockEntity extends TileEntityChemicalWasher implem
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        return getRecipeAeSupport().drainChemicalOutputs(this.aeOutputMode, sendUpdatePacket, this.outputTank);
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -90,17 +92,14 @@ public class MeChemicalWasherBlockEntity extends TileEntityChemicalWasher implem
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 2) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        return getRecipeAeSupport().pushFluidChemical(inputHolder, this.fluidTank, this.inputTank);
+    public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(java.util.List.of(
+                MeMachineIoAdapter.fluidInput(this.fluidTank),
+                MeMachineIoAdapter.chemicalInput(this.inputTank)));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override public java.util.List<? extends MeOutputPort> getPatternOutputPorts() { return java.util.List.of(
+            MeMachineIoAdapter.chemicalOutput(this.outputTank)); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.CHEMICAL_WASHER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

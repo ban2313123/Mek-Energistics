@@ -11,6 +11,8 @@ import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraItemStac
 import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraSawingFactoryBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismCompat;
+import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
+import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.machine.MachineFactoryRegistrar;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -107,7 +109,8 @@ public final class MekanismExtrasCompat {
     @Nullable
     public static MeMekanismMachine getFactoryTarget(BlockState state, FactoryType factoryType) {
         ExtraFactoryTier tier = ExtraAttribute.getAdvancedTier(state.getBlock(), ExtraFactoryTier.class);
-        return tier == null ? null : MeMekanismMachine.getExtraFactory(tier.name().toLowerCase(Locale.ROOT), factoryType);
+        return tier == null ? null : CompatFactoryTierGraph.findFactory(
+                CompatMod.MEKE, tier.name().toLowerCase(Locale.ROOT), factoryType.getRegistryNameComponent());
     }
 
     @Nullable
@@ -147,14 +150,7 @@ public final class MekanismExtrasCompat {
 
     @Nullable
     private static MeMekanismMachine getExtraFactoryTarget(MeMekanismMachine current, AdvancedTier toTier) {
-        String tierName = toTier.getLowerName();
-        if (current.moreMachineFactoryTypeName() != null) {
-            return MeMekanismMachine.getExtraMoreMachineFactory(tierName, current.moreMachineFactoryTypeName());
-        }
-        if (current.moreMachineAdvancedFactoryTypeName() != null) {
-            return MeMekanismMachine.getExtraMoreMachineAdvancedFactory(tierName, current.moreMachineAdvancedFactoryTypeName());
-        }
-        return MeMekanismMachine.getExtraFactory(tierName, current.factoryTypeName());
+        return CompatFactoryTierGraph.factoryAtTier(current, CompatMod.MEKE, toTier.getLowerName());
     }
 
     private static boolean isTerminalEvolvedFactory(MeMekanismMachine machine) {

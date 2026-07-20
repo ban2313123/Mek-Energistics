@@ -13,9 +13,12 @@
 
 已有工具：
 
-- `MePatternInputRouter.PatternInput.single(...)`: 仅供位置敏感 adapter 做 key normalization；普通机器不应自行解析输入。
 - `MeMachineIoAdapter.autoSortedFactoryItemInput(...)`: 将 Mekanism 自动均分的主输入槽视为一个事务端口，汇总容量并整组回滚；实际均分继续由 Mekanism 按配方最小输入量完成。
 - `MePatternInputRouter.route(...)`: 普通端口的统一模拟、执行和回滚。
 - `MePatternInputRouter.routeLanes(...)`: 多 lane 输入的统一事务分配与回滚。
 
-双输入机器要注意输入顺序。Chemical Infuser 这类左右 tank 可互换的机器，应尝试 `(first, second)` 和 `(second, first)`。Combiner 这类主槽/副槽语义不同的机器不能随便交换。
+AE key normalization 只存在于 `MePatternInputRouter` 内部。具体 BlockEntity 和 adapter 不得读取
+`AEItemKey`、`AEFluidKey` 或 `MekanismKey` 来选择投料路径。
+
+双输入机器要明确物理 lane。Chemical Infuser 这类左右 tank 可互换的机器，把两个 tank 作为同一候选端口集合交给
+`route(...)`，由 router 回溯分配。Combiner 这类主槽/副槽语义不同的机器使用 `routeLanes(...)` 固定位置，不能交换。

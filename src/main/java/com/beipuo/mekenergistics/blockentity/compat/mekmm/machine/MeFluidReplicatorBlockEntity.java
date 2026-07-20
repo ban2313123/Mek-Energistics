@@ -10,6 +10,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityFluidReplicatorAccessor;
 import com.jerry.mekmm.common.tile.machine.TileEntityFluidReplicator;
@@ -87,8 +89,7 @@ public class MeFluidReplicatorBlockEntity extends TileEntityFluidReplicator
 
     @Override
     protected boolean onUpdateServer() {
-        boolean changed = super.onUpdateServer();
-        return support().drainFluidOutputs(outputMode, changed, this.outputTank);
+        return support().processPatternIo(outputMode, super.onUpdateServer());
     }
 
     @Override
@@ -98,22 +99,16 @@ public class MeFluidReplicatorBlockEntity extends TileEntityFluidReplicator
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails pattern, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(pattern)
-                || inputHolder == null || inputHolder.length != 2
-                || this.inputTank == null || this.uuTank == null || this.conversionSlot == null) {
-            return false;
-        }
-        if (support().isSmartPatternMultiplicationEnabled()) {
-            return support().enqueueSmartPattern(pattern, inputHolder);
-        }
+    public MeInputLayout getPatternInputLayout() {
+        if (this.inputTank == null || this.uuTank == null || this.conversionSlot == null) return MeInputLayout.empty();
         MeInputPort fluid = MeMachineIoAdapter.fluidInput(this.inputTank);
         List<MeInputPort> chemical = List.of(MeMachineIoAdapter.chemicalInput(this.uuTank),
                 MeMachineIoAdapter.itemInput(this.conversionSlot));
-        return support().pushLaneChoices(inputHolder, List.of(List.of(fluid), chemical));
+        return MeInputLayout.lanes(List.of(List.of(fluid), chemical));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override public List<? extends MeOutputPort> getPatternOutputPorts() { return this.outputTank == null
+            ? List.of() : List.of(MeMachineIoAdapter.fluidOutput(this.outputTank)); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.FLUID_REPLICATOR; }
     @Override public appeng.api.networking.IManagedGridNode getMainNode() { return support().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return outputMode; }

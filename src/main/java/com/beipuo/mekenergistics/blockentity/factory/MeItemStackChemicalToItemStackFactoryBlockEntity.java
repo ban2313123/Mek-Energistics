@@ -1,7 +1,9 @@
 package com.beipuo.mekenergistics.blockentity.factory;
 
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
@@ -25,7 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
-public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntityItemStackChemicalToItemStackFactory implements MeFactoryAeMachine {
+public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntityItemStackChemicalToItemStackFactory implements MeFactoryIoOwner {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
 
@@ -78,29 +80,22 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
         return MeFactoryAeSupport.withAeRecipeEnergy(this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex));
     }
 
-    @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 2) {
-            return false;
-        }
-        if (this.aeSupport.isSmartPatternMultiplicationEnabled()) {
-            return this.aeSupport.enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        return this.aeSupport.pushItemChemicalOrConversion(inputHolder, this.inputSlots, getChemicalTank(),
-                ((TileEntityItemStackChemicalToItemStackFactoryAccessor) this).mekenergistics$getExtraSlot());
-    }
+    @Override public List<mekanism.api.inventory.IInventorySlot> meInputSlots() { return this.inputSlots; }
+    @Override public List<mekanism.api.inventory.IInventorySlot> meOutputSlots() { return this.outputSlots; }
+    @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
 
     @Override
-    public boolean isBusy() {
-        return false;
+    public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(List.of(
+                MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputSlots),
+                MeMachineIoAdapter.chemicalInput(getChemicalTank()),
+                MeMachineIoAdapter.itemInput(
+                        ((TileEntityItemStackChemicalToItemStackFactoryAccessor) this).mekenergistics$getExtraSlot())));
     }
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        return this.aeSupport.processItemChemicalOrConversionSmartPatterns(
-                getChemicalTank(), ((TileEntityItemStackChemicalToItemStackFactoryAccessor) this).mekenergistics$getExtraSlot(),
-                this.outputSlots, List.of(), this.inputSlots) || sendUpdatePacket;
+        return this.aeSupport.processPatternIo(super.onUpdateServer());
     }
 
     @Override

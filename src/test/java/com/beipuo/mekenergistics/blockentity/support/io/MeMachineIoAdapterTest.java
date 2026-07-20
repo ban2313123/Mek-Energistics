@@ -99,6 +99,36 @@ class MeMachineIoAdapterTest {
     }
 
     @Test
+    void laneRouterBacktracksWhenFirstCandidateIsNeededByLaterLane() {
+        FakeInput fallback = new FakeInput(IRON, 5);
+        FakeInput shared = new FakeInput(IRON, 5);
+        KeyCounter first = new KeyCounter();
+        first.add(IRON, 5);
+        KeyCounter second = new KeyCounter();
+        second.add(IRON, 5);
+
+        assertTrue(MePatternInputRouter.routeLanes(
+                new KeyCounter[] {first, second}, List.of(List.of(fallback, shared), List.of(fallback))));
+        assertEquals(5, shared.amount);
+        assertEquals(5, fallback.amount);
+    }
+
+    @Test
+    void laneRouterCanReduceEarlierReservationForLaterLane() {
+        FakeInput shared = new FakeInput(IRON, 10);
+        FakeInput fallback = new FakeInput(IRON, 10);
+        KeyCounter first = new KeyCounter();
+        first.add(IRON, 15);
+        KeyCounter second = new KeyCounter();
+        second.add(IRON, 5);
+
+        assertTrue(MePatternInputRouter.routeLanes(
+                new KeyCounter[] {first, second}, List.of(List.of(shared, fallback), List.of(shared))));
+        assertEquals(10, shared.amount);
+        assertEquals(10, fallback.amount);
+    }
+
+    @Test
     void laneRouterAccountsForReservationsWhenOnePortServesMultipleLanes() {
         FakeInput shared = new FakeInput(IRON, 8);
         KeyCounter first = new KeyCounter();
@@ -204,17 +234,6 @@ class MeMachineIoAdapterTest {
     }
 
     @Test
-    void outputCollectorRollsBackDestinationAndSource() {
-        FakeOutput output = new FakeOutput(IRON, 4);
-        FakeInput destination = new FakeInput(IRON, 100);
-        destination.failExecution = true;
-
-        assertFalse(MeOutputCollector.collectAll(List.of(output), destination));
-        assertEquals(4, output.amount);
-        assertEquals(0, destination.amount);
-    }
-
-    @Test
     void routerRejectsMultipleKeysInOneLane() {
         KeyCounter counter = new KeyCounter();
         counter.add(IRON, 1);
@@ -246,21 +265,6 @@ class MeMachineIoAdapterTest {
         }
         @Override public Object snapshot() { return amount; }
         @Override public void restore(Object snapshot) { restores++; amount = (long) snapshot; }
-    }
-
-    private static final class FakeOutput implements MeOutputPort {
-        private final AEKey key;
-        private long amount;
-        private FakeOutput(AEKey key, long amount) { this.key = key; this.amount = amount; }
-        @Override public AEKey key() { return amount == 0 ? null : key; }
-        @Override public long amount() { return amount; }
-        @Override public long extract(long requested, mekanism.api.Action action) {
-            long extracted = Math.min(requested, amount);
-            if (action.execute()) amount -= extracted;
-            return extracted;
-        }
-        @Override public Object snapshot() { return amount; }
-        @Override public void restore(Object snapshot) { amount = (long) snapshot; }
     }
 
     private static final class FakeKey extends AEKey {

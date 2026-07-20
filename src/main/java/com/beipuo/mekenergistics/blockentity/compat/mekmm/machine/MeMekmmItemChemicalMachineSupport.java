@@ -9,6 +9,9 @@ import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
@@ -90,39 +93,28 @@ final class MeMekmmItemChemicalMachineSupport<TILE extends TileEntityMekanism & 
         }
     }
 
-    boolean drainOutputs(boolean sendUpdatePacket) {
-        MeRecipeMachineAeSupport<TILE> support = aeSupport();
-        boolean changed = support.insertOutputSlotIntoNetwork(this.outputSlot, this.aeOutputMode);
-        changed |= support.insertOutputSlotIntoNetwork(this.secondaryOutputSlot, this.aeOutputMode);
-        return changed || sendUpdatePacket;
+    boolean processPatternIo(boolean sendUpdatePacket) {
+        return aeSupport().processPatternIo(this.aeOutputMode, sendUpdatePacket);
     }
 
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 2) {
-            return false;
+    MeInputLayout inputLayout() {
+        if (this.inputSlot == null || this.chemicalTank == null || this.conversionSlot == null) {
+            return MeInputLayout.empty();
         }
-        if (aeSupport().isSmartPatternMultiplicationEnabled()) {
-            return aeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        if (this.inputSlot == null || this.chemicalTank == null || this.conversionSlot == null
-                || !aeSupport().pushItemChemicalOrConversion(inputHolder, this.inputSlot,
-                        this.chemicalTank, this.conversionSlot)) {
-            return false;
-        }
-        this.owner.setChanged();
-        return true;
+        return MeInputLayout.unordered(List.of(
+                MeMachineIoAdapter.itemInput(this.inputSlot),
+                MeMachineIoAdapter.chemicalInput(this.chemicalTank),
+                MeMachineIoAdapter.itemInput(this.conversionSlot)));
     }
 
-    public boolean isBusy() { return false; }
-    public List<IPatternDetails> getAvailablePatterns() { return aeSupport().getAvailablePatterns(); }
-    public int getPatternPriority() { return aeSupport().getPatternPriority(); }
-    public String getCustomPatternTerminalName() { return aeSupport().getPatternTerminalName(); }
-    public void setCustomPatternTerminalName(String name) { aeSupport().setPatternTerminalName(name); }
-    public List<BasicInventorySlot> getPatternSlots() { return aeSupport().getPatternSlots(); }
+    List<? extends MeOutputPort> outputPorts() {
+        List<MeOutputPort> outputs = new ArrayList<>(2);
+        if (this.outputSlot != null) outputs.add(MeMachineIoAdapter.itemOutput(this.outputSlot));
+        if (this.secondaryOutputSlot != null) outputs.add(MeMachineIoAdapter.itemOutput(this.secondaryOutputSlot));
+        return List.copyOf(outputs);
+    }
+
     public MeMekanismMachine getMachine() { return this.machine; }
-    public ItemStack getTerminalIconStack() { return new ItemStack(ModBlocks.getMachineBlock(getMachine()).get()); }
-    public IGrid getGrid() { return aeSupport().getGrid(); }
-    public appeng.api.networking.IManagedGridNode getMainNode() { return aeSupport().getMainNode(); }
     public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }
     public void cycleAeOutputMode() { this.aeOutputMode = this.aeOutputMode.next(); this.owner.setChanged(); }
     public <RECIPE extends MekanismRecipe<?>> CachedRecipe<RECIPE> wrapRecipeEnergy(MachineEnergyContainer<?> energyContainer, CachedRecipe<RECIPE> cachedRecipe) { return aeSupport().wrapRecipeEnergy(energyContainer, cachedRecipe); }

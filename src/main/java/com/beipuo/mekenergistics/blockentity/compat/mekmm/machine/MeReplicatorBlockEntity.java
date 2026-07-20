@@ -9,6 +9,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.jerry.mekmm.common.tile.machine.TileEntityReplicator;
 import mekanism.api.IContentsListener;
 import mekanism.common.capabilities.holder.chemical.IChemicalTankHolder;
@@ -45,7 +47,7 @@ public class MeReplicatorBlockEntity extends TileEntityReplicator implements ICr
 
     @Override
     protected boolean onUpdateServer() {
-        return this.meSupport().drainOutputs(super.onUpdateServer());
+        return this.meSupport().processPatternIo(super.onUpdateServer());
     }
 
     @Override
@@ -61,8 +63,8 @@ public class MeReplicatorBlockEntity extends TileEntityReplicator implements ICr
         return this.meSupport;
     }
 
-    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return this.meSupport().pushPattern(patternDetails, inputHolder); }
-    @Override public boolean isBusy() { return this.meSupport().isBusy(); }
+    @Override public MeInputLayout getPatternInputLayout() { return this.meSupport().inputLayout(); }
+    @Override public java.util.List<? extends MeOutputPort> getPatternOutputPorts() { return this.meSupport().outputPorts(); }
     @Override public MeMekanismMachine getMachine() { return this.meSupport().getMachine(); }
     @Override public MeRecipeMachineAeSupport<?> getRecipeAeSupport() { return this.meSupport().aeSupport(); }
     @Override public AeOutputMode getAeOutputMode() { return this.meSupport().getAeOutputMode(); }

@@ -14,7 +14,7 @@
 - `MeMekanismMachine.slotLayout()` 应返回 `SINGLE_ITEM`。
 - `hasRecipeLogic()` 应为 true。
 - `pushPattern` 只接受 `inputHolder.length == 1`。
-- 输入必须是 `AEItemKey`，数量不能超过 `Integer.MAX_VALUE`。
+- 机器只声明 item 输入端口；key 类型和数值范围由 router 统一校验。
 - 输出只需要 item slot 回网。
 - JEI catalyst 可通过 `FactoryType` 统一注册。
 
@@ -32,8 +32,7 @@
 
 - `pushPattern` 接受两个输入，一个 item，一个 chemical。
 - 不能依赖输入顺序，除非机器槽位语义真的有顺序。
-- item slot 和 chemical tank 都 simulate 成功后才能 execute。
-- `chemicalTank.insert(...).getAmount() == 0` 才代表完整插入。
+- item slot 和 chemical tank 作为同一事务的端口交给 support，机器不得自行 simulate/execute。
 - Purifying / Injecting 注意 `useStatisticalMechanics()`，不要把随机消耗逻辑绕开。
 
 ## 双 item 输入机器
@@ -50,8 +49,7 @@
 
 - `hasSecondaryItemInput()` 要返回 true。
 - 主输入槽和副输入槽语义不同，不能随便交换两个输入。
-- 先 simulate 主输入跨槽/主槽，再 simulate 副输入槽。
-- execute 顺序应和 simulate 顺序一致。
+- 主输入和副输入声明为两个固定 lane，由 router 统一模拟、执行和回滚。
 - side config 通常是 `EXTRA_MACHINE`。
 
 ## item 输入 + 副产物输出机器
@@ -80,9 +78,7 @@
 
 - `pushPattern` 接受三个输入：item、fluid、chemical。
 - 三种输入都必须存在，且每种只能出现一次。
-- item 用 `InputInventorySlot.insertItem(..., Action.SIMULATE, AutomationType.INTERNAL)`。
-- chemical 用 `inputGasTank.insert(..., Action.SIMULATE, AutomationType.INTERNAL)`。
-- fluid 用 `inputFluidTank.fill(..., FluidAction.SIMULATE)`，返回量必须等于输入量。
+- item、fluid、chemical 端口一次性交给 support；具体机器不得分别执行后再补偿。
 - 输出通常同时包含 item output slot 和 chemical output tank。
 - `ModBlockTypes.sideConfigFor` 必须包含 `ITEM`、`CHEMICAL`、`FLUID`、`ENERGY`。
 - 默认 side config 用 `AttachedSideConfig.REACTION`。
@@ -98,9 +94,8 @@
 
 检查点：
 
-- 输入都是 chemical，通常左右 tank 可互换。
-- 先尝试 `(first, second)`，失败再尝试 `(second, first)`。
-- `MeChemicalInputHelper.insertPair(...)` 会检查容量、同类 chemical 和 tank validity，并在不合法时回滚。
+- 输入都是 chemical，通常左右 tank 可互换；把两个 tank 声明为同一候选端口集合。
+- router 会按 tank validity、已有内容和容量回溯分配，并在执行失败时恢复全部端口。
 - 输出是 chemical tank，必须通过 `insertChemicalTankIntoNetwork` 回网。
 
 ## fluid 和 chemical 可切换机器
@@ -113,7 +108,7 @@
 
 - `getMode()` 决定当前方向。
 - 当前实现中 `getMode() == true` 时接受 fluid 输入并输出 chemical；`getMode() == false` 时接受 chemical 输入并输出 fluid。
-- `pushPattern` 必须按当前模式验证输入类型。
+- 根据当前模式只声明当前物理输入端口，类型验证仍由 router 完成。
 - 输出回网也必须按当前模式选择 tank。
 - GUI/样板使用时要提醒玩家：样板是否可执行取决于机器当前模式。
 
@@ -127,7 +122,7 @@
 
 - 输出 tank 数量可能不止一个，例如 Electrolytic Separator 有 left/right tank。
 - 多输出 tank 都要传给 support，否则网络满后其中一边不会被 AE ticker 继续处理。
-- fluid 输出目前要特别检查 `AeOutputMode` 语义，避免玩家打开 chemical 输出却无法回 fluid。
+- item、chemical、fluid 输出开关彼此独立；所有实际输出 tank 都必须声明给 support。
 - 有 daylight、biome、water source 或环境依赖的机器，不要只按 recipe 判断可执行。
 
 ## item 输入 + fluid 输出机器
@@ -141,7 +136,7 @@
 - `pushPattern` 接受一个 item 输入，输出是 fluid tank。
 - 输出 fluid 必须通过 `insertFluidTankIntoNetwork` 回网。
 - `sideConfigFor` 应包含 `ITEM, FLUID, ENERGY`。
-- `AeOutputMode` 的 `items()` 控制 fluid 输出（`MeRecipeMachineAeSupport` 中 fluid 输出受 `mode.items()` 控制）。
+- fluid 输出由 `AeOutputMode.fluids()` 独立控制。
 
 ## chemical -> chemical 带模式切换机器
 
@@ -152,7 +147,7 @@
 检查点：
 
 - 输入输出都是 chemical，但机器有模式切换。
-- `pushPattern` 必须按当前模式验证输入/输出类型。
+- 根据当前模式声明实际输入/输出 tank；key 类型由 router 验证。
 - 输出回网也必须按当前模式选择 tank。
 - `sideConfigFor` 应包含 `CHEMICAL, ITEM, ENERGY`。
 

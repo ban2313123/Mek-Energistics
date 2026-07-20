@@ -9,6 +9,9 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -79,10 +82,7 @@ public class MePaintingMachineBlockEntity extends TileEntityPaintingMachine impl
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
-        sendUpdatePacket |= super.onUpdateServer();
-        OutputInventorySlot output = ((TileEntityPaintingMachineAccessor) this).mekenergistics$getOutputSlot();
-        return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -93,23 +93,19 @@ public class MePaintingMachineBlockEntity extends TileEntityPaintingMachine impl
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 2) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
+    public MeInputLayout getPatternInputLayout() {
         InputInventorySlot inputSlot = ((TileEntityPaintingMachineAccessor) this).mekenergistics$getInputSlot();
-        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.pigmentTank);
+        return MeInputLayout.unordered(java.util.List.of(
+                MeMachineIoAdapter.itemInput(inputSlot),
+                MeMachineIoAdapter.chemicalInput(this.pigmentTank)));
     }
 
-    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
-        InputInventorySlot inputSlot = ((TileEntityPaintingMachineAccessor) this).mekenergistics$getInputSlot();
-        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.pigmentTank);
+    @Override
+    public java.util.List<? extends MeOutputPort> getPatternOutputPorts() {
+        return java.util.List.of(MeMachineIoAdapter.itemOutput(
+                ((TileEntityPaintingMachineAccessor) this).mekenergistics$getOutputSlot()));
     }
 
-    @Override public boolean isBusy() { return false; }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.PAINTING_MACHINE; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

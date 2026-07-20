@@ -1,7 +1,9 @@
 package com.beipuo.mekenergistics.blockentity.factory;
 
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
@@ -25,7 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
-public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory implements MeFactoryAeMachine {
+public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory implements MeFactoryIoOwner {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
 
@@ -64,25 +66,20 @@ public class MeCombiningFactoryBlockEntity extends TileEntityCombiningFactory im
         return MeFactoryAeSupport.withAeRecipeEnergy(this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex));
     }
 
-    @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 2) {
-            return false;
-        }
-        if (this.aeSupport.isSmartPatternMultiplicationEnabled()) {
-            return this.aeSupport.enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        InputInventorySlot extraSlot = ((TileEntityCombiningFactoryAccessor) this).mekenergistics$getExtraSlot();
-        return this.aeSupport.pushTwoItems(inputHolder, this.inputSlots, extraSlot);
-    }
+    @Override public java.util.List<mekanism.api.inventory.IInventorySlot> meInputSlots() { return this.inputSlots; }
+    @Override public java.util.List<mekanism.api.inventory.IInventorySlot> meOutputSlots() { return this.outputSlots; }
+    @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
 
-    @Override public boolean isBusy() { return false; }
+    @Override
+    public MeInputLayout getPatternInputLayout() {
+        InputInventorySlot extraSlot = ((TileEntityCombiningFactoryAccessor) this).mekenergistics$getExtraSlot();
+        return MeInputLayout.lanes(java.util.List.of(
+                java.util.List.of(MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputSlots)),
+                java.util.List.of(MeMachineIoAdapter.itemInput(extraSlot))));
+    }
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        InputInventorySlot extraSlot = ((TileEntityCombiningFactoryAccessor) this).mekenergistics$getExtraSlot();
-        return this.aeSupport.processTwoItemsSmartPatterns(extraSlot, this.outputSlots, this.inputSlots)
-                || sendUpdatePacket;
+        return this.aeSupport.processPatternIo(super.onUpdateServer());
     }
     @Override public void clearRemoved() { super.clearRemoved(); this.aeSupport.createNodeOnFirstTick(this); }
     @Override public void setRemoved() { this.aeSupport.destroy(); super.setRemoved(); }

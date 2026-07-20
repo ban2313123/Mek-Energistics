@@ -7,6 +7,7 @@ import com.beipuo.mekenergistics.blockentity.support.MeMekanismMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeNetworkEnergyHelper;
 import com.beipuo.mekenergistics.blockentity.support.MePatternTerminalNames;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
@@ -618,31 +619,13 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     }
 
     public boolean hasAeOutputWork() {
-        if (hasSmartPatternWork()) {
-            return true;
-        }
-        for (MeOutputPort output : getAeOutputPorts()) {
-            if (output.key() == null || output.amount() <= 0) {
-                continue;
-            }
-            if (output.key() instanceof appeng.api.stacks.AEItemKey) {
-                if (this.aeOutputMode.items()) {
-                    return true;
-                }
-            } else if (output.key() instanceof appeng.api.stacks.AEFluidKey) {
-                if (this.aeOutputMode.fluids()) {
-                    return true;
-                }
-            } else if (this.aeOutputMode.chemicals()) {
-                return true;
-            }
-        }
-        return false;
+        return hasSmartPatternWork() || getAeSupport().hasPatternOutputBacklog(this.aeOutputMode);
     }
 
     public boolean processAeOutputWork() {
-        boolean changed = processSmartPatternWork();
-        return getAeSupport().drainOutputPorts(this.aeOutputMode, getAeOutputPorts()) || changed;
+        boolean changed = getAeSupport().drainPatternOutputs(this.aeOutputMode);
+        return getAeSupport().hasPatternOutputBacklog(this.aeOutputMode)
+                ? changed : processSmartPatternWork() || changed;
     }
 
     @Override
@@ -670,31 +653,25 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         return this.actionSource;
     }
 
-    public List<MeInputPort> getAeInputPorts(int inputCount) {
+    @Override
+    public MeInputLayout getPatternInputLayout() {
         List<MeInputPort> ports = new ArrayList<>();
-        switch (this.machine.slotLayout()) {
-            case SINGLE_ITEM, SAWING -> ports.add(MeMachineIoAdapter.itemInput(slots()[INPUT_SLOT]));
-            case DOUBLE_ITEM -> {
-                ports.add(MeMachineIoAdapter.itemInput(slots()[INPUT_SLOT]));
+        if (this.chemicalTank != null && this.aeOutputMode.chemicals()) {
+            if (slots()[SECONDARY_INPUT_SLOT] != null) {
                 ports.add(MeMachineIoAdapter.itemInput(slots()[SECONDARY_INPUT_SLOT]));
             }
-            case ITEM_CHEMICAL -> {
-                if (inputCount == 1) {
-                    ports.add(MeMachineIoAdapter.itemInput(slots()[SECONDARY_INPUT_SLOT]));
-                } else {
-                    ports.add(MeMachineIoAdapter.itemInput(slots()[INPUT_SLOT]));
-                    if (this.chemicalTank != null) {
-                        ports.add(MeMachineIoAdapter.chemicalInput(this.chemicalTank));
-                    }
-                }
-            }
+            return MeInputLayout.unordered(ports);
         }
-        return ports;
-    }
-
-    @Override
-    public List<? extends MeInputPort> getPatternInputPorts() {
-        return getAeInputPorts(2);
+        if (slots()[INPUT_SLOT] != null) {
+            ports.add(MeMachineIoAdapter.itemInput(slots()[INPUT_SLOT]));
+        }
+        if (slots()[SECONDARY_INPUT_SLOT] != null) {
+            ports.add(MeMachineIoAdapter.itemInput(slots()[SECONDARY_INPUT_SLOT]));
+        }
+        if (this.chemicalTank != null) {
+            ports.add(MeMachineIoAdapter.chemicalInput(this.chemicalTank));
+        }
+        return MeInputLayout.unordered(ports);
     }
 
     public List<MeOutputPort> getAeOutputPorts() {
@@ -752,16 +729,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
 
     boolean processSmartPatternWork() {
         return getAeSupport().processSmartPatternWork();
-    }
-
-    @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        return getAeSupport().pushPattern(patternDetails, inputHolder);
-    }
-
-    @Override
-    public boolean isBusy() {
-        return getAeSupport().isPatternBusy();
     }
 
     private void updatePatterns() {

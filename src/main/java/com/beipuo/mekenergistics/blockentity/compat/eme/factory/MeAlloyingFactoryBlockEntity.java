@@ -1,9 +1,9 @@
 package com.beipuo.mekenergistics.blockentity.compat.eme.factory;
 
-import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismRecipeViewerTypes;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -65,12 +65,16 @@ public class MeAlloyingFactoryBlockEntity extends TileEntityAlloyingFactory impl
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return this.outputSlots; }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
-    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) { return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder) : getAeSupport().pushThreeItems(inputHolder, this.inputSlots, getExtraSlot(), getSecondExtraSlot())); }
-    @Override public boolean isBusy() { return false; }
+    @Override public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.lanes(List.of(
+                List.of(MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputSlots)),
+                List.of(MeMachineIoAdapter.itemInput(getExtraSlot())),
+                List.of(MeMachineIoAdapter.itemInput(getSecondExtraSlot()))));
+    }
     @Nullable @Override public IRecipeViewerRecipeType<AlloyerRecipe> recipeViewerType() { return EvolvedMekanismRecipeViewerTypes.ALLOYING; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public CachedRecipe<AlloyerRecipe> createNewCachedRecipe(@NotNull AlloyerRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }
-    @Override protected boolean onUpdateServer() { boolean sendUpdatePacket = super.onUpdateServer(); sendUpdatePacket |= getAeSupport().processThreeItemsSmartPatterns(getExtraSlot(), getSecondExtraSlot(), this.outputSlots, this.inputSlots); return sendUpdatePacket; }
+    @Override protected boolean onUpdateServer() { return getAeSupport().processPatternIo(super.onUpdateServer()); }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

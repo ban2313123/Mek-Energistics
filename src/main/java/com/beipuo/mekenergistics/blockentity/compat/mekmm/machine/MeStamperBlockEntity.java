@@ -13,6 +13,9 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -85,7 +88,7 @@ public class MeStamperBlockEntity extends TileEntityStamper implements ICrafting
 
     @Override
     protected boolean onUpdateServer() {
-        return getRecipeAeSupport().insertOutputSlotIntoNetwork(this.meOutputSlot, this.aeOutputMode) || super.onUpdateServer();
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @Override
@@ -95,18 +98,14 @@ public class MeStamperBlockEntity extends TileEntityStamper implements ICrafting
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails)
-                || this.meMoldInputSlot == null || this.meMoldInputSlot.getStack().isEmpty()) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        return this.meItemInputSlot != null && getRecipeAeSupport().pushSingleItem(inputHolder, this.meItemInputSlot);
+    public MeInputLayout getPatternInputLayout() {
+        return this.meItemInputSlot == null ? MeInputLayout.empty()
+                : MeInputLayout.unordered(java.util.List.of(MeMachineIoAdapter.itemInput(this.meItemInputSlot)));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override public boolean isPatternBusy() { return this.meMoldInputSlot == null || this.meMoldInputSlot.isEmpty(); }
+    @Override public java.util.List<? extends MeOutputPort> getPatternOutputPorts() { return this.meOutputSlot == null
+            ? java.util.List.of() : java.util.List.of(MeMachineIoAdapter.itemOutput(this.meOutputSlot)); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.CNC_STAMPER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

@@ -10,6 +10,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityLargeAntiprotonicNucleosynthesizerAccessor;
 import com.jerry.meklm.common.tile.machine.TileEntityLargeAntiprotonicNucleosynthesizer;
@@ -60,9 +62,7 @@ public class MeLargeAntiprotonicNucleosynthesizerBlockEntity extends TileEntityL
     }
 
     @Override protected boolean onUpdateServer() {
-        boolean changed = super.onUpdateServer();
-        var output = ((TileEntityLargeAntiprotonicNucleosynthesizerAccessor) this).mekenergistics$getOutputSlot();
-        return support().drainOutputs(outputMode, changed, output);
+        return support().processPatternIo(outputMode, super.onUpdateServer());
     }
 
     @Override public mekanism.api.recipes.cache.CachedRecipe<mekanism.api.recipes.NucleosynthesizingRecipe> createNewCachedRecipe(
@@ -70,19 +70,18 @@ public class MeLargeAntiprotonicNucleosynthesizerBlockEntity extends TileEntityL
         return support().wrapRecipeEnergy(getEnergyContainer(), super.createNewCachedRecipe(recipe, cacheIndex));
     }
 
-    @Override public boolean pushPattern(IPatternDetails pattern, KeyCounter[] inputHolder) {
+    @Override public MeInputLayout getPatternInputLayout() {
         var accessor = (TileEntityLargeAntiprotonicNucleosynthesizerAccessor) this;
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(pattern) || inputHolder == null
-                || inputHolder.length != 2 || gasTank == null || accessor.mekenergistics$getInputSlot() == null
-                || accessor.mekenergistics$getGasInputSlot() == null) return false;
-        if (support().isSmartPatternMultiplicationEnabled()) return support().enqueueSmartPattern(pattern, inputHolder);
+        if (gasTank == null || accessor.mekenergistics$getInputSlot() == null
+                || accessor.mekenergistics$getGasInputSlot() == null) return MeInputLayout.empty();
         MeInputPort item = MeMachineIoAdapter.itemInput(accessor.mekenergistics$getInputSlot());
         List<MeInputPort> chemical = List.of(MeMachineIoAdapter.chemicalInput(gasTank),
                 MeMachineIoAdapter.itemInput(accessor.mekenergistics$getGasInputSlot()));
-        return support().pushLaneChoices(inputHolder, List.of(List.of(item), chemical));
+        return MeInputLayout.lanes(List.of(List.of(item), chemical));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override public List<? extends MeOutputPort> getPatternOutputPorts() { return List.of(MeMachineIoAdapter.itemOutput(
+            ((TileEntityLargeAntiprotonicNucleosynthesizerAccessor) this).mekenergistics$getOutputSlot())); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER; }
     @Override public appeng.api.networking.IManagedGridNode getMainNode() { return support().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return outputMode; }

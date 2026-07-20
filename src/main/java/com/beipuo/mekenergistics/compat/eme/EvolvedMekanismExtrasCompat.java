@@ -17,6 +17,8 @@ import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraReplica
 import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraItemToChemicalFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraSawingFactoryBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
+import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
@@ -243,9 +245,8 @@ public final class EvolvedMekanismExtrasCompat {
 
     @Nullable
     private static MeMekanismMachine getEmExtraFactoryTarget(MeMekanismMachine current, EMExtraTier toTier) {
-        return MeMekanismMachine.getEvolvedMekanismExtrasFactory(
-                toTier.name().toLowerCase(Locale.ROOT),
-                current.factoryTypeName());
+        return CompatFactoryTierGraph.factoryAtTier(
+                current, CompatMod.EMEKE, toTier.name().toLowerCase(Locale.ROOT));
     }
 
     private static boolean isTerminalEvolvedFactory(MeMekanismMachine machine) {

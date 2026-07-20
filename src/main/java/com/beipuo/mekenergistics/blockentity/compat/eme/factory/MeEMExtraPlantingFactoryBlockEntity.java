@@ -1,9 +1,9 @@
 package com.beipuo.mekenergistics.blockentity.compat.eme.factory;
 
-import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import io.github.masyumero.emextras.common.integration.mekmm.tile.factory.TileEntityEMExtraPlantingFactory;
@@ -31,11 +31,15 @@ public class MeEMExtraPlantingFactoryBlockEntity extends TileEntityEMExtraPlanti
     @Override public MeFactoryAeSupport getAeSupport() { if (aeSupport == null) aeSupport = new MeFactoryAeSupport(this); return aeSupport; }
     @Override public MeMekanismMachine getMachine() { return machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails p, KeyCounter[] in) { return getMainNode().isActive() && getAvailablePatterns().contains(p) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(p, in) : getAeSupport().pushItemChemicalOrConversion(in, this.inputSlots, getChemicalTank(), getExtraSlot())); }
-    @Override public boolean isBusy() { return false; }
+    @Override public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(List.of(
+                MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputSlots),
+                MeMachineIoAdapter.chemicalInput(getChemicalTank()),
+                MeMachineIoAdapter.itemInput(getExtraSlot())));
+    }
     @Override public void addContainerTrackers(MekanismContainer c) { super.addContainerTrackers(c); addAeOutputModeTracker(c); }
     @Override public mekanism.api.recipes.cache.CachedRecipe<com.jerry.mekmm.api.recipes.PlantingRecipe> createNewCachedRecipe(@NotNull com.jerry.mekmm.api.recipes.PlantingRecipe r, int i) { return MeFactoryAeSupport.withAeRecipeEnergy(this, getEnergyContainer(), super.createNewCachedRecipe(r, i)); }
-    @Override protected boolean onUpdateServer() { boolean u = super.onUpdateServer(); return getAeSupport().processItemChemicalOrConversionSmartPatterns(getChemicalTank(), getExtraSlot(), this.outputSlots, List.of(), this.inputSlots) || u; }
+    @Override protected boolean onUpdateServer() { return getAeSupport().processPatternIo(super.onUpdateServer()); }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

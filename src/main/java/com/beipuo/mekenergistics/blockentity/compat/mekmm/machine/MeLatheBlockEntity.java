@@ -13,6 +13,9 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityElectricMachineAccessor;
@@ -76,7 +79,7 @@ public class MeLatheBlockEntity extends TileEntityLathe implements ICraftingProv
 
     @Override
     protected boolean onUpdateServer() {
-        return getRecipeAeSupport().insertOutputSlotIntoNetwork(((TileEntityElectricMachineAccessor) this).mekenergistics$getOutputSlot(), this.aeOutputMode) || super.onUpdateServer();
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -87,18 +90,13 @@ public class MeLatheBlockEntity extends TileEntityLathe implements ICraftingProv
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 1) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        var inputSlot = ((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot();
-        return getRecipeAeSupport().pushSingleItem(inputHolder, inputSlot);
+    public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(java.util.List.of(MeMachineIoAdapter.itemInput(
+                ((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot())));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override public java.util.List<? extends MeOutputPort> getPatternOutputPorts() { return java.util.List.of(
+            MeMachineIoAdapter.itemOutput(((TileEntityElectricMachineAccessor) this).mekenergistics$getOutputSlot())); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.CNC_LATHE; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

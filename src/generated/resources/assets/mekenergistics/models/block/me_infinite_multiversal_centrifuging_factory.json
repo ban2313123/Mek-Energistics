@@ -1,0 +1,59 @@
+{
+  "parent": "block/block",
+  "children": {
+    "base": {
+      "parent": "mekmm:block/factory/centrifuging/base"
+    },
+    "front_led": {
+      "elements": [
+        {
+          "faces": {
+            "north": {
+              "cullface": "north",
+              "texture": "#led",
+              "uv": [
+                0.0,
+                3.0,
+                6.0,
+                4.0
+              ]
+            },
+            "up": {
+              "cullface": "up",
+              "rotation": 180,
+              "texture": "#led",
+              "uv": [
+                0.0,
+                3.0,
+                6.0,
+                4.0
+              ]
+            }
+          },
+          "from": [
+            4.98,
+            28.99,
+            0.01
+          ],
+          "name": "front_panel_led",
+          "to": [
+            11.02,
+            29.99,
+            1.01
+          ]
+        }
+      ],
+      "textures": {
+        "led": "mekenergistics:block/factory/infinite_multiversal_led"
+      }
+    },
+    "translucent": {
+      "parent": "mekenergistics:block/factory/centrifuging_translucent"
+    }
+  },
+  "gui_light": "side",
+  "loader": "neoforge:composite",
+  "textures": {
+    "particle": "mekanism:block/factory/factory_front_back"
+  }
+}

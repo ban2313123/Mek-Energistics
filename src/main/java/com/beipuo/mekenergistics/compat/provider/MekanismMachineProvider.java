@@ -40,6 +40,7 @@ import com.beipuo.mekenergistics.blockentity.machine.utility.MeSeismicVibratorBl
 import com.beipuo.mekenergistics.blockentity.machine.utility.MeTeleporterBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineSpec;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
@@ -58,8 +59,6 @@ import mekanism.common.block.attribute.Attributes;
 import mekanism.common.content.blocktype.BlockShapes;
 import mekanism.common.content.blocktype.BlockTypeTile;
 import mekanism.common.item.ItemTierInstaller;
-import mekanism.common.inventory.container.tile.MekanismTileContainer;
-import mekanism.common.registration.impl.ContainerTypeRegistryObject;
 import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.registration.impl.TileEntityTypeRegistryObject;
 import mekanism.common.tier.FactoryTier;
@@ -69,34 +68,32 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import org.jetbrains.annotations.Nullable;
+import java.util.Map;
 
-public final class MekanismMachineProvider implements CompatMachineProvider {
+public final class MekanismMachineProvider extends AbstractCompatMachineProvider implements CompatMachineProvider {
     public MekanismMachineProvider() {
+        super(CompatMod.MEKANISM, familyAdapters());
+    }
+
+    private static Map<CompatMachineFamily, CompatMachineFamilyAdapter> familyAdapters() {
+        return Map.of(
+                CompatMachineFamily.MEKANISM_MACHINE,
+                CompatMachineFamilyAdapter.of(
+                        spec -> ModMenuTypes.getCoreMachineContainer(spec.machine()),
+                        (spec, registrar) -> registerMachine(spec.machine(), registrar),
+                        MekanismMachineProvider::createMachineBlockType,
+                        MekanismMachineProvider::registerMachineGridNodeHost),
+                CompatMachineFamily.MEKANISM_FACTORY,
+                CompatMachineFamilyAdapter.of(
+                        spec -> ModMenuTypes.ME_FACTORY,
+                        (spec, registrar) -> registerFactory(spec.machine(), registrar),
+                        MekanismMachineProvider::createMachineBlockType,
+                        MekanismMachineProvider::registerFactoryGridNodeHost));
     }
 
     @Override
     public boolean isInstaller(ItemStack stack) {
         return stack.getItem() instanceof ItemTierInstaller;
-    }
-
-    @Override
-    public ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> menuType(
-            CompatMachineSpec spec) {
-        return switch (spec.route()) {
-            case MEKANISM_FACTORY -> ModMenuTypes.ME_FACTORY;
-            case MEKANISM_MACHINE -> ModMenuTypes.getCoreMachineContainer(spec.machine());
-            default -> throw wrongRoute(spec);
-        };
-    }
-
-    @Override
-    public TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerBlockEntity(
-            CompatMachineSpec spec, MachineFactoryRegistrar registrar) {
-        return switch (spec.route()) {
-            case MEKANISM_MACHINE -> registerMachine(spec.machine(), registrar);
-            case MEKANISM_FACTORY -> registerFactory(spec.machine(), registrar);
-            default -> throw wrongRoute(spec);
-        };
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -155,9 +152,8 @@ public final class MekanismMachineProvider implements CompatMachineProvider {
         };
     }
 
-    @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public BlockTypeTile<? extends TileEntityMekanism> createBlockType(
+    private static BlockTypeTile<? extends TileEntityMekanism> createMachineBlockType(
             CompatMachineSpec spec, TileEntityTypeRegistryObject<? extends TileEntityMekanism> tileType) {
         return createBlockTypeTyped(spec, (TileEntityTypeRegistryObject) tileType);
     }
@@ -252,14 +248,17 @@ public final class MekanismMachineProvider implements CompatMachineProvider {
         };
     }
 
-    @Override
-    public void registerGridNodeHost(CompatMachineSpec spec, RegisterCapabilitiesEvent event,
+    private static void registerMachineGridNodeHost(CompatMachineSpec spec, RegisterCapabilitiesEvent event,
             TileEntityTypeRegistryObject<? extends TileEntityMekanism> holder) {
-        Class<? extends IInWorldGridNodeHost> host = spec.kind() == com.beipuo.mekenergistics.compat.catalog.CompatMachineKind.MACHINE
-                ? machineGridHost(spec.machine()) : factoryGridHost(spec.machine());
+        Class<? extends IInWorldGridNodeHost> host = machineGridHost(spec.machine());
         if (host != null) {
             ModBlockEntities.registerGridNodeHost(event, holder, host);
         }
+    }
+
+    private static void registerFactoryGridNodeHost(CompatMachineSpec spec, RegisterCapabilitiesEvent event,
+            TileEntityTypeRegistryObject<? extends TileEntityMekanism> holder) {
+        ModBlockEntities.registerGridNodeHost(event, holder, factoryGridHost(spec.machine()));
     }
 
     @Nullable
@@ -334,9 +333,5 @@ public final class MekanismMachineProvider implements CompatMachineProvider {
         }
         MeMekanismMachine target = fromTier == null ? current.getBasicFactory() : current.getNextFactory();
         return target != null && target.baseTier() == toTier ? target : null;
-    }
-
-    private static IllegalArgumentException wrongRoute(CompatMachineSpec spec) {
-        return new IllegalArgumentException("Mekanism provider cannot handle " + spec.route());
     }
 }

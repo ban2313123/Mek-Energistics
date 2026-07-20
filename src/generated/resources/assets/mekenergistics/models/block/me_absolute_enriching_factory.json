@@ -1,0 +1,15 @@
+{
+  "parent": "block/block",
+  "children": {
+    "base": {
+      "parent": "mekanism:block/factory/enriching/base"
+    },
+    "front_led": {
+      "parent": "mekenergistics:block/factory/front_led/absolute"
+    }
+  },
+  "loader": "neoforge:composite",
+  "textures": {
+    "particle": "mekanism:block/factory/enriching/enriching_factory_front"
+  }
+}

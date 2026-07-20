@@ -6,10 +6,11 @@ import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
-import com.beipuo.mekenergistics.blockentity.support.MeChemicalInputHelper;
-
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -23,7 +24,6 @@ import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
 import java.util.List;
 import mekanism.api.IContentsListener;
-import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
 import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;
@@ -77,8 +77,7 @@ public class MePigmentMixerBlockEntity extends TileEntityPigmentMixer implements
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        return getRecipeAeSupport().drainChemicalOutputs(this.aeOutputMode, sendUpdatePacket, this.outputTank);
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -89,35 +88,16 @@ public class MePigmentMixerBlockEntity extends TileEntityPigmentMixer implements
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 2) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        ChemicalStack first = getChemical(inputHolder[0]);
-        ChemicalStack second = getChemical(inputHolder[1]);
-        if (first.isEmpty() || second.isEmpty()) {
-            return false;
-        }
-        return tryInsertChemicals(first, second) || tryInsertChemicals(second, first);
+    public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(java.util.List.of(
+                MeMachineIoAdapter.chemicalInput(this.leftInputTank),
+                MeMachineIoAdapter.chemicalInput(this.rightInputTank)));
     }
 
-    private ChemicalStack getChemical(KeyCounter counter) {
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(counter);
-        return input == null || !input.isChemical() ? ChemicalStack.EMPTY : input.chemical();
+    @Override
+    public java.util.List<? extends MeOutputPort> getPatternOutputPorts() {
+        return java.util.List.of(MeMachineIoAdapter.chemicalOutput(this.outputTank));
     }
-
-    private boolean tryInsertChemicals(ChemicalStack left, ChemicalStack right) {
-        if (!MeChemicalInputHelper.insertPair(this.leftInputTank, this.rightInputTank, left, right)) {
-            return false;
-        }
-        setChanged();
-        return true;
-    }
-
-    @Override public boolean isBusy() { return false; }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.PIGMENT_MIXER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

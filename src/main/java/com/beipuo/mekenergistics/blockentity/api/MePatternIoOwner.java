@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.blockentity.api;
 
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternIoAdapter;
 import java.util.List;
@@ -14,6 +15,10 @@ public interface MePatternIoOwner extends MeAeSupportOwner {
 
     default List<? extends MeInputPort> getPatternInputPorts() {
         return List.of();
+    }
+
+    default MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(getPatternInputPorts());
     }
 
     default List<? extends MeOutputPort> getPatternOutputPorts() {

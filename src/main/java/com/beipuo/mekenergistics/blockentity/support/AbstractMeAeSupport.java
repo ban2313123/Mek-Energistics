@@ -24,6 +24,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
 import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
@@ -101,11 +102,65 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
 
     public final MePatternIoAdapter getPatternIoAdapter() {
         return this.owner instanceof MePatternIoOwner io ? io.getPatternIoAdapter()
-                : new MePatternIoAdapter(List.of(), List.of(), false);
+                : new MePatternIoAdapter(MeInputLayout.empty(), List.of(), false);
     }
 
     public final boolean isPatternBusy() {
-        return getPatternIoAdapter().busy();
+        return this.smartPatternMultiplication.hasPendingWork() || getPatternIoAdapter().busy();
+    }
+
+    public final boolean pushPatternWithAdapter(IPatternDetails patternDetails, KeyCounter[] inputs) {
+        if (!this.mainNode.isActive() || patternDetails == null || inputs == null
+                || !this.patterns.contains(patternDetails) || getPatternIoAdapter().busy()) {
+            return false;
+        }
+        if (this.smartPatternMultiplication.isEnabled()) {
+            return enqueueSmartPattern(patternDetails, inputs);
+        }
+        boolean changed = getPatternIoAdapter().inputLayout().route(inputs);
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
+    }
+
+    protected final boolean processSmartPatternViaAdapter() {
+        MeInputLayout layout = getPatternIoAdapter().inputLayout();
+        if (layout.isEmpty() || getPatternIoAdapter().busy()) {
+            return false;
+        }
+        return processSmartPattern(new MeSmartPatternMultiplication.CapacityAwareFeeder() {
+            @Override
+            public boolean feed(KeyCounter[] oneCraftInputs) {
+                return layout.route(oneCraftInputs);
+            }
+
+            @Override
+            public long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+                return layout.maxAcceptedCopies(oneCraftInputs);
+            }
+        });
+    }
+
+    protected final boolean processSmartPatternViaDeclaredIo() {
+        return getPatternIoAdapter().inputLayout().isEmpty()
+                ? processSmartPatternViaOwner() : processSmartPatternViaAdapter();
+    }
+
+    public final boolean hasPatternOutputBacklog(
+            com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode) {
+        for (MeOutputPort output : getPatternIoAdapter().outputPorts()) {
+            AEKey key = output.key();
+            if (key != null && output.amount() > 0 && outputModeAllows(mode, key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public final boolean drainPatternOutputs(
+            com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode) {
+        return drainOutputPorts(mode, getPatternIoAdapter().outputPorts());
     }
 
     public final IInventorySlotHolder withPatternSlots(IInventorySlotHolder original) {
@@ -211,10 +266,7 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
         boolean changed = false;
         for (MeOutputPort output : outputPorts) {
             AEKey key = output.key();
-            if (key == null || output.amount() <= 0
-                    || key instanceof AEItemKey && !mode.items()
-                    || key instanceof AEFluidKey && !mode.fluids()
-                    || !(key instanceof AEItemKey) && !(key instanceof AEFluidKey) && !mode.chemicals()) {
+            if (key == null || output.amount() <= 0 || !outputModeAllows(mode, key)) {
                 continue;
             }
             long inserted = insertIntoNetwork(key, output.amount());
@@ -227,6 +279,12 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
             this.owner.saveChanges();
         }
         return changed;
+    }
+
+    private static boolean outputModeAllows(
+            com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode, AEKey key) {
+        return key instanceof AEItemKey ? mode.items()
+                : key instanceof AEFluidKey ? mode.fluids() : mode.chemicals();
     }
 
     public boolean processSmartPattern(MeSmartPatternMultiplication.Feeder feeder) {

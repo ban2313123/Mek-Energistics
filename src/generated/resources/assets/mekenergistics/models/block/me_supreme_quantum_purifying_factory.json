@@ -1,0 +1,15 @@
+{
+  "parent": "block/block",
+  "children": {
+    "base": {
+      "parent": "mekanism:block/factory/purifying/base"
+    },
+    "front_led": {
+      "parent": "mekenergistics:block/factory/front_led/supreme_quantum"
+    }
+  },
+  "loader": "neoforge:composite",
+  "textures": {
+    "particle": "mekanism:block/factory/purifying/purifying_factory_front"
+  }
+}

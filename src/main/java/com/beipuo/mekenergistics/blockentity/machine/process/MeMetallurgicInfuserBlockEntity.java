@@ -9,6 +9,9 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -82,14 +85,7 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
-        sendUpdatePacket |= super.onUpdateServer();
-        OutputInventorySlot output = ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getOutputSlot();
-        boolean changed = getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
-        if (this.aeOutputMode.chemicals()) {
-            changed |= getRecipeAeSupport().drainChemicalOutputs(this.aeOutputMode, false, this.infusionTank);
-        }
-        return changed;
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -100,29 +96,25 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        return feedPatternInputs(inputHolder);
-    }
-
-    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
+    public MeInputLayout getPatternInputLayout() {
         if (this.aeOutputMode.chemicals()) {
-            if (inputHolder == null || inputHolder.length != 1) {
-                return false;
-            }
-            return getRecipeAeSupport().pushSingleItem(inputHolder,
-                    ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInfusionSlot());
+            return MeInputLayout.unordered(java.util.List.of(MeMachineIoAdapter.itemInput(
+                    ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInfusionSlot())));
         }
         InputInventorySlot inputSlot = ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInputSlot();
-        return getRecipeAeSupport().pushItemChemical(inputHolder, inputSlot, this.infusionTank);
+        return MeInputLayout.unordered(java.util.List.of(
+                MeMachineIoAdapter.itemInput(inputSlot),
+                MeMachineIoAdapter.chemicalInput(this.infusionTank)));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override
+    public java.util.List<? extends MeOutputPort> getPatternOutputPorts() {
+        return java.util.List.of(
+                MeMachineIoAdapter.itemOutput(
+                        ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getOutputSlot()),
+                MeMachineIoAdapter.chemicalOutput(this.infusionTank));
+    }
+
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.METALLURGIC_INFUSER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

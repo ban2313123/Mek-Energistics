@@ -68,10 +68,6 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & MeAeMachine & ICraftingProvider & IActionHost>
         extends AbstractMeAeSupport<TILE> {
-    private final List<OutputInventorySlot> knownOutputSlots = new ArrayList<>();
-    private final List<IChemicalTank> knownChemicalOutputTanks = new ArrayList<>();
-    private final List<IExtendedFluidTank> knownFluidOutputTanks = new ArrayList<>();
-
     public MeRecipeMachineAeSupport(TILE owner) {
         super(owner);
     }
@@ -84,237 +80,20 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
         }
     }
 
-    public boolean insertOutputSlotIntoNetwork(OutputInventorySlot outputSlot, AeOutputMode mode) {
-        rememberOutputSlot(outputSlot);
-        if (outputSlot == null) {
-            return false;
-        }
-        return drainOutputPorts(mode, List.of(MeMachineIoAdapter.itemOutput(outputSlot)));
-    }
-
-    public boolean insertOutputSlotsIntoNetwork(AeOutputMode mode, OutputInventorySlot... outputSlots) {
-        boolean changed = false;
-        for (OutputInventorySlot outputSlot : outputSlots) {
-            rememberOutputSlot(outputSlot);
-            changed |= drainOutputPorts(mode, List.of(MeMachineIoAdapter.itemOutput(outputSlot)));
+    /** Drains declared outputs before allowing another smart batch into the machine. */
+    public boolean processPatternIo(AeOutputMode mode, boolean sendUpdatePacket) {
+        boolean changed = drainPatternOutputs(mode) || sendUpdatePacket;
+        if (!hasPatternOutputBacklog(mode)) {
+            changed |= processSmartPatternViaAdapter();
         }
         return changed;
-    }
-
-    public boolean insertChemicalTankIntoNetwork(IChemicalTank tank, AeOutputMode mode) {
-        rememberChemicalTank(tank);
-        if (tank == null) {
-            return false;
-        }
-        return drainOutputPorts(mode, List.of(MeMachineIoAdapter.chemicalOutput(tank)));
-    }
-
-    public boolean insertFluidTankIntoNetwork(IExtendedFluidTank tank, AeOutputMode mode) {
-        rememberFluidTank(tank);
-        if (tank == null) {
-            return false;
-        }
-        return drainOutputPorts(mode, List.of(MeMachineIoAdapter.fluidOutput(tank)));
-    }
-
-    public boolean drainOutputs(AeOutputMode mode, boolean sendUpdatePacket, OutputInventorySlot... outputSlots) {
-        return insertOutputSlotsIntoNetwork(mode, outputSlots) || sendUpdatePacket;
-    }
-
-    public boolean drainOutputs(AeOutputMode mode, boolean sendUpdatePacket, Iterable<? extends IInventorySlot> outputSlots) {
-        boolean changed = false;
-        for (IInventorySlot slot : outputSlots) {
-            if (slot instanceof OutputInventorySlot outputSlot) {
-                changed |= insertOutputSlotIntoNetwork(outputSlot, mode);
-            }
-        }
-        return changed || sendUpdatePacket;
-    }
-
-    public boolean drainChemicalOutputs(AeOutputMode mode, boolean sendUpdatePacket, IChemicalTank... tanks) {
-        boolean changed = false;
-        for (IChemicalTank tank : tanks) {
-            changed |= insertChemicalTankIntoNetwork(tank, mode);
-        }
-        return changed || sendUpdatePacket;
-    }
-
-    public boolean drainFluidOutputs(AeOutputMode mode, boolean sendUpdatePacket, IExtendedFluidTank... tanks) {
-        boolean changed = false;
-        for (IExtendedFluidTank tank : tanks) {
-            changed |= insertFluidTankIntoNetwork(tank, mode);
-        }
-        return changed || sendUpdatePacket;
-    }
-
-    public boolean drainMixedOutputs(AeOutputMode mode, boolean sendUpdatePacket, OutputInventorySlot outputSlot, IChemicalTank chemicalTank) {
-        boolean changed = insertOutputSlotIntoNetwork(outputSlot, mode);
-        changed |= insertChemicalTankIntoNetwork(chemicalTank, mode);
-        return changed || sendUpdatePacket;
-    }
-
-    public boolean drainMixedOutputs(AeOutputMode mode, boolean sendUpdatePacket, OutputInventorySlot outputSlot, IExtendedFluidTank fluidTank) {
-        boolean changed = insertOutputSlotIntoNetwork(outputSlot, mode);
-        changed |= insertFluidTankIntoNetwork(fluidTank, mode);
-        return changed || sendUpdatePacket;
-    }
-
-    public boolean pushSingleItem(KeyCounter[] inputHolder, IInventorySlot inputSlot) {
-        if (inputHolder == null || inputHolder.length != 1 || inputSlot == null) {
-            return false;
-        }
-        boolean changed = MePatternInputRouter.route(inputHolder,
-                List.of(MeMachineIoAdapter.itemInput(inputSlot)));
-        if (changed) {
-            this.owner.setChanged();
-        }
-        return changed;
-    }
-
-    public boolean pushItemChemical(KeyCounter[] inputHolder, IInventorySlot inputSlot, IChemicalTank chemicalTank) {
-        if (inputSlot == null || chemicalTank == null) {
-            return false;
-        }
-        boolean changed = MePatternInputRouter.route(inputHolder, List.of(
-                MeMachineIoAdapter.itemInput(inputSlot), MeMachineIoAdapter.chemicalInput(chemicalTank)));
-        if (changed) {
-            this.owner.setChanged();
-        }
-        return changed;
-    }
-
-    /** Routes the chemical lane to either the direct tank or Mekanism's conversion slot. */
-    public boolean pushItemChemicalOrConversion(KeyCounter[] inputHolder, IInventorySlot inputSlot,
-            IChemicalTank chemicalTank, IInventorySlot conversionSlot) {
-        if (inputHolder == null || inputHolder.length != 2 || inputSlot == null
-                || chemicalTank == null || conversionSlot == null) {
-            return false;
-        }
-        MeInputPort main = MeMachineIoAdapter.itemInput(inputSlot);
-        List<MeInputPort> secondary = List.of(MeMachineIoAdapter.chemicalInput(chemicalTank),
-                MeMachineIoAdapter.itemInput(conversionSlot));
-        boolean changed = MePatternInputRouter.routeLanes(inputHolder,
-                List.of(List.of(main), secondary));
-        if (!changed) {
-            changed = MePatternInputRouter.routeLanes(inputHolder,
-                    List.of(secondary, List.of(main)));
-        }
-        if (changed) {
-            this.owner.setChanged();
-        }
-        return changed;
-    }
-
-    public boolean pushFluidChemical(KeyCounter[] inputHolder, IExtendedFluidTank fluidTank,
-            IChemicalTank chemicalTank) {
-        if (fluidTank == null || chemicalTank == null) {
-            return false;
-        }
-        boolean changed = MePatternInputRouter.route(inputHolder, List.of(
-                MeMachineIoAdapter.fluidInput(fluidTank),
-                MeMachineIoAdapter.chemicalInput(chemicalTank)));
-        if (changed) {
-            this.owner.setChanged();
-        }
-        return changed;
-    }
-
-    public boolean pushItemFluidChemical(KeyCounter[] inputHolder, IInventorySlot inputSlot,
-            IExtendedFluidTank fluidTank, IChemicalTank chemicalTank) {
-        if (inputSlot == null || fluidTank == null || chemicalTank == null) {
-            return false;
-        }
-        boolean changed = MePatternInputRouter.route(inputHolder, List.of(
-                MeMachineIoAdapter.itemInput(inputSlot),
-                MeMachineIoAdapter.fluidInput(fluidTank),
-                MeMachineIoAdapter.chemicalInput(chemicalTank)));
-        if (changed) {
-            this.owner.setChanged();
-        }
-        return changed;
-    }
-
-    /** Routes fixed-position or interchangeable lanes as one atomic input transaction. */
-    public boolean pushLanes(KeyCounter[] inputHolder, List<? extends MeInputPort> lanePorts) {
-        if (inputHolder == null || lanePorts == null || inputHolder.length != lanePorts.size()
-                || lanePorts.stream().anyMatch(java.util.Objects::isNull)) {
-            return false;
-        }
-        List<List<MeInputPort>> lanes = lanePorts.stream().map(List::of).toList();
-        boolean changed = MePatternInputRouter.routeLanes(inputHolder, lanes);
-        if (changed) {
-            this.owner.setChanged();
-        }
-        return changed;
-    }
-
-    public boolean pushLaneChoices(KeyCounter[] inputHolder,
-            List<? extends List<? extends MeInputPort>> lanePorts) {
-        if (inputHolder == null || lanePorts == null || inputHolder.length != lanePorts.size()) {
-            return false;
-        }
-        boolean changed = MePatternInputRouter.routeLanes(inputHolder, lanePorts);
-        if (changed) {
-            this.owner.setChanged();
-        }
-        return changed;
-    }
-
-    /** Position-sensitive two-lane input for machines whose main and extra slots cannot swap. */
-    public boolean pushTwoItems(KeyCounter[] inputHolder, IInventorySlot mainSlot, IInventorySlot extraSlot) {
-        if (inputHolder == null || inputHolder.length != 2 || mainSlot == null || extraSlot == null) {
-            return false;
-        }
-        boolean changed = MePatternInputRouter.routeLanes(inputHolder, List.of(
-                List.of(MeMachineIoAdapter.itemInput(mainSlot)),
-                List.of(MeMachineIoAdapter.itemInput(extraSlot))));
-        if (changed) {
-            this.owner.setChanged();
-        }
-        return changed;
-    }
-
-    private void rememberOutputSlot(OutputInventorySlot outputSlot) {
-        if (outputSlot != null && !this.knownOutputSlots.contains(outputSlot)) {
-            this.knownOutputSlots.add(outputSlot);
-        }
-    }
-
-    private void rememberChemicalTank(IChemicalTank tank) {
-        if (tank != null && !this.knownChemicalOutputTanks.contains(tank)) {
-            this.knownChemicalOutputTanks.add(tank);
-        }
-    }
-
-    private void rememberFluidTank(IExtendedFluidTank tank) {
-        if (tank != null && !this.knownFluidOutputTanks.contains(tank)) {
-            this.knownFluidOutputTanks.add(tank);
-        }
     }
 
     @Override
     protected boolean hasAeOutputWork() {
         AeOutputMode mode = this.owner.getAeOutputMode();
-        if (mode.items()) {
-            for (OutputInventorySlot slot : this.knownOutputSlots) {
-                if (slot != null && !slot.getStack().isEmpty()) {
-                    return true;
-                }
-            }
-        }
-        if (mode.chemicals()) {
-            for (IChemicalTank tank : this.knownChemicalOutputTanks) {
-                if (tank != null && !tank.isEmpty()) {
-                    return true;
-                }
-            }
-        }
-        if (mode.fluids()) {
-            for (IExtendedFluidTank tank : this.knownFluidOutputTanks) {
-                if (tank != null && !tank.isEmpty()) {
-                    return true;
-                }
-            }
+        if (hasPatternOutputBacklog(mode)) {
+            return true;
         }
         return this.smartPatternMultiplication.hasPendingWork();
     }
@@ -322,16 +101,10 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
     @Override
     protected boolean processAeOutputWork() {
         boolean hadWork = hasAeOutputWork();
-        processSmartPatternViaOwner();
         AeOutputMode mode = this.owner.getAeOutputMode();
-        for (OutputInventorySlot slot : this.knownOutputSlots) {
-            insertOutputSlotIntoNetwork(slot, mode);
-        }
-        for (IChemicalTank tank : this.knownChemicalOutputTanks) {
-            insertChemicalTankIntoNetwork(tank, mode);
-        }
-        for (IExtendedFluidTank tank : this.knownFluidOutputTanks) {
-            insertFluidTankIntoNetwork(tank, mode);
+        drainPatternOutputs(mode);
+        if (!hasPatternOutputBacklog(mode)) {
+            processSmartPatternViaDeclaredIo();
         }
         boolean hasWork = hasAeOutputWork();
         if (hasWork) {

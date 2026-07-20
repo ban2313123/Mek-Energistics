@@ -61,7 +61,7 @@ class CompatProviderBoundaryTest {
     }
 
     @Test
-    void serverProvidersOwnMenuSelectionForEveryCatalogRoute() throws IOException {
+    void serverProvidersBindOneAdapterForEveryCatalogFamily() throws IOException {
         Map<CompatMod, String> providers = Map.of(
                 CompatMod.MEKANISM, "MekanismMachineProvider.java",
                 CompatMod.MEKMM, "MekmmMachineProvider.java",
@@ -71,13 +71,16 @@ class CompatProviderBoundaryTest {
         for (var entry : providers.entrySet()) {
             String source = Files.readString(Path.of(
                     "src/main/java/com/beipuo/mekenergistics/compat/provider", entry.getValue()));
-            assertTrue(source.contains("menuType("), entry.getKey().name());
-            Set<CompatRegistrationRoute> routes = CompatMachineCatalog.all()
+            assertTrue(source.contains("extends AbstractCompatMachineProvider"), entry.getKey().name());
+            assertTrue(source.contains("CompatMachineFamilyAdapter.of("), entry.getKey().name());
+            assertFalse(source.contains("switch (spec.route())"), entry.getKey().name());
+            Set<CompatMachineFamily> families = CompatMachineCatalog.all()
                     .filter(spec -> spec.provider() == entry.getKey())
-                    .map(CompatMachineSpec::route)
+                    .map(CompatMachineSpec::family)
                     .collect(java.util.stream.Collectors.toSet());
-            for (CompatRegistrationRoute route : routes) {
-                assertTrue(source.contains(route.name()), entry.getKey() + " menu missing " + route);
+            for (CompatMachineFamily family : families) {
+                assertTrue(source.contains("CompatMachineFamily." + family.name()),
+                        entry.getKey() + " adapter missing " + family);
             }
         }
     }
@@ -99,17 +102,28 @@ class CompatProviderBoundaryTest {
     }
 
     @Test
-    void optionalFeatureResolversAreGuardedByCatalogRequirements() throws IOException {
+    void optionalFeatureResolversAreGuardedByAvailableFamilies() throws IOException {
         String mekmm = Files.readString(Path.of(
                 "src/main/java/com/beipuo/mekenergistics/compat/provider/MekmmMachineProvider.java"));
-        assertTrue(mekmm.contains("hasAvailableRoute(CompatRegistrationRoute.MEKMM_ADVANCED_FACTORY)"));
-        assertTrue(mekmm.indexOf("hasAvailableRoute(CompatRegistrationRoute.MEKMM_ADVANCED_FACTORY)")
+        assertTrue(mekmm.contains("hasAvailableFamily(CompatMachineFamily.MEKMM_ADVANCED_FACTORY)"));
+        assertTrue(mekmm.indexOf("hasAvailableFamily(CompatMachineFamily.MEKMM_ADVANCED_FACTORY)")
                 < mekmm.indexOf("MekanismMoreMachineAdvancedCompat.getFactoryTarget(state)"));
+        String mekmmAdvanced = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/compat/mekmm/MekanismMoreMachineAdvancedCompat.java"));
+        assertFalse(mekmmAdvanced.contains("com.jerry.mekextras"));
+        assertFalse(mekmmAdvanced.contains("MeExtraAdvanced"));
+        assertFalse(mekmmAdvanced.contains("MeExtraUpgradeableAttribute"));
+
+        String meke = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/compat/provider/MekeMachineProvider.java"));
+        assertTrue(meke.contains("MekanismExtrasAdvancedFactoryCompat"));
+        assertTrue(meke.contains("hasAvailableFamily(CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY)"));
 
         String emeke = Files.readString(Path.of(
                 "src/main/java/com/beipuo/mekenergistics/compat/provider/EmekeMachineProvider.java"));
-        assertTrue(emeke.contains("hasRequirement(CompatRequirement.EMEKE_ADVANCED_FACTORIES)"));
-        assertTrue(emeke.contains("hasRequirement(CompatRequirement.EMEKE_MEKMM_FACTORIES)"));
+        assertTrue(emeke.contains("hasAvailableFamily(CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY)"));
+        assertTrue(emeke.contains("hasAvailableFamily(CompatMachineFamily.EMEKE_MEKMM_FACTORY)"));
+        assertFalse(emeke.contains("requirements().contains"));
         assertTrue(emeke.contains("EvolvedMekanismExtrasCompat.getBaseFactoryTarget(state)"));
         assertTrue(emeke.contains("EvolvedMekanismExtrasCompat.getAdvancedFactoryTarget(state)"));
         assertTrue(emeke.contains("EvolvedMekanismExtrasCompat.getMoreMachineFactoryTarget(state)"));
@@ -154,6 +168,15 @@ class CompatProviderBoundaryTest {
         assertFalse(source.contains("MekanismExtrasCompat.isInstaller"));
         assertFalse(source.contains("EvolvedMekanismCompat.isInstaller"));
         assertFalse(source.contains("EvolvedMekanismExtrasCompat.isInstaller"));
+    }
+
+    @Test
+    void evolvedProviderRoutesMaxInstallerThroughSharedUpgradeHandler() throws IOException {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/compat/provider/EmekMachineProvider.java"));
+        assertTrue(source.contains("resolveInstallerUpgrade(MeMekanismMachine current, ItemStack stack)"));
+        assertTrue(source.contains("EMConfig.general.maxInstallerTier.getOrDefault()"));
+        assertTrue(source.contains("CompatFactoryTierGraph.forwardFactoryAtTier"));
     }
 
     @Test

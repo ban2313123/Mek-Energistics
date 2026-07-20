@@ -9,6 +9,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityElectricMachineAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -95,11 +97,7 @@ public class MeElectricMachineBlockEntity extends TileEntityElectricMachine
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
-        sendUpdatePacket |= super.onUpdateServer();
-        OutputInventorySlot outputSlot = ((TileEntityElectricMachineAccessor) this).mekenergistics$getOutputSlot();
-        return getRecipeAeSupport().drainOutputPorts(this.aeOutputMode,
-                java.util.List.of(MeMachineIoAdapter.itemOutput(outputSlot))) || sendUpdatePacket;
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -109,25 +107,15 @@ public class MeElectricMachineBlockEntity extends TileEntityElectricMachine
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 1) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        return getRecipeAeSupport().pushPatternInputs(inputHolder,
-                java.util.List.of(MeMachineIoAdapter.itemInput(((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot())));
-    }
-
-    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
-        return getRecipeAeSupport().pushPatternInputs(inputHolder,
-                java.util.List.of(MeMachineIoAdapter.itemInput(((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot())));
+    public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(java.util.List.of(MeMachineIoAdapter.itemInput(
+                ((TileEntityElectricMachineAccessor) this).mekenergistics$getInputSlot())));
     }
 
     @Override
-    public boolean isBusy() {
-        return false;
+    public java.util.List<? extends MeOutputPort> getPatternOutputPorts() {
+        return java.util.List.of(MeMachineIoAdapter.itemOutput(
+                ((TileEntityElectricMachineAccessor) this).mekenergistics$getOutputSlot()));
     }
 
     @Override

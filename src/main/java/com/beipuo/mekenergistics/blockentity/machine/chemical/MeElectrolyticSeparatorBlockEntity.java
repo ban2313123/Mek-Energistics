@@ -9,6 +9,9 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -34,8 +37,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,8 +65,7 @@ public class MeElectrolyticSeparatorBlockEntity extends TileEntityElectrolyticSe
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        return getRecipeAeSupport().drainChemicalOutputs(this.aeOutputMode, sendUpdatePacket, this.leftTank, this.rightTank);
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -76,27 +76,16 @@ public class MeElectrolyticSeparatorBlockEntity extends TileEntityElectrolyticSe
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 1) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[0]);
-        if (input == null || !input.isFluid()) {
-            return false;
-        }
-        FluidStack fluidInput = input.fluid();
-        if (fluidInput.isEmpty() || this.fluidTank.fill(fluidInput.copy(), FluidAction.SIMULATE) != fluidInput.getAmount()) {
-            return false;
-        }
-        this.fluidTank.fill(fluidInput, FluidAction.EXECUTE);
-        setChanged();
-        return true;
+    public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(java.util.List.of(MeMachineIoAdapter.fluidInput(this.fluidTank)));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override
+    public java.util.List<? extends MeOutputPort> getPatternOutputPorts() {
+        return java.util.List.of(
+                MeMachineIoAdapter.chemicalOutput(this.leftTank),
+                MeMachineIoAdapter.chemicalOutput(this.rightTank));
+    }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.ELECTROLYTIC_SEPARATOR; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

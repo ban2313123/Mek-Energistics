@@ -1,9 +1,9 @@
 package com.beipuo.mekenergistics.blockentity.compat.eme.factory;
 
-import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import io.github.masyumero.emextras.common.integration.mekaf.tile.factory.TileEntityEMExtraPaintingFactory;
@@ -33,11 +33,15 @@ public class MeEMExtraPaintingFactoryBlockEntity extends TileEntityEMExtraPainti
     @Override public MeFactoryAeSupport getAeSupport() { if (aeSupport == null) aeSupport = new MeFactoryAeSupport(this); return aeSupport; }
     @Override public MeMekanismMachine getMachine() { return machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails p, KeyCounter[] in) { return getMainNode().isActive() && getAvailablePatterns().contains(p) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(p, in) : getAeSupport().pushItemChemicalOrConversion(in, this.inputItemSlots, this.chemicalTank, getExtraSlot())); }
-    @Override public boolean isBusy() { return false; }
+    @Override public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(List.of(
+                MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputItemSlots),
+                MeMachineIoAdapter.chemicalInput(this.chemicalTank),
+                MeMachineIoAdapter.itemInput(getExtraSlot())));
+    }
     @Override public void addContainerTrackers(MekanismContainer c) { super.addContainerTrackers(c); addAeOutputModeTracker(c); }
     @Override public CachedRecipe<ItemStackChemicalToItemStackRecipe> createNewCachedRecipe(@NotNull ItemStackChemicalToItemStackRecipe r, int i) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(r, i)); }
-    @Override protected boolean onUpdateServer() { boolean u = super.onUpdateServer(); return getAeSupport().processItemChemicalOrConversionSmartPatterns(this.chemicalTank, getExtraSlot(), this.outputItemSlots, List.of(), this.inputItemSlots) || u; }
+    @Override protected boolean onUpdateServer() { return getAeSupport().processPatternIo(super.onUpdateServer()); }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

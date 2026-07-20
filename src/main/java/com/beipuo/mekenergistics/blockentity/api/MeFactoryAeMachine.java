@@ -10,7 +10,6 @@ import appeng.api.networking.security.IActionHost;
 import appeng.me.helpers.IGridConnectedBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
-import com.beipuo.mekenergistics.blockentity.support.MeChemicalInputCapability;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import java.util.List;
@@ -21,15 +20,10 @@ import mekanism.common.lib.transmitter.TransmissionType;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
-public interface MeFactoryAeMachine extends MeAeSupportOwner, IGridConnectedBlockEntity, MeSmartCableConnection, appeng.helpers.patternprovider.PatternContainer {
+public interface MeFactoryAeMachine extends MePatternIoOwner, IGridConnectedBlockEntity, MeSmartCableConnection, appeng.helpers.patternprovider.PatternContainer {
     MeFactoryAeSupport getAeSupport();
 
     MeMekanismMachine getMachine();
-
-    /** Capability declared by the machine's stable factory/recipe family id. */
-    default MeChemicalInputCapability getChemicalInputCapability() {
-        return MeChemicalInputCapability.forMachineType(getMachine().factoryTypeName());
-    }
 
     Level getOwnerLevel();
 
@@ -45,9 +39,6 @@ public interface MeFactoryAeMachine extends MeAeSupportOwner, IGridConnectedBloc
 
     @Override
     default void saveChanges() {
-        if (getAeSupport().suppressesFeedSaveChanges()) {
-            return;
-        }
         if (this instanceof net.minecraft.world.level.block.entity.BlockEntity blockEntity) {
             blockEntity.setChanged();
         }
@@ -93,6 +84,16 @@ public interface MeFactoryAeMachine extends MeAeSupportOwner, IGridConnectedBloc
 
     default void setSmartPatternMultiplicationEnabled(boolean enabled) {
         getAeSupport().setSmartPatternMultiplicationEnabled(enabled);
+    }
+
+    @Override
+    default boolean pushPattern(IPatternDetails patternDetails, appeng.api.stacks.KeyCounter[] inputHolder) {
+        return getAeSupport().pushPatternWithAdapter(patternDetails, inputHolder);
+    }
+
+    @Override
+    default boolean isBusy() {
+        return getAeSupport().isPatternBusy();
     }
 
     default void addAeOutputModeTracker(MekanismContainer container) {

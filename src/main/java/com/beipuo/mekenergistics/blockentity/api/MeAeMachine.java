@@ -26,7 +26,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 
-public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.me.helpers.IGridConnectedBlockEntity {
+public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.me.helpers.IGridConnectedBlockEntity {
     int MAX_PATTERN_TERMINAL_NAME_LENGTH = 64;
 
     AeOutputMode getAeOutputMode();
@@ -47,8 +47,7 @@ public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.
 
     @Override
     default IManagedGridNode getMainNode() {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        return support == null ? null : support.getMainNode();
+        return getRecipeAeSupport().getMainNode();
     }
 
     @Override
@@ -71,8 +70,7 @@ public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.
     }
 
     default List<BasicInventorySlot> getPatternSlots() {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        return support == null ? List.of() : support.getPatternSlots();
+        return getRecipeAeSupport().getPatternSlots();
     }
 
     MeMekanismMachine getMachine();
@@ -82,30 +80,19 @@ public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.
     }
 
     default String getCustomPatternTerminalName() {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        return support == null ? "" : support.getPatternTerminalName();
+        return getRecipeAeSupport().getPatternTerminalName();
     }
 
     default void setCustomPatternTerminalName(String name) {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        if (support != null) {
-            support.setPatternTerminalName(name);
-        }
+        getRecipeAeSupport().setPatternTerminalName(name);
     }
 
     default boolean isSmartPatternMultiplicationEnabled() {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        if (support != null) {
-            return support.isSmartPatternMultiplicationEnabled();
-        }
-        return true;
+        return getRecipeAeSupport().isSmartPatternMultiplicationEnabled();
     }
 
     default void setSmartPatternMultiplicationEnabled(boolean enabled) {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        if (support != null) {
-            support.setSmartPatternMultiplicationEnabled(enabled);
-        }
+        getRecipeAeSupport().setSmartPatternMultiplicationEnabled(enabled);
     }
 
     default MeRecipeMachineAeSupport<?> getRecipeAeSupport() {
@@ -114,23 +101,21 @@ public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.
     }
 
     default List<IPatternDetails> getAvailablePatterns() {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        return support == null ? List.of() : support.getAvailablePatterns();
+        return getRecipeAeSupport().getAvailablePatterns();
     }
 
     default int getPatternPriority() {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        return support == null ? 0 : support.getPatternPriority();
+        return getRecipeAeSupport().getPatternPriority();
     }
 
     @Override
     default boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        return false;
+        return getRecipeAeSupport().pushPatternWithAdapter(patternDetails, inputHolder);
     }
 
     @Override
     default boolean isBusy() {
-        return false;
+        return getRecipeAeSupport().isPatternBusy();
     }
 
     default Component getPatternTerminalDisplayName() {
@@ -140,8 +125,7 @@ public interface MeAeMachine extends PatternContainer, MeAeSupportOwner, appeng.
 
     @Override
     default IGrid getGrid() {
-        MeRecipeMachineAeSupport<?> support = getRecipeAeSupport();
-        return support == null ? null : support.getGrid();
+        return getRecipeAeSupport().getGrid();
     }
 
     @Nullable

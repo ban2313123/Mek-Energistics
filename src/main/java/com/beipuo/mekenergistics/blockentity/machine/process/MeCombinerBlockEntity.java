@@ -8,6 +8,9 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
@@ -77,10 +80,7 @@ public class MeCombinerBlockEntity extends TileEntityCombiner implements ICrafti
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
-        sendUpdatePacket |= super.onUpdateServer();
-        OutputInventorySlot output = ((TileEntityCombinerAccessor) this).mekenergistics$getOutputSlot();
-        return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -91,25 +91,20 @@ public class MeCombinerBlockEntity extends TileEntityCombiner implements ICrafti
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 2) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
+    public MeInputLayout getPatternInputLayout() {
         InputInventorySlot main = ((TileEntityCombinerAccessor) this).mekenergistics$getMainInputSlot();
         InputInventorySlot extra = ((TileEntityCombinerAccessor) this).mekenergistics$getExtraInputSlot();
-        return getRecipeAeSupport().pushTwoItems(inputHolder, main, extra);
+        return MeInputLayout.lanes(java.util.List.of(
+                java.util.List.of(MeMachineIoAdapter.itemInput(main)),
+                java.util.List.of(MeMachineIoAdapter.itemInput(extra))));
     }
 
-    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
-        InputInventorySlot main = ((TileEntityCombinerAccessor) this).mekenergistics$getMainInputSlot();
-        InputInventorySlot extra = ((TileEntityCombinerAccessor) this).mekenergistics$getExtraInputSlot();
-        return getRecipeAeSupport().pushTwoItems(inputHolder, main, extra);
+    @Override
+    public java.util.List<? extends MeOutputPort> getPatternOutputPorts() {
+        return java.util.List.of(MeMachineIoAdapter.itemOutput(
+                ((TileEntityCombinerAccessor) this).mekenergistics$getOutputSlot()));
     }
 
-    @Override public boolean isBusy() { return false; }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.COMBINER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

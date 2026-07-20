@@ -10,6 +10,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -78,30 +80,21 @@ public class MeFormulaicAssemblicatorBlockEntity extends TileEntityFormulaicAsse
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = getRecipeAeSupport().processSmartPattern(this::feedPatternInputs);
-        sendUpdatePacket |= super.onUpdateServer();
-        return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket,
-                ((TileEntityFormulaicAssemblicatorAccessor) this).mekenergistics$getOutputSlots());
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length == 0) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        return feedPatternInputs(inputHolder);
-    }
-
-    private boolean feedPatternInputs(KeyCounter[] inputHolder) {
+    public MeInputLayout getPatternInputLayout() {
         List<IInventorySlot> inputSlots = ((TileEntityFormulaicAssemblicatorAccessor) this).mekenergistics$getInputSlots();
-        return getRecipeAeSupport().pushPatternInputs(inputHolder,
-                inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
+        return MeInputLayout.unordered(inputSlots.stream().map(MeMachineIoAdapter::itemInput).toList());
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override
+    public java.util.List<? extends MeOutputPort> getPatternOutputPorts() {
+        return ((TileEntityFormulaicAssemblicatorAccessor) this).mekenergistics$getOutputSlots().stream()
+                .map(MeMachineIoAdapter::itemOutput).toList();
+    }
+
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.FORMULAIC_ASSEMBLICATOR; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

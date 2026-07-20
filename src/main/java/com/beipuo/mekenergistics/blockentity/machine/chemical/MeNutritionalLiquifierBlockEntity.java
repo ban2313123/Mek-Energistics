@@ -9,6 +9,9 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -21,8 +24,6 @@ import com.beipuo.mekenergistics.mixin.TileEntityNutritionalLiquifierAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.ArrayList;
 import java.util.List;
-import mekanism.api.Action;
-import mekanism.api.AutomationType;
 import mekanism.api.IContentsListener;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
@@ -39,7 +40,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,9 +79,7 @@ public class MeNutritionalLiquifierBlockEntity extends TileEntityNutritionalLiqu
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        OutputInventorySlot output = ((TileEntityNutritionalLiquifierAccessor) this).mekenergistics$getOutputSlot();
-        return getRecipeAeSupport().drainMixedOutputs(this.aeOutputMode, sendUpdatePacket, output, this.fluidTank);
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -92,28 +90,18 @@ public class MeNutritionalLiquifierBlockEntity extends TileEntityNutritionalLiqu
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 1) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput input = com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter.PatternInput.single(inputHolder[0]);
-        if (input == null || !input.isItem()) {
-            return false;
-        }
-        ItemStack itemInput = input.item();
+    public MeInputLayout getPatternInputLayout() {
         InputInventorySlot inputSlot = ((TileEntityNutritionalLiquifierAccessor) this).mekenergistics$getInputSlot();
-        if (itemInput.isEmpty() || !inputSlot.insertItem(itemInput.copy(), Action.SIMULATE, AutomationType.INTERNAL).isEmpty()) {
-            return false;
-        }
-        inputSlot.insertItem(itemInput, Action.EXECUTE, AutomationType.INTERNAL);
-        setChanged();
-        return true;
+        return MeInputLayout.unordered(java.util.List.of(MeMachineIoAdapter.itemInput(inputSlot)));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override
+    public java.util.List<? extends MeOutputPort> getPatternOutputPorts() {
+        return java.util.List.of(
+                MeMachineIoAdapter.itemOutput(
+                        ((TileEntityNutritionalLiquifierAccessor) this).mekenergistics$getOutputSlot()),
+                MeMachineIoAdapter.fluidOutput(this.fluidTank));
+    }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.NUTRITIONAL_LIQUIFIER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

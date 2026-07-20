@@ -1,0 +1,15 @@
+{
+  "parent": "block/block",
+  "children": {
+    "base": {
+      "parent": "mekanism:block/factory/combining/base"
+    },
+    "front_led": {
+      "parent": "mekenergistics:block/factory/front_led/multiversal"
+    }
+  },
+  "loader": "neoforge:composite",
+  "textures": {
+    "particle": "mekanism:block/factory/combining/combining_factory_front"
+  }
+}

@@ -13,10 +13,12 @@ import com.beipuo.mekenergistics.blockentity.factory.MeItemStackToItemStackFacto
 import com.beipuo.mekenergistics.blockentity.factory.MeSawingFactoryBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
-import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
+import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineSpec;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismCompat;
+import fr.iglee42.evolvedmekanism.config.EMConfig;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
@@ -29,8 +31,6 @@ import mekanism.common.block.attribute.AttributeUpgradeSupport;
 import mekanism.common.block.attribute.Attributes;
 import mekanism.common.content.blocktype.BlockShapes;
 import mekanism.common.content.blocktype.BlockTypeTile;
-import mekanism.common.inventory.container.tile.MekanismTileContainer;
-import mekanism.common.registration.impl.ContainerTypeRegistryObject;
 import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.registration.impl.TileEntityTypeRegistryObject;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -38,9 +38,27 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import org.jetbrains.annotations.Nullable;
+import java.util.Map;
 
-public final class EmekMachineProvider implements CompatMachineProvider {
+public final class EmekMachineProvider extends AbstractCompatMachineProvider implements CompatMachineProvider {
     public EmekMachineProvider() {
+        super(CompatMod.EMEK, familyAdapters());
+    }
+
+    private static Map<CompatMachineFamily, CompatMachineFamilyAdapter> familyAdapters() {
+        return Map.of(
+                CompatMachineFamily.EMEK_MACHINE,
+                CompatMachineFamilyAdapter.of(
+                        spec -> ModMenuTypes.getCoreMachineContainer(spec.machine()),
+                        (spec, registrar) -> registerMachine(spec.machine(), registrar),
+                        EmekMachineProvider::createMachineBlockType,
+                        EmekMachineProvider::registerMachineGridNodeHost),
+                CompatMachineFamily.EMEK_FACTORY,
+                CompatMachineFamilyAdapter.of(
+                        spec -> ModMenuTypes.ME_FACTORY,
+                        (spec, registrar) -> registerFactory(spec.machine(), registrar),
+                        EmekMachineProvider::createMachineBlockType,
+                        EmekMachineProvider::registerFactoryGridNodeHost));
     }
 
     @Override
@@ -49,28 +67,23 @@ public final class EmekMachineProvider implements CompatMachineProvider {
     }
 
     @Override
-    public ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> menuType(
-            CompatMachineSpec spec) {
-        return switch (spec.route()) {
-            case EMEK_FACTORY -> ModMenuTypes.ME_FACTORY;
-            case EMEK_MACHINE -> ModMenuTypes.getCoreMachineContainer(spec.machine());
-            default -> throw wrongRoute(spec);
-        };
+    @Nullable
+    public MeMekanismMachine resolveInstallerUpgrade(MeMekanismMachine current, ItemStack stack) {
+        if (!EvolvedMekanismCompat.isInstaller(stack)) {
+            return null;
+        }
+        String targetTier = EMConfig.general.maxInstallerTier.getOrDefault().getLowerName();
+        return CompatFactoryTierGraph.forwardFactoryAtTier(current, CompatMod.EMEK, targetTier);
     }
 
-    @Override
-    public TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerBlockEntity(
-            CompatMachineSpec spec, MachineFactoryRegistrar registrar) {
-        return switch (spec.route()) {
-            case EMEK_MACHINE -> switch (spec.machine()) {
-                case ALLOYER -> registrar.register(spec.machine(), MeAlloyerBlockEntity::new);
-                case SOLIDIFICATION_CHAMBER -> registrar.register(spec.machine(), MeSolidifierBlockEntity::new);
-                case THERMALIZER -> registrar.register(spec.machine(), MeThermalizerBlockEntity::new);
-                case CHEMIXER -> registrar.register(spec.machine(), MeChemixerBlockEntity::new);
-                default -> throw new IllegalArgumentException("Unknown EMEK machine " + spec.machine());
-            };
-            case EMEK_FACTORY -> registerFactory(spec.machine(), registrar);
-            default -> throw wrongRoute(spec);
+    private static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerMachine(
+            MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
+        return switch (machine) {
+            case ALLOYER -> registrar.register(machine, MeAlloyerBlockEntity::new);
+            case SOLIDIFICATION_CHAMBER -> registrar.register(machine, MeSolidifierBlockEntity::new);
+            case THERMALIZER -> registrar.register(machine, MeThermalizerBlockEntity::new);
+            case CHEMIXER -> registrar.register(machine, MeChemixerBlockEntity::new);
+            default -> throw new IllegalArgumentException("Unknown EMEK machine " + machine);
         };
     }
 
@@ -88,9 +101,8 @@ public final class EmekMachineProvider implements CompatMachineProvider {
         };
     }
 
-    @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public BlockTypeTile<? extends TileEntityMekanism> createBlockType(
+    private static BlockTypeTile<? extends TileEntityMekanism> createMachineBlockType(
             CompatMachineSpec spec, TileEntityTypeRegistryObject<? extends TileEntityMekanism> tileType) {
         return createBlockTypeTyped(spec, (TileEntityTypeRegistryObject) tileType);
     }
@@ -159,19 +171,21 @@ public final class EmekMachineProvider implements CompatMachineProvider {
         };
     }
 
-    @Override
-    public void registerGridNodeHost(CompatMachineSpec spec, RegisterCapabilitiesEvent event,
+    private static void registerMachineGridNodeHost(CompatMachineSpec spec, RegisterCapabilitiesEvent event,
             TileEntityTypeRegistryObject<? extends TileEntityMekanism> holder) {
-        Class<? extends IInWorldGridNodeHost> host = spec.kind() == CompatMachineKind.MACHINE
-                ? switch (spec.machine()) {
-                    case ALLOYER -> MeAlloyerBlockEntity.class;
-                    case SOLIDIFICATION_CHAMBER -> MeSolidifierBlockEntity.class;
-                    case THERMALIZER -> MeThermalizerBlockEntity.class;
-                    case CHEMIXER -> MeChemixerBlockEntity.class;
-                    default -> throw new IllegalArgumentException("Unknown EMEK machine " + spec.machine());
-                }
-                : factoryGridHost(spec.machine());
+        Class<? extends IInWorldGridNodeHost> host = switch (spec.machine()) {
+            case ALLOYER -> MeAlloyerBlockEntity.class;
+            case SOLIDIFICATION_CHAMBER -> MeSolidifierBlockEntity.class;
+            case THERMALIZER -> MeThermalizerBlockEntity.class;
+            case CHEMIXER -> MeChemixerBlockEntity.class;
+            default -> throw new IllegalArgumentException("Unknown EMEK machine " + spec.machine());
+        };
         ModBlockEntities.registerGridNodeHost(event, holder, host);
+    }
+
+    private static void registerFactoryGridNodeHost(CompatMachineSpec spec, RegisterCapabilitiesEvent event,
+            TileEntityTypeRegistryObject<? extends TileEntityMekanism> holder) {
+        ModBlockEntities.registerGridNodeHost(event, holder, factoryGridHost(spec.machine()));
     }
 
     private static Class<? extends IInWorldGridNodeHost> factoryGridHost(MeMekanismMachine machine) {
@@ -184,9 +198,5 @@ public final class EmekMachineProvider implements CompatMachineProvider {
             case COMBINING -> MeCombiningFactoryBlockEntity.class;
             case SAWING -> MeSawingFactoryBlockEntity.class;
         };
-    }
-
-    private static IllegalArgumentException wrongRoute(CompatMachineSpec spec) {
-        return new IllegalArgumentException("EMEK provider cannot handle " + spec.route());
     }
 }

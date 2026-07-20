@@ -10,6 +10,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityChemicalReplicatorAccessor;
 import com.jerry.mekmm.common.tile.machine.TileEntityChemicalReplicator;
@@ -55,23 +57,18 @@ public class MeChemicalReplicatorBlockEntity extends TileEntityChemicalReplicato
                 .toList();
         return support().withPatternSlots(original);
     }
-    @Override protected boolean onUpdateServer() { boolean changed = super.onUpdateServer(); return tanks.size() > 2 ? support().drainChemicalOutputs(outputMode, changed, tanks.get(2)) : changed; }
+    @Override protected boolean onUpdateServer() { return support().processPatternIo(outputMode, super.onUpdateServer()); }
     @Override public mekanism.api.recipes.cache.CachedRecipe<com.jerry.mekmm.api.recipes.basic.MMBasicChemicalChemicalToChemicalRecipe> createNewCachedRecipe(@NotNull com.jerry.mekmm.api.recipes.basic.MMBasicChemicalChemicalToChemicalRecipe r, int i) { return support().wrapRecipeEnergy(getEnergyContainer(), super.createNewCachedRecipe(r,i)); }
-    @Override public boolean pushPattern(IPatternDetails p, KeyCounter[] input) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(p) || input == null
-                || input.length != 2 || tanks.size() < 3 || conversionSlots.size() < 2) {
-            return false;
-        }
-        if (support().isSmartPatternMultiplicationEnabled()) {
-            return support().enqueueSmartPattern(p, input);
-        }
+    @Override public MeInputLayout getPatternInputLayout() {
+        if (tanks.size() < 3 || conversionSlots.size() < 2) return MeInputLayout.empty();
         List<MeInputPort> first = List.of(MeMachineIoAdapter.chemicalInput(tanks.get(0)),
                 MeMachineIoAdapter.itemInput(conversionSlots.get(0)));
         List<MeInputPort> second = List.of(MeMachineIoAdapter.chemicalInput(tanks.get(1)),
                 MeMachineIoAdapter.itemInput(conversionSlots.get(1)));
-        return support().pushLaneChoices(input, List.of(first, second));
+        return MeInputLayout.lanes(List.of(first, second));
     }
-    @Override public boolean isBusy() { return false; }
+    @Override public List<? extends MeOutputPort> getPatternOutputPorts() { return tanks.size() > 2
+            ? List.of(MeMachineIoAdapter.chemicalOutput(tanks.get(2))) : List.of(); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.CHEMICAL_REPLICATOR; }
     @Override public appeng.api.networking.IManagedGridNode getMainNode() { return support().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return outputMode; }

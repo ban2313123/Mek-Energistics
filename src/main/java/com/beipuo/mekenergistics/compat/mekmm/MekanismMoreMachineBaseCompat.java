@@ -17,7 +17,8 @@ import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeLargeAntipro
 import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeRollingMillBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeStamperBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
-import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
+import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.compat.catalog.CompatRegistrationRoute;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -210,49 +211,17 @@ public final class MekanismMoreMachineBaseCompat {
         if (path.startsWith("me_")) {
             return null;
         }
-        MeMekanismMachine baseTarget = MeMekanismMachine.getByRegistryName("me_" + path);
+        MeMekanismMachine baseTarget = CompatFactoryTierGraph.findBySourcePath(
+                CompatRegistrationRoute.MEKMM_MACHINE, path);
         if (baseTarget != null) {
             return baseTarget;
         }
-        MeMekanismMachine factoryTarget = getFactoryTargetByRegistryName(path, FactoryTier.BASIC.name().toLowerCase(Locale.ROOT), FactoryTier.BASIC);
-        if (factoryTarget != null) {
-            return factoryTarget;
-        }
-        factoryTarget = getFactoryTargetByRegistryName(path, FactoryTier.ADVANCED.name().toLowerCase(Locale.ROOT), FactoryTier.ADVANCED);
-        if (factoryTarget != null) {
-            return factoryTarget;
-        }
-        factoryTarget = getFactoryTargetByRegistryName(path, FactoryTier.ELITE.name().toLowerCase(Locale.ROOT), FactoryTier.ELITE);
-        if (factoryTarget != null) {
-            return factoryTarget;
-        }
-        return getFactoryTargetByRegistryName(path, FactoryTier.ULTIMATE.name().toLowerCase(Locale.ROOT), FactoryTier.ULTIMATE);
-    }
-
-    @Nullable
-    private static MeMekanismMachine getFactoryTargetByRegistryName(String path, String tierName, FactoryTier tier) {
-        String typeName = factoryTypeName(path, tierName);
-        return typeName == null ? null : MeMekanismMachine.getMoreMachineFactory(tier, typeName);
-    }
-
-    @Nullable
-    private static String factoryTypeName(String path, String tierName) {
-        String prefix = tierName + "_";
-        String suffix = "_factory";
-        if (!path.startsWith(prefix) || !path.endsWith(suffix)) {
-            return null;
-        }
-        return path.substring(prefix.length(), path.length() - suffix.length());
+        return CompatFactoryTierGraph.findBySourcePath(CompatRegistrationRoute.MEKMM_FACTORY, path);
     }
 
     @Nullable
     private static MeMekanismMachine getBaseTarget(String typeName) {
-        return CompatMachineCatalog.available()
-                .filter(spec -> spec.route() == CompatRegistrationRoute.MEKMM_MACHINE)
-                .filter(spec -> typeName.equals(spec.machineTypeId()))
-                .map(spec -> spec.machine())
-                .findFirst()
-                .orElse(null);
+        return CompatFactoryTierGraph.findBaseMachine(CompatMod.MEKMM, typeName);
     }
 
     public static void registerGridNodeHost(

@@ -1,7 +1,5 @@
 package com.beipuo.mekenergistics.blockentity.compat.eme.factory;
 
-import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -30,15 +28,14 @@ public class MeEMExtraItemToChemicalFactoryBlockEntity extends TileEntityEMExtra
     @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputItemSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return Collections.emptyList(); }
+    @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalOutputTanks() { return this.outputChemicalTanks; }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
     @Override public MeFactoryAeSupport getAeSupport() { if (aeSupport == null) aeSupport = new MeFactoryAeSupport(this); return aeSupport; }
     @Override public MeMekanismMachine getMachine() { return machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails p, KeyCounter[] in) { return getMainNode().isActive() && getAvailablePatterns().contains(p) && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(p, in) : getAeSupport().pushSingleItem(in, this.inputItemSlots)); }
-    @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer c) { super.addContainerTrackers(c); addAeOutputModeTracker(c); }
     @Override public CachedRecipe<ItemStackToChemicalRecipe> createNewCachedRecipe(@NotNull ItemStackToChemicalRecipe r, int i) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(r, i)); }
-    @Override protected boolean onUpdateServer() { boolean u = super.onUpdateServer(); return getAeSupport().processSingleItemSmartPatterns(List.of(), this.outputChemicalTanks, this.inputItemSlots) || u; }
+    @Override protected boolean onUpdateServer() { return getAeSupport().processPatternIo(super.onUpdateServer()); }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

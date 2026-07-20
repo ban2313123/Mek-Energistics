@@ -1,9 +1,9 @@
 package com.beipuo.mekenergistics.blockentity.compat.eme.factory;
 
-import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import com.beipuo.mekenergistics.mixin.TileEntityEMExtraDissolvingFactoryAccessor;
@@ -38,27 +38,23 @@ public class MeEMExtraDissolvingFactoryBlockEntity extends TileEntityEMExtraDiss
     }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputItemSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return Collections.emptyList(); }
+    @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalOutputTanks() { return this.outputChemicalTanks; }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
     @Override public MeFactoryAeSupport getAeSupport() { if (aeSupport == null) aeSupport = new MeFactoryAeSupport(this); return aeSupport; }
     @Override public MeMekanismMachine getMachine() { return machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
-    @Override public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        return getMainNode().isActive() && getAvailablePatterns().contains(patternDetails)
-                && (isSmartPatternMultiplicationEnabled() ? getAeSupport().enqueueSmartPattern(patternDetails, inputHolder)
-                : getAeSupport().pushItemChemicalOrConversion(inputHolder, this.inputItemSlots, this.injectTank,
-                ((TileEntityEMExtraDissolvingFactoryAccessor) this).mekenergistics$getChemicalInputSlot()));
+    @Override public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(List.of(
+                MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputItemSlots),
+                MeMachineIoAdapter.chemicalInput(this.injectTank),
+                MeMachineIoAdapter.itemInput(
+                        ((TileEntityEMExtraDissolvingFactoryAccessor) this).mekenergistics$getChemicalInputSlot())));
     }
-    @Override public boolean isBusy() { return false; }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public CachedRecipe<ChemicalDissolutionRecipe> createNewCachedRecipe(@NotNull ChemicalDissolutionRecipe recipe, int cacheIndex) {
         return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex));
     }
-    @Override protected boolean onUpdateServer() {
-        boolean update = super.onUpdateServer();
-        return getAeSupport().processItemChemicalOrConversionSmartPatterns(this.injectTank,
-                ((TileEntityEMExtraDissolvingFactoryAccessor) this).mekenergistics$getChemicalInputSlot(),
-                List.of(), this.outputChemicalTanks, this.inputItemSlots) || update;
-    }
+    @Override protected boolean onUpdateServer() { return getAeSupport().processPatternIo(super.onUpdateServer()); }
     @Override public void clearRemoved() { super.clearRemoved(); getAeSupport().createNodeOnFirstTick(this); }
     @Override public void setRemoved() { getAeSupport().destroy(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getAeSupport().destroy(); super.onChunkUnloaded(); }

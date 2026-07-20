@@ -1,6 +1,6 @@
 package com.beipuo.mekenergistics.blockentity.factory;
 
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 
 import appeng.api.crafting.IPatternDetails;
@@ -23,7 +23,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
-public class MeSawingFactoryBlockEntity extends TileEntitySawingFactory implements MeFactoryAeMachine {
+public class MeSawingFactoryBlockEntity extends TileEntitySawingFactory implements MeFactoryIoOwner {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
 
@@ -62,22 +62,13 @@ public class MeSawingFactoryBlockEntity extends TileEntitySawingFactory implemen
         return MeFactoryAeSupport.withAeRecipeEnergy(this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex));
     }
 
-    @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 1) {
-            return false;
-        }
-        if (this.aeSupport.isSmartPatternMultiplicationEnabled()) {
-            return this.aeSupport.enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        return this.aeSupport.pushSingleItem(inputHolder, this.inputSlots);
-    }
+    @Override public java.util.List<mekanism.api.inventory.IInventorySlot> meInputSlots() { return this.inputSlots; }
+    @Override public java.util.List<mekanism.api.inventory.IInventorySlot> meOutputSlots() { return this.outputSlots; }
+    @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
 
-    @Override public boolean isBusy() { return false; }
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        return this.aeSupport.processSingleItemSmartPatterns(this.outputSlots, this.inputSlots) || sendUpdatePacket;
+        return this.aeSupport.processPatternIo(super.onUpdateServer());
     }
     @Override public void clearRemoved() { super.clearRemoved(); this.aeSupport.createNodeOnFirstTick(this); }
     @Override public void setRemoved() { this.aeSupport.destroy(); super.setRemoved(); }

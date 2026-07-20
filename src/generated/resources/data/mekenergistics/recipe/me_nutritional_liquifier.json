@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mekanism:nutritional_liquifier"
+    },
+    {
+      "item": "mekenergistics:me_factory_installer"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "mekenergistics:me_nutritional_liquifier"
+  }
+}

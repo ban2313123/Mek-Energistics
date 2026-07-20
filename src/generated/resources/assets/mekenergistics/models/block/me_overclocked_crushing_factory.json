@@ -1,0 +1,15 @@
+{
+  "parent": "block/block",
+  "children": {
+    "base": {
+      "parent": "mekanism:block/factory/crushing/base"
+    },
+    "front_led": {
+      "parent": "mekenergistics:block/factory/front_led/overclocked"
+    }
+  },
+  "loader": "neoforge:composite",
+  "textures": {
+    "particle": "mekanism:block/factory/crushing/crushing_factory_front"
+  }
+}

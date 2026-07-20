@@ -5,6 +5,7 @@ import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class CompatMachineCatalog {
     private static final Map<MeMekanismMachine, CompatMachineSpec> MACHINES = buildCatalog();
+    private static final Map<ResourceLocation, CompatMachineSpec> MACHINES_BY_SOURCE_ID = buildSourceIdIndex();
 
     private CompatMachineCatalog() {
     }
@@ -41,8 +43,23 @@ public final class CompatMachineCatalog {
         return available().anyMatch(spec -> spec.route() == route);
     }
 
+    public static boolean hasAvailableFamily(CompatMachineFamily family) {
+        return available().anyMatch(spec -> spec.family() == family);
+    }
+
     public static Optional<CompatMachineSpec> findBySourceBlockId(ResourceLocation sourceBlockId) {
-        return all().filter(spec -> spec.sourceBlockId().equals(sourceBlockId)).findFirst();
+        return Optional.ofNullable(MACHINES_BY_SOURCE_ID.get(sourceBlockId));
+    }
+
+    private static Map<ResourceLocation, CompatMachineSpec> buildSourceIdIndex() {
+        Map<ResourceLocation, CompatMachineSpec> index = new HashMap<>();
+        MACHINES.values().forEach(spec -> {
+            CompatMachineSpec previous = index.put(spec.sourceBlockId(), spec);
+            if (previous != null) {
+                throw new IllegalStateException("Duplicate source block ID " + spec.sourceBlockId());
+            }
+        });
+        return Map.copyOf(index);
     }
 
     private static Map<MeMekanismMachine, CompatMachineSpec> buildCatalog() {
@@ -63,18 +80,30 @@ public final class CompatMachineCatalog {
         CompatMod provider = machine.provider();
         CompatRegistrationRoute route = machine.registrationRoute();
         CompatMachineKind kind = machine.machineKind();
-        Set<CompatRequirement> requirements = requirements(machine, provider, route);
+        CompatMachineFamily family = CompatMachineFamily.resolve(route, machine.declaredMachineTypeName());
+        Set<CompatRequirement> requirements = requirements(machine, provider, family);
         return new CompatMachineSpec(
                 provider,
                 machine,
-                ResourceLocation.fromNamespaceAndPath(provider.modId(), machine.baseName()),
+                sourceBlockId(machine, provider),
                 ResourceLocation.fromNamespaceAndPath("mekenergistics", machine.registryName()),
                 kind,
                 machine.declaredTierName(),
                 machine.declaredMachineTypeName(),
                 sideConfigProfile(machine, route, kind),
                 route,
+                family,
                 requirements);
+    }
+
+    private static ResourceLocation sourceBlockId(MeMekanismMachine machine, CompatMod provider) {
+        // The four MEKE-tier alloying factories are supplied by Evolved Mekanism Extras,
+        // which combines Mekanism Extras' tiers with Evolved Mekanism's alloying type.
+        String namespace = provider == CompatMod.MEKE
+                && "alloying".equals(machine.declaredMachineTypeName())
+                ? CompatMod.EMEKE.modId()
+                : provider.modId();
+        return ResourceLocation.fromNamespaceAndPath(namespace, machine.baseName());
     }
 
     private static CompatSideConfigProfile sideConfigProfile(MeMekanismMachine machine,
@@ -136,17 +165,23 @@ public final class CompatMachineCatalog {
     }
 
     private static Set<CompatRequirement> requirements(MeMekanismMachine machine, CompatMod provider,
-            CompatRegistrationRoute route) {
+            CompatMachineFamily family) {
         EnumSet<CompatRequirement> requirements = EnumSet.noneOf(CompatRequirement.class);
-        switch (provider) {
-            case MEKANISM -> {
+        boolean emekeAlloying = provider == CompatMod.MEKE
+                && "alloying".equals(machine.declaredMachineTypeName());
+        if (emekeAlloying) {
+            requirements.add(CompatRequirement.EMEKE);
+        } else {
+            switch (provider) {
+                case MEKANISM -> {
+                }
+                case MEKMM -> requirements.add(CompatRequirement.MEKMM);
+                case MEKE -> requirements.add(CompatRequirement.MEKE);
+                case EMEK -> requirements.add(CompatRequirement.EMEK);
+                case EMEKE -> requirements.add(CompatRequirement.EMEKE);
             }
-            case MEKMM -> requirements.add(CompatRequirement.MEKMM);
-            case MEKE -> requirements.add(CompatRequirement.MEKE);
-            case EMEK -> requirements.add(CompatRequirement.EMEK);
-            case EMEKE -> requirements.add(CompatRequirement.EMEKE);
         }
-        switch (route) {
+        switch (family) {
             case MEKMM_MACHINE -> {
                 if (machine == MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER) {
                     requirements.add(CompatRequirement.MEKMM_LARGE_MACHINES);
@@ -161,16 +196,10 @@ public final class CompatMachineCatalog {
                 requirements.add(CompatRequirement.MEKMM);
                 requirements.add(CompatRequirement.MEKE_ADVANCED_FACTORIES);
             }
-            case EMEKE_ADVANCED_FACTORY -> requirements.add(
-                    switch (machine.declaredMachineTypeName()) {
-                        case "planting", "replicating" -> CompatRequirement.EMEKE_MEKMM_FACTORIES;
-                        default -> CompatRequirement.EMEKE_ADVANCED_FACTORIES;
-                    });
+            case EMEKE_MEKAF_ADVANCED_FACTORY -> requirements.add(CompatRequirement.EMEKE_ADVANCED_FACTORIES);
+            case EMEKE_MEKMM_FACTORY -> requirements.add(CompatRequirement.EMEKE_MEKMM_FACTORIES);
             default -> {
             }
-        }
-        if (provider == CompatMod.MEKE && "alloying".equals(machine.customFactoryTypeName())) {
-            requirements.add(CompatRequirement.EMEK);
         }
         return requirements;
     }

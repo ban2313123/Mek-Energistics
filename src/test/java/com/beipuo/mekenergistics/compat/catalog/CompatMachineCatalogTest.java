@@ -30,9 +30,12 @@ class CompatMachineCatalogTest {
                     spec.meBlockId());
             assertFalse(spec.machineTypeId().isBlank(), spec.machine().name());
             assertNotNull(spec.route(), spec.machine().name());
+            assertNotNull(spec.family(), spec.machine().name());
             assertNotNull(spec.sideConfigProfile(), spec.machine().name());
             assertEquals(spec.machine().provider(), spec.provider(), spec.machine().name());
             assertEquals(spec.machine().registrationRoute(), spec.route(), spec.machine().name());
+            assertEquals(CompatMachineFamily.resolve(spec.route(), spec.machineTypeId()), spec.family(),
+                    spec.machine().name());
             assertEquals(spec.machine().machineKind(), spec.kind(), spec.machine().name());
             if (spec.kind() != CompatMachineKind.MACHINE) {
                 assertNotNull(spec.tierId(), spec.machine().name());
@@ -50,9 +53,20 @@ class CompatMachineCatalogTest {
                 .requirements().contains(CompatRequirement.EMEKE_ADVANCED_FACTORIES));
         assertTrue(CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_OVERCLOCKED_PLANTING_FACTORY)
                 .requirements().contains(CompatRequirement.EMEKE_MEKMM_FACTORIES));
+        assertEquals(CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY,
+                CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY).family());
+        assertEquals(CompatMachineFamily.EMEKE_MEKMM_FACTORY,
+                CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_OVERCLOCKED_PLANTING_FACTORY).family());
         var alloyingRequirements = CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_ALLOYING_FACTORY).requirements();
-        assertTrue(alloyingRequirements.contains(CompatRequirement.EMEK));
-        assertFalse(alloyingRequirements.contains(CompatRequirement.EMEKE));
+        assertEquals(Set.of(CompatRequirement.EMEKE), alloyingRequirements);
+        assertEquals(ResourceLocation.fromNamespaceAndPath("emextras", "absolute_alloying_factory"),
+                CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_ALLOYING_FACTORY).sourceBlockId());
+        assertEquals(ResourceLocation.fromNamespaceAndPath("emextras", "supreme_alloying_factory"),
+                CompatMachineCatalog.get(MeMekanismMachine.SUPREME_ALLOYING_FACTORY).sourceBlockId());
+        assertEquals(ResourceLocation.fromNamespaceAndPath("emextras", "cosmic_alloying_factory"),
+                CompatMachineCatalog.get(MeMekanismMachine.COSMIC_ALLOYING_FACTORY).sourceBlockId());
+        assertEquals(ResourceLocation.fromNamespaceAndPath("emextras", "infinite_alloying_factory"),
+                CompatMachineCatalog.get(MeMekanismMachine.INFINITE_ALLOYING_FACTORY).sourceBlockId());
     }
 
     @Test

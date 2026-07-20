@@ -11,6 +11,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntitySolidifierAccessor;
 import fr.iglee42.evolvedmekanism.recipes.SolidificationRecipe;
@@ -58,9 +60,7 @@ public class MeSolidifierBlockEntity extends TileEntitySolidifier implements ICr
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        OutputInventorySlot output = ((TileEntitySolidifierAccessor) this).mekenergistics$getOutputSlot();
-        return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -70,13 +70,7 @@ public class MeSolidifierBlockEntity extends TileEntitySolidifier implements ICr
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 3) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
+    public MeInputLayout getPatternInputLayout() {
         TileEntitySolidifierAccessor accessor = (TileEntitySolidifierAccessor) this;
         InputInventorySlot inputSlot = accessor.mekenergistics$getInputSlot();
         BasicFluidTank fluidTank = accessor.mekenergistics$getInputFluidTank();
@@ -84,12 +78,13 @@ public class MeSolidifierBlockEntity extends TileEntitySolidifier implements ICr
         MeInputPort itemPort = MeMachineIoAdapter.itemInput(inputSlot);
         MeInputPort fluidPort = MeMachineIoAdapter.fluidInput(fluidTank);
         MeInputPort extraPort = MeMachineIoAdapter.fluidInput(extraTank);
-        return getRecipeAeSupport().pushLaneChoices(inputHolder, java.util.List.of(
+        return MeInputLayout.lanes(java.util.List.of(
                 java.util.List.of(itemPort), java.util.List.of(fluidPort, extraPort),
                 java.util.List.of(fluidPort, extraPort)));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override public java.util.List<? extends MeOutputPort> getPatternOutputPorts() { return java.util.List.of(
+            MeMachineIoAdapter.itemOutput(((TileEntitySolidifierAccessor) this).mekenergistics$getOutputSlot())); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.SOLIDIFICATION_CHAMBER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

@@ -8,6 +8,9 @@ import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityMelterAccessor;
 import fr.iglee42.evolvedmekanism.tiles.machine.TileEntityMelter;
@@ -47,9 +50,7 @@ public class MeThermalizerBlockEntity extends TileEntityMelter implements ICraft
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        return getRecipeAeSupport().drainFluidOutputs(this.aeOutputMode, sendUpdatePacket,
-                ((TileEntityMelterAccessor) this).mekenergistics$getFluidTank());
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -59,17 +60,13 @@ public class MeThermalizerBlockEntity extends TileEntityMelter implements ICraft
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 1) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
-        return getRecipeAeSupport().pushSingleItem(inputHolder, ((TileEntityMelterAccessor) this).mekenergistics$getInputSlot());
+    public MeInputLayout getPatternInputLayout() {
+        return MeInputLayout.unordered(java.util.List.of(MeMachineIoAdapter.itemInput(
+                ((TileEntityMelterAccessor) this).mekenergistics$getInputSlot())));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override public java.util.List<? extends MeOutputPort> getPatternOutputPorts() { return java.util.List.of(
+            MeMachineIoAdapter.fluidOutput(((TileEntityMelterAccessor) this).mekenergistics$getFluidTank())); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.THERMALIZER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

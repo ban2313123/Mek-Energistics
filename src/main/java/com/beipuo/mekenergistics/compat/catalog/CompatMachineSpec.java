@@ -15,6 +15,7 @@ public record CompatMachineSpec(
         String machineTypeId,
         CompatSideConfigProfile sideConfigProfile,
         CompatRegistrationRoute route,
+        CompatMachineFamily family,
         Set<CompatRequirement> requirements) {
 
     public CompatMachineSpec {

@@ -10,6 +10,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityChemixerAccessor;
 import fr.iglee42.evolvedmekanism.recipes.ChemixerRecipe;
@@ -69,9 +71,7 @@ public class MeChemixerBlockEntity extends TileEntityChemixer implements ICrafti
 
     @Override
     protected boolean onUpdateServer() {
-        boolean sendUpdatePacket = super.onUpdateServer();
-        OutputInventorySlot output = ((TileEntityChemixerAccessor) this).mekenergistics$getOutputSlot();
-        return getRecipeAeSupport().drainOutputs(this.aeOutputMode, sendUpdatePacket, output);
+        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
     }
 
     @NotNull
@@ -81,24 +81,19 @@ public class MeChemixerBlockEntity extends TileEntityChemixer implements ICrafti
     }
 
     @Override
-    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
-        if (!getMainNode().isActive() || !getAvailablePatterns().contains(patternDetails) || inputHolder == null || inputHolder.length != 3) {
-            return false;
-        }
-        if (getRecipeAeSupport().isSmartPatternMultiplicationEnabled()) {
-            return getRecipeAeSupport().enqueueSmartPattern(patternDetails, inputHolder);
-        }
+    public MeInputLayout getPatternInputLayout() {
         TileEntityChemixerAccessor accessor = (TileEntityChemixerAccessor) this;
         InputInventorySlot mainSlot = accessor.mekenergistics$getMainInputSlot();
         InputInventorySlot extraSlot = accessor.mekenergistics$getExtraInputSlot();
         IChemicalTank chemicalTank = accessor.mekenergistics$getInputChemicalTank();
-        return getRecipeAeSupport().pushLanes(inputHolder, java.util.List.of(
-                MeMachineIoAdapter.itemInput(mainSlot),
-                MeMachineIoAdapter.itemInput(extraSlot),
-                MeMachineIoAdapter.chemicalInput(chemicalTank)));
+        return MeInputLayout.lanes(java.util.List.of(
+                java.util.List.of(MeMachineIoAdapter.itemInput(mainSlot)),
+                java.util.List.of(MeMachineIoAdapter.itemInput(extraSlot)),
+                java.util.List.of(MeMachineIoAdapter.chemicalInput(chemicalTank))));
     }
 
-    @Override public boolean isBusy() { return false; }
+    @Override public java.util.List<? extends MeOutputPort> getPatternOutputPorts() { return java.util.List.of(
+            MeMachineIoAdapter.itemOutput(((TileEntityChemixerAccessor) this).mekenergistics$getOutputSlot())); }
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.CHEMIXER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }

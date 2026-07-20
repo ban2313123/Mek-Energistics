@@ -9,11 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import mekanism.api.Action;
-import mekanism.api.chemical.ChemicalStack;
 import me.ramidzkh.mekae2.ae2.MekanismKey;
-import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
-import org.jetbrains.annotations.Nullable;
 
 public final class MePatternInputRouter {
     /** Keeps smart-pattern capacity probing bounded; later ticks continue the pending batch. */
@@ -22,82 +18,6 @@ public final class MePatternInputRouter {
     private static final int MAX_ASSIGNMENT_STEPS = 256;
 
     private MePatternInputRouter() {
-    }
-
-    /** Normalized single-key input used by machines with position-sensitive ports. */
-    public record PatternInput(ItemStack item, ChemicalStack chemical, FluidStack fluid) {
-        public boolean isItem() {
-            return !this.item.isEmpty() && this.chemical.isEmpty() && this.fluid.isEmpty();
-        }
-
-        public boolean isChemical() {
-            return this.item.isEmpty() && !this.chemical.isEmpty() && this.fluid.isEmpty();
-        }
-
-        public boolean isFluid() {
-            return this.item.isEmpty() && this.chemical.isEmpty() && !this.fluid.isEmpty();
-        }
-
-        @Nullable
-        public static PatternInput single(KeyCounter counter) {
-            if (counter == null || counter.isEmpty()) {
-                return null;
-            }
-            PatternInput input = null;
-            for (var entry : counter) {
-                AEKey key = entry.getKey();
-                long amount = entry.getLongValue();
-                PatternInput next;
-                if (key instanceof AEItemKey itemKey && amount > 0 && amount <= Integer.MAX_VALUE) {
-                    next = new PatternInput(itemKey.toStack((int) amount), ChemicalStack.EMPTY, FluidStack.EMPTY);
-                } else if (key instanceof MekanismKey chemicalKey && amount > 0) {
-                    next = new PatternInput(ItemStack.EMPTY, chemicalKey.getStack().copyWithAmount(amount), FluidStack.EMPTY);
-                } else if (key instanceof AEFluidKey fluidKey && amount > 0 && amount <= Integer.MAX_VALUE) {
-                    next = new PatternInput(ItemStack.EMPTY, ChemicalStack.EMPTY, fluidKey.toStack((int) amount));
-                } else {
-                    return null;
-                }
-                if (input != null) {
-                    return null;
-                }
-                input = next;
-            }
-            return input;
-        }
-
-        public static ItemStack singleItem(KeyCounter counter) {
-            PatternInput input = single(counter);
-            return input != null && input.isItem() ? input.item() : ItemStack.EMPTY;
-        }
-
-        @Nullable
-        public static PatternInput separate(KeyCounter[] counters) {
-            if (counters == null || counters.length == 0) {
-                return null;
-            }
-            ItemStack item = ItemStack.EMPTY;
-            ChemicalStack chemical = ChemicalStack.EMPTY;
-            FluidStack fluid = FluidStack.EMPTY;
-            for (KeyCounter counter : counters) {
-                PatternInput input = single(counter);
-                if (input == null) {
-                    return null;
-                }
-                if (input.isItem()) {
-                    if (!item.isEmpty()) return null;
-                    item = input.item();
-                } else if (input.isChemical()) {
-                    if (!chemical.isEmpty()) return null;
-                    chemical = input.chemical();
-                } else if (input.isFluid()) {
-                    if (!fluid.isEmpty()) return null;
-                    fluid = input.fluid();
-                } else {
-                    return null;
-                }
-            }
-            return new PatternInput(item, chemical, fluid);
-        }
     }
 
     public static boolean route(KeyCounter[] inputHolders, List<? extends MeInputPort> ports) {
@@ -147,28 +67,9 @@ public final class MePatternInputRouter {
             }
         }
 
-        Map<MeInputPort, AEKey> reservedKeys = new java.util.IdentityHashMap<>();
-        Map<MeInputPort, Long> reservedAmounts = new java.util.IdentityHashMap<>();
-        for (int lane = 0; lane < laneInputs.length; lane++) {
-            Map<AEKey, Long> requests = normalize(new KeyCounter[] {laneInputs[lane]});
-            if (requests == null || requests.isEmpty()) {
-                return false;
-            }
-            List<Map.Entry<AEKey, Long>> requestList = new ArrayList<>(requests.entrySet());
-            int planSize = plan.size();
-            boolean assigned = requestList.size() == 1
-                    ? assignSingle(requestList.get(0), lanePorts.get(lane), plan,
-                            reservedKeys, reservedAmounts)
-                    : assign(requestList, 0, requestList.get(0).getValue(), lanePorts.get(lane), plan, planSize,
-                            reservedKeys, reservedAmounts);
-            if (!assigned) {
-                while (plan.size() > planSize) {
-                    plan.remove(plan.size() - 1);
-                }
-                return false;
-            }
-        }
-        return executePlan(plan, snapshots);
+        boolean assigned = assignLanes(laneInputs, lanePorts, 0, plan,
+                new java.util.IdentityHashMap<>(), new java.util.IdentityHashMap<>());
+        return assigned && executePlan(plan, snapshots);
     }
 
     /** Returns the largest whole-copy batch that can be simulated by the ports. */
@@ -339,6 +240,106 @@ public final class MePatternInputRouter {
         return false;
     }
 
+    private static boolean assignLanes(KeyCounter[] laneInputs,
+            List<? extends List<? extends MeInputPort>> lanePorts, int lane,
+            List<Insertion> plan, Map<MeInputPort, AEKey> reservedKeys,
+            Map<MeInputPort, Long> reservedAmounts) {
+        if (plan.size() >= MAX_ASSIGNMENT_STEPS) {
+            return false;
+        }
+        if (lane >= laneInputs.length) {
+            return true;
+        }
+        Map<AEKey, Long> requests = normalize(new KeyCounter[] {laneInputs[lane]});
+        if (requests == null || requests.size() != 1) {
+            return false;
+        }
+        Map.Entry<AEKey, Long> request = requests.entrySet().iterator().next();
+        return assignLanePorts(laneInputs, lanePorts, lane, request.getKey(), request.getValue(),
+                lanePorts.get(lane), 0, plan, reservedKeys, reservedAmounts);
+    }
+
+    private static boolean assignLanePorts(KeyCounter[] laneInputs,
+            List<? extends List<? extends MeInputPort>> lanePorts, int lane, AEKey key,
+            long remaining, List<? extends MeInputPort> ports, int portIndex,
+            List<Insertion> plan, Map<MeInputPort, AEKey> reservedKeys,
+            Map<MeInputPort, Long> reservedAmounts) {
+        if (remaining <= 0) {
+            return assignLanes(laneInputs, lanePorts, lane + 1, plan, reservedKeys, reservedAmounts);
+        }
+        if (portIndex >= ports.size() || plan.size() >= MAX_ASSIGNMENT_STEPS) {
+            return false;
+        }
+
+        MeInputPort port = ports.get(portIndex);
+        AEKey reservedKey = reservedKeys.get(port);
+        if (port.supports(key) && (reservedKey == null || reservedKey.equals(key))) {
+            long alreadyReserved = reservedAmounts.getOrDefault(port, 0L);
+            long available = simulateAdditionalCapacity(port, key, remaining, alreadyReserved);
+            long maximum = Math.min(remaining, available);
+            if (maximum > 0) {
+                long capacityAfter = remainingLaneCapacity(
+                        key, remaining, ports, portIndex + 1, reservedKeys, reservedAmounts);
+                long minimum = Math.max(0L, remaining - capacityAfter);
+                if (tryLaneAllocation(laneInputs, lanePorts, lane, key, remaining, ports,
+                        portIndex, plan, reservedKeys, reservedAmounts, port, alreadyReserved, maximum)) {
+                    return true;
+                }
+                if (minimum > 0 && minimum < maximum
+                        && tryLaneAllocation(laneInputs, lanePorts, lane, key, remaining, ports,
+                                portIndex, plan, reservedKeys, reservedAmounts, port, alreadyReserved, minimum)) {
+                    return true;
+                }
+            }
+        }
+
+        return assignLanePorts(laneInputs, lanePorts, lane, key, remaining, ports,
+                portIndex + 1, plan, reservedKeys, reservedAmounts);
+    }
+
+    private static boolean tryLaneAllocation(KeyCounter[] laneInputs,
+            List<? extends List<? extends MeInputPort>> lanePorts, int lane, AEKey key,
+            long remaining, List<? extends MeInputPort> ports, int portIndex,
+            List<Insertion> plan, Map<MeInputPort, AEKey> reservedKeys,
+            Map<MeInputPort, Long> reservedAmounts, MeInputPort port,
+            long alreadyReserved, long amount) {
+        int planSize = plan.size();
+        plan.add(new Insertion(port, key, amount));
+        reservedKeys.put(port, key);
+        reservedAmounts.put(port, alreadyReserved + amount);
+        if (assignLanePorts(laneInputs, lanePorts, lane, key, remaining - amount, ports,
+                portIndex + 1, plan, reservedKeys, reservedAmounts)) {
+            return true;
+        }
+        while (plan.size() > planSize) {
+            plan.remove(plan.size() - 1);
+        }
+        if (alreadyReserved == 0) {
+            reservedKeys.remove(port);
+            reservedAmounts.remove(port);
+        } else {
+            reservedAmounts.put(port, alreadyReserved);
+        }
+        return false;
+    }
+
+    private static long remainingLaneCapacity(AEKey key, long requested,
+            List<? extends MeInputPort> ports, int start,
+            Map<MeInputPort, AEKey> reservedKeys, Map<MeInputPort, Long> reservedAmounts) {
+        long capacity = 0;
+        for (int i = start; i < ports.size() && capacity < requested; i++) {
+            MeInputPort port = ports.get(i);
+            AEKey reservedKey = reservedKeys.get(port);
+            if (!port.supports(key) || reservedKey != null && !reservedKey.equals(key)) {
+                continue;
+            }
+            long available = simulateAdditionalCapacity(
+                    port, key, requested - capacity, reservedAmounts.getOrDefault(port, 0L));
+            capacity = available > Long.MAX_VALUE - capacity ? Long.MAX_VALUE : capacity + available;
+        }
+        return capacity;
+    }
+
     private static long simulateAdditionalCapacity(MeInputPort port, AEKey key,
             long requested, long alreadyReserved) {
         long numericLimit = key instanceof AEItemKey || key instanceof AEFluidKey
@@ -394,28 +395,14 @@ public final class MePatternInputRouter {
 
     private static boolean canRouteLanes(KeyCounter[] inputs,
             List<? extends List<? extends MeInputPort>> lanePorts) {
-        if (inputs.length != lanePorts.size()) {
+        if (inputs == null || lanePorts == null || inputs.length == 0 || inputs.length != lanePorts.size()
+                || lanePorts.stream().anyMatch(ports -> ports == null || ports.isEmpty()
+                        || ports.stream().anyMatch(java.util.Objects::isNull))) {
             return false;
         }
         List<Insertion> plan = new ArrayList<>();
-        Map<MeInputPort, AEKey> reservedKeys = new java.util.IdentityHashMap<>();
-        Map<MeInputPort, Long> reservedAmounts = new java.util.IdentityHashMap<>();
-        for (int lane = 0; lane < inputs.length; lane++) {
-            Map<AEKey, Long> requests = normalize(new KeyCounter[] {inputs[lane]});
-            if (requests == null || requests.isEmpty()) {
-                return false;
-            }
-            List<Map.Entry<AEKey, Long>> requestList = new ArrayList<>(requests.entrySet());
-            boolean assigned = requestList.size() == 1
-                    ? assignSingle(requestList.get(0), lanePorts.get(lane), plan,
-                            reservedKeys, reservedAmounts)
-                    : assign(requestList, 0, requestList.get(0).getValue(), lanePorts.get(lane), plan, plan.size(),
-                            reservedKeys, reservedAmounts);
-            if (!assigned) {
-                return false;
-            }
-        }
-        return true;
+        return assignLanes(inputs, lanePorts, 0, plan,
+                new java.util.IdentityHashMap<>(), new java.util.IdentityHashMap<>());
     }
 
     private static KeyCounter[] scale(KeyCounter[] inputs, long copies) {
