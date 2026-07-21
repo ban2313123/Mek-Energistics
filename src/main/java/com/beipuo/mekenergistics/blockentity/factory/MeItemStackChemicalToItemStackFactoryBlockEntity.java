@@ -3,7 +3,6 @@ package com.beipuo.mekenergistics.blockentity.factory;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
-import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
@@ -35,6 +34,7 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
         super(ModBlocks.getMachineBlock(machine), pos, state);
         this.machine = machine;
         getAeSupport();
+        initializeFactoryAeOutputMode();
     }
 
     @NotNull
@@ -82,15 +82,13 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
 
     @Override public List<mekanism.api.inventory.IInventorySlot> meInputSlots() { return this.inputSlots; }
     @Override public List<mekanism.api.inventory.IInventorySlot> meOutputSlots() { return this.outputSlots; }
+    @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalOutputTanks() { return itemChemicalFactoryOutputTanks(getChemicalTank()); }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
 
     @Override
     public MeInputLayout getPatternInputLayout() {
-        return MeInputLayout.unordered(List.of(
-                MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputSlots),
-                MeMachineIoAdapter.chemicalInput(getChemicalTank()),
-                MeMachineIoAdapter.itemInput(
-                        ((TileEntityItemStackChemicalToItemStackFactoryAccessor) this).mekenergistics$getExtraSlot())));
+        return itemChemicalFactoryInputLayout(getChemicalTank(),
+                ((TileEntityItemStackChemicalToItemStackFactoryAccessor) this).mekenergistics$getExtraSlot());
     }
 
     @Override

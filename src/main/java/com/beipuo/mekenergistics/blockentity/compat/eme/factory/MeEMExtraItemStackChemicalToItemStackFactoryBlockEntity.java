@@ -2,7 +2,6 @@ package com.beipuo.mekenergistics.blockentity.compat.eme.factory;
 
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
-import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import io.github.masyumero.emextras.common.tile.factory.TileEntityEMExtraFactory;
@@ -33,6 +32,7 @@ public class MeEMExtraItemStackChemicalToItemStackFactoryBlockEntity extends Til
     public MeEMExtraItemStackChemicalToItemStackFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(ModBlocks.getMachineBlock(machine), pos, state);
         this.machine = machine;
+        initializeFactoryAeOutputMode();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -51,15 +51,13 @@ public class MeEMExtraItemStackChemicalToItemStackFactoryBlockEntity extends Til
 
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return this.outputSlots; }
+    @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalOutputTanks() { return itemChemicalFactoryOutputTanks(getChemicalTank()); }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
     @Override public MeFactoryAeSupport getAeSupport() { if (this.aeSupport == null) this.aeSupport = new MeFactoryAeSupport(this); return this.aeSupport; }
     @Override public MeMekanismMachine getMachine() { return this.machine; }
     @Override public Level getOwnerLevel() { return getLevel(); }
     @Override public MeInputLayout getPatternInputLayout() {
-        return MeInputLayout.unordered(List.of(
-                MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputSlots),
-                MeMachineIoAdapter.chemicalInput(getChemicalTank()),
-                MeMachineIoAdapter.itemInput(getExtraSlot())));
+        return itemChemicalFactoryInputLayout(getChemicalTank(), getExtraSlot());
     }
     @Override public void addContainerTrackers(MekanismContainer container) { super.addContainerTrackers(container); addAeOutputModeTracker(container); }
     @Override public CachedRecipe<ItemStackChemicalToItemStackRecipe> createNewCachedRecipe(@NotNull ItemStackChemicalToItemStackRecipe recipe, int cacheIndex) { return MeFactoryAeSupport.withAeRecipeEnergy(this, this.energyContainer, super.createNewCachedRecipe(recipe, cacheIndex)); }

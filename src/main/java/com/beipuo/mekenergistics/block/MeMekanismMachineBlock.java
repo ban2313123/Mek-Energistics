@@ -13,6 +13,7 @@ import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
 import com.beipuo.mekenergistics.item.MeInstallerUpgradeHandler;
 import com.beipuo.mekenergistics.item.MeTierInstallerItem;
 import com.beipuo.mekenergistics.registry.ModBlockTypes;
+import com.beipuo.mekenergistics.registry.ModMenuTypes;
 import appeng.core.definitions.AEItems;
 import appeng.menu.MenuOpener;
 import appeng.menu.implementations.QuartzKnifeMenu;
@@ -32,8 +33,11 @@ import mekanism.common.block.attribute.Attributes;
 import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.block.interfaces.IHasDescription;
 import mekanism.common.block.interfaces.ITypeBlock;
+import mekanism.common.capabilities.Capabilities;
 import mekanism.common.content.blocktype.BlockType;
 import mekanism.common.content.blocktype.BlockTypeTile;
+import mekanism.common.item.ItemConfigurationCard;
+import mekanism.common.item.ItemConfigurator;
 import mekanism.common.resource.BlockResourceInfo;
 import mekanism.common.registration.impl.TileEntityTypeRegistryObject;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -129,11 +133,9 @@ public class MeMekanismMachineBlock extends Block implements IHasDescription, IT
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        BlockState state = this.defaultBlockState();
-        for (AttributeState attribute : STATE_ATTRIBUTES) {
-            state = attribute.getStateForPlacement(state, context.getLevel(), context.getClickedPos(), context.getPlayer(), context.getClickedFace());
-        }
-        return state;
+        return this.defaultBlockState().setValue(
+                BlockStateProperties.HORIZONTAL_FACING,
+                context.getHorizontalDirection().getOpposite());
     }
 
     @Override
@@ -189,9 +191,38 @@ public class MeMekanismMachineBlock extends Block implements IHasDescription, IT
             if (level.isClientSide) {
                 return Attribute.has(this, AttributeGui.class) ? InteractionResult.SUCCESS : InteractionResult.PASS;
             }
-            return tile.openGui(player);
+            return openMachineGui(tile, player);
         }
         return InteractionResult.PASS;
+    }
+
+    private InteractionResult openMachineGui(TileEntityMekanism tile, Player player) {
+        if (!tile.hasGui() || player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        if (tile.hasSecurity()
+                && !IBlockSecurityUtils.INSTANCE.canAccessOrDisplayError(player, player.level(), tile.getBlockPos(), tile)) {
+            return InteractionResult.FAIL;
+        }
+        ItemStack stack = player.getMainHandItem();
+        if (tile.isDirectional() && !stack.isEmpty() && stack.getItem() instanceof ItemConfigurator configurator
+                && configurator.getMode(stack) == ItemConfigurator.ConfiguratorMode.ROTATE) {
+            return InteractionResult.PASS;
+        }
+        if (!stack.isEmpty() && stack.getItem() instanceof ItemConfigurationCard
+                && WorldUtils.getCapability(tile.getLevel(), Capabilities.CONFIG_CARD, tile.getBlockPos(), null, tile, null) != null) {
+            return InteractionResult.PASS;
+        }
+
+        var menuProvider = ModMenuTypes.getMachineContainer(this.machine).getProvider(tile.getDisplayName(), tile, true);
+        if (menuProvider == null) {
+            return InteractionResult.PASS;
+        }
+        player.openMenu(menuProvider, buffer -> {
+            buffer.writeBlockPos(tile.getBlockPos());
+            tile.encodeExtraContainerData(buffer);
+        });
+        return InteractionResult.CONSUME;
     }
 
     @Override

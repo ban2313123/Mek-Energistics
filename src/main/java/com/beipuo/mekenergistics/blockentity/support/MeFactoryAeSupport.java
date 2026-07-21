@@ -151,7 +151,9 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
     }
 
     public void loadAll(CompoundTag tag, HolderLookup.Provider registries) {
-        this.aeOutputMode = AeOutputMode.byId(tag.getInt("AeOutputMode"));
+        if (tag.contains("AeOutputMode")) {
+            this.aeOutputMode = AeOutputMode.byId(tag.getInt("AeOutputMode"));
+        }
         loadCommon(tag, registries);
     }
 

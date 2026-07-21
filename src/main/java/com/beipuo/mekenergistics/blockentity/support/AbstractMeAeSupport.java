@@ -29,6 +29,7 @@ import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -245,20 +246,26 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     public final boolean drainOutputPorts(com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode,
             List<? extends MeOutputPort> outputPorts) {
+        boolean changed = drainOutputPorts(mode, outputPorts, this::insertIntoNetwork);
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
+    }
+
+    static boolean drainOutputPorts(com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode,
+            List<? extends MeOutputPort> outputPorts, BiFunction<AEKey, Long, Long> networkInserter) {
         boolean changed = false;
         for (MeOutputPort output : outputPorts) {
             AEKey key = output.key();
-            if (key == null || output.amount() <= 0 || !outputModeAllows(mode, key)) {
+            long available = output.amount();
+            if (key == null || available <= 0 || !outputModeAllows(mode, key)) {
                 continue;
             }
-            long inserted = insertIntoNetwork(key, output.amount());
+            long inserted = Math.min(available, Math.max(0, networkInserter.apply(key, available)));
             if (inserted > 0) {
-                output.extract(inserted, mekanism.api.Action.EXECUTE);
-                changed = true;
+                changed |= output.extract(inserted, mekanism.api.Action.EXECUTE) > 0;
             }
-        }
-        if (changed) {
-            this.owner.saveChanges();
         }
         return changed;
     }

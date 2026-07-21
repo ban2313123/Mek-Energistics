@@ -7,6 +7,7 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.api.chemical.IChemicalTank;
 import mekanism.api.fluid.IExtendedFluidTank;
+import mekanism.common.content.blocktype.FactoryType;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -33,6 +34,41 @@ public interface MeFactoryIoOwner extends MeFactoryAeMachine {
     }
 
     void unpauseRecipeMonitors();
+
+    default boolean isInfusingFactory() {
+        return getMachine().factoryType() == FactoryType.INFUSING;
+    }
+
+    /**
+     * Keeps metallurgic infusing factories in reaction mode until chemical AE output is enabled.
+     * Other item + chemical factories retain their existing three-port layout.
+     */
+    default MeInputLayout itemChemicalFactoryInputLayout(IChemicalTank chemicalTank, IInventorySlot extraSlot) {
+        Objects.requireNonNull(chemicalTank, "chemicalTank");
+        Objects.requireNonNull(extraSlot, "extraSlot");
+        if (isInfusingFactory()) {
+            if (getAeOutputMode().chemicals()) {
+                return MeInputLayout.unordered(List.of(MeMachineIoAdapter.manualItemInput(extraSlot)));
+            }
+            return MeInputLayout.unordered(List.of(
+                    MeMachineIoAdapter.autoSortedFactoryItemInput(meInputSlots()),
+                    MeMachineIoAdapter.chemicalInput(chemicalTank)));
+        }
+        return MeInputLayout.unordered(List.of(
+                MeMachineIoAdapter.autoSortedFactoryItemInput(meInputSlots()),
+                MeMachineIoAdapter.chemicalInput(chemicalTank),
+                MeMachineIoAdapter.itemInput(extraSlot)));
+    }
+
+    default List<? extends IChemicalTank> itemChemicalFactoryOutputTanks(IChemicalTank chemicalTank) {
+        return isInfusingFactory() ? List.of(Objects.requireNonNull(chemicalTank, "chemicalTank")) : List.of();
+    }
+
+    default void initializeFactoryAeOutputMode() {
+        if (isInfusingFactory()) {
+            getAeSupport().setAeOutputMode(AeOutputMode.ITEMS);
+        }
+    }
 
     @Override
     default MeInputLayout getPatternInputLayout() {

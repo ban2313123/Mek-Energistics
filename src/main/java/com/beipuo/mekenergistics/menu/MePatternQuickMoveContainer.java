@@ -26,6 +26,10 @@ public interface MePatternQuickMoveContainer {
         } else {
             return stack;
         }
+        return insertIntoPatternSlots(stack, patternSlots);
+    }
+
+    static ItemStack insertIntoPatternSlots(ItemStack stack, List<BasicInventorySlot> patternSlots) {
         ItemStack remaining = stack;
         for (BasicInventorySlot patternSlot : patternSlots) {
             remaining = patternSlot.insertItem(remaining, Action.EXECUTE, AutomationType.MANUAL);

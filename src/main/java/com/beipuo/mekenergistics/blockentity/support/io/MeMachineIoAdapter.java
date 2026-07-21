@@ -20,6 +20,15 @@ public final class MeMachineIoAdapter {
     }
 
     public static MeInputPort itemInput(IInventorySlot slot) {
+        return itemInput(slot, AutomationType.INTERNAL);
+    }
+
+    /** Mirrors a player's insertion into a dedicated conversion/extra slot. */
+    public static MeInputPort manualItemInput(IInventorySlot slot) {
+        return itemInput(slot, AutomationType.MANUAL);
+    }
+
+    private static MeInputPort itemInput(IInventorySlot slot, AutomationType automationType) {
         return new MeInputPort() {
             @Override
             public boolean supports(AEKey key) {
@@ -40,7 +49,7 @@ public final class MeMachineIoAdapter {
                     return 0;
                 }
                 ItemStack offered = probe.copyWithCount(offeredAmount);
-                ItemStack remainder = slot.insertItem(offered, action, AutomationType.INTERNAL);
+                ItemStack remainder = slot.insertItem(offered, action, automationType);
                 return Math.max(0, Math.min(offeredAmount, offered.getCount() - remainder.getCount()));
             }
 
