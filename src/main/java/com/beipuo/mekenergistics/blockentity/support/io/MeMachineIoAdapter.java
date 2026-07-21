@@ -31,6 +31,9 @@ public final class MeMachineIoAdapter {
                 if (!(key instanceof AEItemKey itemKey) || amount <= 0 || amount > Integer.MAX_VALUE) {
                     return 0;
                 }
+                // Capability-backed extra slots can report a different limit when
+                // queried with an oversized temporary stack. Probe with one item,
+                // then cap the actual offer to the slot's declared remaining space.
                 ItemStack probe = itemKey.toStack(1);
                 int offeredAmount = boundedItemOffer(amount, slot.getCount(), slot.getLimit(probe));
                 if (offeredAmount <= 0) {

@@ -8,6 +8,9 @@ import appeng.api.config.Actionable;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.KeyCounter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -31,6 +34,16 @@ class MeMachineIoAdapterTest {
     @Test
     void itemOfferKeepsUpgradedSlotLimitsAboveVanillaStackSize() {
         assertEquals(768, MeMachineIoAdapter.boundedItemOffer(1_000, 3_328, 4_096));
+    }
+
+    @Test
+    void itemInputProbesTheSlotLimitWithOneItem() throws IOException {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/blockentity/support/io/MeMachineIoAdapter.java"));
+
+        assertTrue(source.contains("ItemStack probe = itemKey.toStack(1);"));
+        assertTrue(source.contains("boundedItemOffer(amount, slot.getCount(), slot.getLimit(probe))"));
+        assertFalse(source.contains("itemKey.toStack((int) amount)"));
     }
 
     @Test
