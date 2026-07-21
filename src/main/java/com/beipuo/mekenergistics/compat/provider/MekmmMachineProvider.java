@@ -26,7 +26,7 @@ public final class MekmmMachineProvider extends AbstractCompatMachineProvider im
         return Map.of(
                 CompatMachineFamily.MEKMM_MACHINE,
                 CompatMachineFamilyAdapter.of(
-                        spec -> ModMenuTypes.getCoreMachineContainer(spec.machine()),
+                        spec -> MekanismMoreMachineBaseCompat.meBaseContainer(spec.machine()),
                         (spec, registrar) -> MekanismMoreMachineBaseCompat.registerBaseMachine(
                                 spec.machine(), registrar),
                         (spec, tileType) -> MekanismMoreMachineBaseCompat.createBaseBlockType(
@@ -60,7 +60,7 @@ public final class MekmmMachineProvider extends AbstractCompatMachineProvider im
         if (CompatMachineCatalog.hasAvailableFamily(CompatMachineFamily.MEKMM_ADVANCED_FACTORY)) {
             MekanismMoreMachineAdvancedMenuTypes.register(register);
         }
-        if (CompatMachineCatalog.isAvailable(MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER)) {
+        if (MekanismMoreMachineBaseCompat.hasAvailableLargeMachines()) {
             MekanismMoreMachineLargeMenuTypes.register(register);
         }
     }

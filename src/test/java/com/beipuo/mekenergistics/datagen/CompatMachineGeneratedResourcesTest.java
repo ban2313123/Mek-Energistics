@@ -144,7 +144,10 @@ class CompatMachineGeneratedResourcesTest {
     @Test
     void handwrittenItemModelsKeepTheirCustomTransforms() throws IOException {
         Set<String> expectedModels = new HashSet<>(Set.of(
-                "me_electrolytic_separator", "me_isotopic_centrifuge", "me_planting_station"));
+                "me_electrolytic_separator", "me_isotopic_centrifuge", "me_planting_station",
+                "me_large_rotary_condensentrator", "me_large_solar_neutron_activator",
+                "me_large_electrolytic_separator", "me_large_chemical_infuser",
+                "me_large_antiprotonic_nucleosynthesizer"));
         for (String tier : List.of("basic", "advanced", "elite", "ultimate",
                 "absolute", "supreme", "cosmic", "infinite")) {
             expectedModels.add("me_" + tier + "_centrifuging_factory");
@@ -166,7 +169,7 @@ class CompatMachineGeneratedResourcesTest {
             assertFalse(Files.exists(resource(GENERATED, "assets/mekenergistics/models/item", id)),
                     () -> id + " must not be replaced by the generic generated item model");
         }
-        assertEquals(19, handwrittenModels, "Unexpected handwritten catalog item model count");
+        assertEquals(24, handwrittenModels, "Unexpected handwritten catalog item model count");
         assertEquals(expectedModels, actualModels, "Handwritten item model set changed");
     }
 

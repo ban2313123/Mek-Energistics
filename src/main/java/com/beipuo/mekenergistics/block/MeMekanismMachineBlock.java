@@ -63,6 +63,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -93,14 +94,19 @@ public class MeMekanismMachineBlock extends Block implements IHasDescription, IT
         BlockBehaviour.Properties properties = BlockBehaviour.Properties.of()
                 .strength(3.5F, 16.0F)
                 .requiresCorrectToolForDrops()
-                .mapColor(BlockResourceInfo.STEEL.getMapColor());
+                .mapColor(machine == MeMekanismMachine.LARGE_SOLAR_NEUTRON_ACTIVATOR
+                        ? MapColor.COLOR_BLUE
+                        : machine == MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER
+                                ? MapColor.METAL
+                                : BlockResourceInfo.STEEL.getMapColor());
         BlockTypeTile<? extends TileEntityMekanism> blockType = ModBlockTypes.getMachineBlockType(machine);
         if (blockType != null) {
             for (Attribute attribute : blockType.getAll()) {
                 attribute.adjustProperties(properties);
             }
         }
-        if (machine == MeMekanismMachine.NUTRITIONAL_LIQUIFIER || blockType != null && blockType.has(AttributeCustomShape.class)) {
+        if (machine == MeMekanismMachine.NUTRITIONAL_LIQUIFIER
+                || blockType != null && blockType.has(AttributeCustomShape.class)) {
             properties.noOcclusion();
         }
         return properties;

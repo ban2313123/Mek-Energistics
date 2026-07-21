@@ -64,6 +64,10 @@ public enum MeMekanismMachine {
     REPLICATOR("replicator", "replicating", "ME Replicator"),
     CHEMICAL_REPLICATOR("chemical_replicator", "chemical_replicator", "ME Chemical Replicator"),
     FLUID_REPLICATOR("fluid_replicator", "fluid_replicator", "ME Fluid Replicator"),
+    LARGE_ROTARY_CONDENSENTRATOR("large_rotary_condensentrator", "large_rotary_condensentrator", "ME Large Rotary Condensentrator"),
+    LARGE_SOLAR_NEUTRON_ACTIVATOR("large_solar_neutron_activator", "large_solar_neutron_activator", "ME Large Solar Neutron Activator"),
+    LARGE_ELECTROLYTIC_SEPARATOR("large_electrolytic_separator", "large_electrolytic_separator", "ME Large Electrolytic Separator"),
+    LARGE_CHEMICAL_INFUSER("large_chemical_infuser", "large_chemical_infuser", "ME Large Chemical Infuser"),
     LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER("large_antiprotonic_nucleosynthesizer", "large_antiprotonic_nucleosynthesizer", "ME Large Antiprotonic Nucleosynthesizer"),
     BASIC_SMELTING_FACTORY(FactoryTier.BASIC, FactoryType.SMELTING),
     BASIC_ENRICHING_FACTORY(FactoryTier.BASIC, FactoryType.ENRICHING),
@@ -560,6 +564,15 @@ public enum MeMekanismMachine {
 
     public String registryName() {
         return "me_" + baseName;
+    }
+
+    public boolean isMekmmLargeMachine() {
+        return switch (this) {
+            case LARGE_ROTARY_CONDENSENTRATOR, LARGE_SOLAR_NEUTRON_ACTIVATOR,
+                    LARGE_ELECTROLYTIC_SEPARATOR, LARGE_CHEMICAL_INFUSER,
+                    LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER -> true;
+            default -> false;
+        };
     }
 
     @Nullable

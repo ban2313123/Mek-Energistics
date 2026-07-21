@@ -12,8 +12,13 @@ public final class OptionalCompatClasses {
             "com/jerry/mekextras/common/integration/mekaf/tile/factory/base/TileEntityExtraAdvancedFactoryBase.class";
     private static final String MEKE_EXTRA_MORE_MACHINE_FACTORY =
             "com/jerry/mekextras/common/integration/mekmm/tile/factory/TileEntityExtraMoreMachineFactory.class";
-    private static final String MEKMM_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER =
-            "com/jerry/meklm/common/tile/machine/TileEntityLargeAntiprotonicNucleosynthesizer.class";
+    private static final String[] MEKMM_LARGE_MACHINE_CLASSES = {
+            "com/jerry/meklm/common/tile/machine/TileEntityLargeRotaryCondensentrator.class",
+            "com/jerry/meklm/common/tile/machine/TileEntityLargeSolarNeutronActivator.class",
+            "com/jerry/meklm/common/tile/machine/TileEntityLargeElectrolyticSeparator.class",
+            "com/jerry/meklm/common/tile/machine/TileEntityLargeChemicalInfuser.class",
+            "com/jerry/meklm/common/tile/machine/TileEntityLargeAntiprotonicNucleosynthesizer.class"
+    };
     private static final String EMEKE_ADVANCED_FACTORY =
             "io/github/masyumero/emextras/common/integration/mekaf/tile/factory/base/TileEntityEMExtraAdvancedFactoryBase.class";
     private static final String EMEKE_MORE_MACHINE_FACTORY =
@@ -101,7 +106,15 @@ public final class OptionalCompatClasses {
     }
 
     public static boolean hasMekmmLargeMachines() {
-        return hasMekmm() && hasClassResource(MEKMM_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER);
+        if (!hasMekmm()) {
+            return false;
+        }
+        for (String classResource : MEKMM_LARGE_MACHINE_CLASSES) {
+            if (!hasClassResource(classResource)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static boolean hasMekanismExtrasAdvancedFactories() {

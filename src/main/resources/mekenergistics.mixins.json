@@ -11,6 +11,8 @@
     "TileEntityAntiprotonicNucleosynthesizerAccessor",
     "TileEntityChemicalReplicatorAccessor",
     "TileEntityFluidReplicatorAccessor",
+    "TileEntityLargeRotaryCondensentratorAccessor",
+    "TileEntityLargeChemicalInfuserAccessor",
     "TileEntityLargeAntiprotonicNucleosynthesizerAccessor",
     "TileEntityMetallurgicInfuserAccessor",
     "TileEntityItemStackChemicalToItemStackFactoryAccessor",

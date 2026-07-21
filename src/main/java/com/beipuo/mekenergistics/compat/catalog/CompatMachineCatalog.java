@@ -149,12 +149,13 @@ public final class CompatMachineCatalog {
             case PRESSURIZED_REACTION_CHAMBER -> CompatSideConfigProfile.REACTION;
             case CHEMICAL_CRYSTALLIZER -> CompatSideConfigProfile.CRYSTALLIZER;
             case CHEMICAL_DISSOLUTION_CHAMBER -> CompatSideConfigProfile.DISSOLUTION;
-            case CHEMICAL_INFUSER -> CompatSideConfigProfile.CHEMICAL_INFUSING;
+            case CHEMICAL_INFUSER, LARGE_CHEMICAL_INFUSER -> CompatSideConfigProfile.CHEMICAL_INFUSING;
             case CHEMICAL_OXIDIZER, PIGMENT_EXTRACTOR -> CompatSideConfigProfile.CHEMICAL_OUT;
             case CHEMICAL_WASHER -> CompatSideConfigProfile.WASHER;
-            case ROTARY_CONDENSENTRATOR -> CompatSideConfigProfile.ROTARY;
-            case ELECTROLYTIC_SEPARATOR -> CompatSideConfigProfile.SEPARATOR;
-            case SOLAR_NEUTRON_ACTIVATOR -> CompatSideConfigProfile.SOLAR_NEUTRON_ACTIVATOR;
+            case ROTARY_CONDENSENTRATOR, LARGE_ROTARY_CONDENSENTRATOR -> CompatSideConfigProfile.ROTARY;
+            case ELECTROLYTIC_SEPARATOR, LARGE_ELECTROLYTIC_SEPARATOR -> CompatSideConfigProfile.SEPARATOR;
+            case SOLAR_NEUTRON_ACTIVATOR, LARGE_SOLAR_NEUTRON_ACTIVATOR -> CompatSideConfigProfile.SOLAR_NEUTRON_ACTIVATOR;
+            case LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER -> CompatSideConfigProfile.ADVANCED_INPUT_ONLY;
             case ISOTOPIC_CENTRIFUGE -> CompatSideConfigProfile.CENTRIFUGE;
             case NUTRITIONAL_LIQUIFIER -> CompatSideConfigProfile.LIQUIFIER;
             case PIGMENT_MIXER -> CompatSideConfigProfile.PIGMENT_MIXER;
@@ -183,7 +184,7 @@ public final class CompatMachineCatalog {
         }
         switch (family) {
             case MEKMM_MACHINE -> {
-                if (machine == MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER) {
+                if (machine.isMekmmLargeMachine()) {
                     requirements.add(CompatRequirement.MEKMM_LARGE_MACHINES);
                 }
             }

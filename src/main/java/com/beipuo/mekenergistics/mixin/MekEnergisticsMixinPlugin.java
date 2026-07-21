@@ -17,6 +17,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             Map.entry(".TileEntityEMExtraDissolvingFactoryAccessor", "emextras"),
             Map.entry(".TileEntityChemicalReplicatorAccessor", "mekmm"),
             Map.entry(".TileEntityFluidReplicatorAccessor", "mekmm"),
+            Map.entry(".TileEntityLargeRotaryCondensentratorAccessor", "mekmm"),
+            Map.entry(".TileEntityLargeChemicalInfuserAccessor", "mekmm"),
             Map.entry(".TileEntityLargeAntiprotonicNucleosynthesizerAccessor", "mekmm"),
             Map.entry(".extendedae.ContainerRenamerMixin", "extendedae"),
             Map.entry(".dataenergistics.PatternProviderSyncHelperMixin", "data_energistics"),

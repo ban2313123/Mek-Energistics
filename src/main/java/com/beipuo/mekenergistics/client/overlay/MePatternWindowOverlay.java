@@ -5,10 +5,12 @@ import appeng.api.stacks.AmountFormat;
 import appeng.api.stacks.GenericStack;
 import appeng.client.gui.me.common.StackSizeRenderer;
 import com.beipuo.mekenergistics.MekEnergistics;
+import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.MePatternDecodeHelper;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
+import com.beipuo.mekenergistics.network.packet.CycleAeOutputTypePacket;
 import com.beipuo.mekenergistics.network.packet.SetPatternTerminalNamePacket;
 import com.beipuo.mekenergistics.network.packet.SetSmartPatternMultiplicationPacket;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import mekanism.client.SpecialColors;
 import mekanism.client.gui.GuiMekanism;
 import mekanism.client.gui.IGuiWrapper;
 import mekanism.client.gui.GuiUtils;
+import mekanism.client.gui.element.button.MekanismButton;
 import mekanism.client.gui.element.button.MekanismImageButton;
 import mekanism.client.gui.element.slot.GuiVirtualSlot;
 import mekanism.client.gui.element.slot.SlotType;
@@ -33,6 +36,7 @@ import mekanism.common.inventory.container.slot.IVirtualSlot;
 import mekanism.common.inventory.container.slot.VirtualInventoryContainerSlot;
 import mekanism.common.inventory.container.tile.MekanismTileContainer;
 import mekanism.common.inventory.slot.BasicInventorySlot;
+import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.util.MekanismUtils;
 import mekanism.common.util.MekanismUtils.ResourceType;
 import net.minecraft.client.Minecraft;
@@ -136,11 +140,13 @@ public final class MePatternWindowOverlay {
         }
         if (container.getTileEntity() instanceof MeAeMachine machine) {
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
-                    new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled));
+                    new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
+                    new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode));
         }
         if (container.getTileEntity() instanceof MeFactoryAeMachine machine) {
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
-                    new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled));
+                    new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
+                    new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode));
         }
         return null;
     }
@@ -177,8 +183,9 @@ public final class MePatternWindowOverlay {
         }
     }
 
-    private record Target(GuiMekanism<?> gui, MekanismTileContainer<?> container, List<BasicInventorySlot> patternSlots, NameAccess nameAccess,
-                          SmartMultiplicationAccess smartMultiplicationAccess) {
+    private record Target(GuiMekanism<?> gui, MekanismTileContainer<?> container,
+                          List<BasicInventorySlot> patternSlots, NameAccess nameAccess,
+                          SmartMultiplicationAccess smartMultiplicationAccess, OutputAccess outputAccess) {
     }
 
     private record NameAccess(Supplier<String> getter, Consumer<String> setter) {
@@ -198,6 +205,16 @@ public final class MePatternWindowOverlay {
 
         private void set(boolean enabled) {
             this.setter.accept(enabled);
+        }
+    }
+
+    private record OutputAccess(Supplier<AeOutputMode> getter, Consumer<TransmissionType> toggler) {
+        private AeOutputMode get() {
+            return this.getter.get();
+        }
+
+        private void toggle(TransmissionType type) {
+            this.toggler.accept(type);
         }
     }
 
@@ -257,6 +274,12 @@ public final class MePatternWindowOverlay {
             this.nameField.setText(this.lastSavedName);
             setNameFieldVisible(false);
             addChild(new MekanismImageButton(gui, relativeX + 8, relativeY + 94, 12, LEFT_BUTTON, (element, mouseX, mouseY) -> previousPage()));
+            addChild(new AeOutputButton(gui, relativeX + 116, relativeY + 94,
+                    Component.literal("I"), TransmissionType.ITEM, target));
+            addChild(new AeOutputButton(gui, relativeX + 130, relativeY + 94,
+                    Component.literal("C"), TransmissionType.CHEMICAL, target));
+            addChild(new AeOutputButton(gui, relativeX + 144, relativeY + 94,
+                    Component.literal("F"), TransmissionType.FLUID, target));
             addChild(new MekanismImageButton(gui, relativeX + width - 20, relativeY + 94, 12, RIGHT_BUTTON, (element, mouseX, mouseY) -> nextPage()));
         }
 
@@ -365,8 +388,67 @@ public final class MePatternWindowOverlay {
                 updateSmartMultiplicationTooltip();
             }
             drawTitleText(guiGraphics, PATTERN_WINDOW_TITLE, 6);
-            drawScrollingString(guiGraphics, Component.literal((this.currentPage + 1) + "/" + pageCount()), 20, 99, TextAlignment.CENTER, titleTextColor(), width - 40, 0, false);
+            drawScrollingString(guiGraphics, Component.literal((this.currentPage + 1) + "/" + pageCount()),
+                    20, 99, TextAlignment.CENTER, titleTextColor(), 94, 0, false);
         }
+    }
+
+    private static final class AeOutputButton extends MekanismButton {
+        private final TransmissionType type;
+        private final Target target;
+
+        private AeOutputButton(IGuiWrapper gui, int x, int y, Component label,
+                TransmissionType type, Target target) {
+            super(gui, x, y, 12, 12, label,
+                    (element, mouseX, mouseY) -> toggleOutput(target, type));
+            this.type = type;
+            this.target = target;
+        }
+
+        private static boolean toggleOutput(Target target, TransmissionType type) {
+            target.outputAccess().toggle(type);
+            PacketDistributor.sendToServer(new CycleAeOutputTypePacket(
+                    target.container().getTileEntity().getBlockPos(), type));
+            return true;
+        }
+
+        @Override
+        public void updateTooltip(int mouseX, int mouseY) {
+            AeOutputMode mode = this.target.outputAccess().get();
+            Component state = Component.translatable(outputEnabled(mode, this.type)
+                    ? "gui.mekenergistics.me_patterns.ae_output.on"
+                    : "gui.mekenergistics.me_patterns.ae_output.off");
+            setTooltip(Tooltip.create(Component.translatable(outputTooltipKey(this.type), state)));
+            super.updateTooltip(mouseX, mouseY);
+        }
+
+        @Override
+        protected int getButtonTextColor(int mouseX, int mouseY) {
+            return outputEnabled(this.target.outputAccess().get(), this.type) ? 0x159515 : 0x555555;
+        }
+
+        @Override
+        protected boolean displayButtonTextShadow() {
+            return false;
+        }
+    }
+
+    private static boolean outputEnabled(AeOutputMode mode, TransmissionType type) {
+        return switch (type) {
+            case ITEM -> mode.items();
+            case CHEMICAL -> mode.chemicals();
+            case FLUID -> mode.fluids();
+            default -> false;
+        };
+    }
+
+    private static String outputTooltipKey(TransmissionType type) {
+        return switch (type) {
+            case ITEM -> "gui.mekenergistics.me_patterns.ae_output.item";
+            case CHEMICAL -> "gui.mekenergistics.me_patterns.ae_output.chemical";
+            case FLUID -> "gui.mekenergistics.me_patterns.ae_output.fluid";
+            default -> "tooltip.mekenergistics.ae_output.button";
+        };
     }
 
     private static final class PatternGuiVirtualSlot extends GuiVirtualSlot {

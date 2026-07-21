@@ -21,6 +21,7 @@ import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
 import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
+import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner.LargeMachineGridPort;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
@@ -28,12 +29,17 @@ import com.beipuo.mekenergistics.blockentity.support.io.MePatternIoAdapter;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
@@ -58,6 +64,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     private NodeState nodeState = NodeState.NEW;
     private CompoundTag retainedNodeData;
     private final CraftingUpdateState craftingUpdateState = new CraftingUpdateState();
+    private final Map<BlockPos, LargeMachinePortNode> largeMachinePortNodes = new HashMap<>();
 
     protected AbstractMeAeSupport(O owner) {
         this.owner = owner;
@@ -77,6 +84,8 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     private IManagedGridNode createManagedNode() {
         IManagedGridNode node = GridHelper.createManagedNode(this.owner, new NodeListener())
+                // The support can be requested from an upstream TileEntity constructor, before
+                // subclass machine fields are initialized. Configure large-machine placement at create time.
                 .setInWorldNode(true)
                 .setTagName(TAG_NODE)
                 .setFlags(GridFlags.REQUIRE_CHANNEL)
@@ -90,6 +99,14 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     public final IManagedGridNode getMainNode() {
         return this.mainNode;
+    }
+
+    public final IGridNode getLargeMachineGridNode(BlockPos position, Direction side) {
+        LargeMachinePortNode port = this.largeMachinePortNodes.get(position);
+        if (port == null || side != port.outwardSide()) {
+            return null;
+        }
+        return port.node().getNode();
     }
 
     public final List<BasicInventorySlot> getPatternSlots() {
@@ -189,7 +206,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         if (this.ownerTile.isRemoved() || this.ownerTile.getLevel() == null || this.ownerTile.getLevel().isClientSide()) {
             return;
         }
-        create(this.ownerTile.getLevel(), this.ownerTile.getBlockPos());
+        create(this.ownerTile.getLevel(), this.owner.getGridNodePosition());
     }
 
     public final void create(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
@@ -201,9 +218,28 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             this.nodeState = NodeState.NEW;
         }
         if (this.nodeState == NodeState.NEW) {
-            this.mainNode.create(level, pos);
+            boolean largeMachine = this.owner.getMachine().isMekmmLargeMachine();
+            this.mainNode.setInWorldNode(!largeMachine);
+            this.mainNode.create(level, largeMachine ? null : pos);
+            if (largeMachine) {
+                createLargeMachinePortNodes(level);
+            }
             this.nodeState = NodeState.ACTIVE;
             rebuildPatternCache(false);
+        }
+    }
+
+    private void createLargeMachinePortNodes(net.minecraft.world.level.Level level) {
+        this.largeMachinePortNodes.clear();
+        for (LargeMachineGridPort port : this.owner.getLargeMachineGridPorts()) {
+            IManagedGridNode portNode = GridHelper.createManagedNode(this.owner, new PortNodeListener())
+                    .setInWorldNode(true)
+                    .setExposedOnSides(Set.of(port.outwardSide()))
+                    .setIdlePowerUsage(0);
+            portNode.create(level, port.position());
+            GridHelper.createConnection(this.mainNode.getNode(), portNode.getNode());
+            this.largeMachinePortNodes.put(
+                    port.position(), new LargeMachinePortNode(port.outwardSide(), portNode));
         }
     }
 
@@ -213,6 +249,10 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         }
         retainNodeData();
         this.craftingUpdateState.markPending();
+        for (LargeMachinePortNode port : this.largeMachinePortNodes.values()) {
+            port.node().destroy();
+        }
+        this.largeMachinePortNodes.clear();
         this.mainNode.destroy();
         this.nodeState = NodeState.DESTROYED;
     }
@@ -455,6 +495,16 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         NEW,
         ACTIVE,
         DESTROYED
+    }
+
+    private record LargeMachinePortNode(Direction outwardSide, IManagedGridNode node) {
+    }
+
+    private final class PortNodeListener implements IGridNodeListener<O> {
+        @Override
+        public void onSaveChanges(O nodeOwner, IGridNode node) {
+            // Port nodes contain no persistent services or state of their own.
+        }
     }
 
     private final class NodeListener implements IGridNodeListener<O> {

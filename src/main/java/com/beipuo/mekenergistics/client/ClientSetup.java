@@ -71,6 +71,8 @@ import mekanism.common.tile.machine.TileEntitySeismicVibrator;
 import mekanism.common.tile.machine.TileEntitySolarNeutronActivator;
 import mekanism.common.tile.factory.TileEntityFactory;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.world.inventory.MenuType;
@@ -80,7 +82,17 @@ public final class ClientSetup {
     }
 
     public static void register(IEventBus modEventBus) {
+        modEventBus.addListener(ClientSetup::clientSetup);
+        modEventBus.addListener(ClientSetup::registerRenderers);
         modEventBus.addListener(ClientSetup::registerScreens);
+    }
+
+    private static void clientSetup(FMLClientSetupEvent event) {
+        CompatMachineClientProviders.available().forEach(provider -> provider.registerClientSetup(event));
+    }
+
+    private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        CompatMachineClientProviders.available().forEach(provider -> provider.registerRenderers(event));
     }
 
     public static void registerScreens(RegisterMenuScreensEvent event) {

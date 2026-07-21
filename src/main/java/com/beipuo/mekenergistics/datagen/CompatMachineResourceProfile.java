@@ -14,6 +14,11 @@ final class CompatMachineResourceProfile {
     private static final EnumSet<MeMekanismMachine> CUSTOM_ITEM_MODELS = EnumSet.of(
             MeMekanismMachine.ELECTROLYTIC_SEPARATOR,
             MeMekanismMachine.ISOTOPIC_CENTRIFUGE,
+            MeMekanismMachine.LARGE_ROTARY_CONDENSENTRATOR,
+            MeMekanismMachine.LARGE_SOLAR_NEUTRON_ACTIVATOR,
+            MeMekanismMachine.LARGE_ELECTROLYTIC_SEPARATOR,
+            MeMekanismMachine.LARGE_CHEMICAL_INFUSER,
+            MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER,
             MeMekanismMachine.PLANTING_STATION);
     private static final EnumSet<MeMekanismMachine> DEDICATED_ACTIVE_MACHINE_MODELS = EnumSet.of(
             MeMekanismMachine.ALLOYER,
@@ -21,6 +26,10 @@ final class CompatMachineResourceProfile {
             MeMekanismMachine.CNC_LATHE,
             MeMekanismMachine.CNC_ROLLING_MILL,
             MeMekanismMachine.CNC_STAMPER,
+            MeMekanismMachine.LARGE_ROTARY_CONDENSENTRATOR,
+            MeMekanismMachine.LARGE_SOLAR_NEUTRON_ACTIVATOR,
+            MeMekanismMachine.LARGE_ELECTROLYTIC_SEPARATOR,
+            MeMekanismMachine.LARGE_CHEMICAL_INFUSER,
             MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER,
             MeMekanismMachine.PLANTING_STATION,
             MeMekanismMachine.RECYCLER,

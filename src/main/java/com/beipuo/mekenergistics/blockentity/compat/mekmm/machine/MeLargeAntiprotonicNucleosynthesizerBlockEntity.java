@@ -8,7 +8,6 @@ import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
-import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
@@ -74,10 +73,10 @@ public class MeLargeAntiprotonicNucleosynthesizerBlockEntity extends TileEntityL
         var accessor = (TileEntityLargeAntiprotonicNucleosynthesizerAccessor) this;
         if (gasTank == null || accessor.mekenergistics$getInputSlot() == null
                 || accessor.mekenergistics$getGasInputSlot() == null) return MeInputLayout.empty();
-        MeInputPort item = MeMachineIoAdapter.itemInput(accessor.mekenergistics$getInputSlot());
-        List<MeInputPort> chemical = List.of(MeMachineIoAdapter.chemicalInput(gasTank),
-                MeMachineIoAdapter.itemInput(accessor.mekenergistics$getGasInputSlot()));
-        return MeInputLayout.lanes(List.of(List.of(item), chemical));
+        return MeInputLayout.unordered(List.of(
+                MeMachineIoAdapter.itemInput(accessor.mekenergistics$getInputSlot()),
+                MeMachineIoAdapter.chemicalInput(gasTank),
+                MeMachineIoAdapter.itemInput(accessor.mekenergistics$getGasInputSlot())));
     }
 
     @Override public List<? extends MeOutputPort> getPatternOutputPorts() { return List.of(MeMachineIoAdapter.itemOutput(

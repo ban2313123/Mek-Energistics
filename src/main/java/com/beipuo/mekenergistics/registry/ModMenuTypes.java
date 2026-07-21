@@ -87,6 +87,14 @@ public final class ModMenuTypes {
             registerPatternTileContainer("me_nutritional_liquifier", MeNutritionalLiquifierBlockEntity.class);
     public static final ContainerTypeRegistryObject<MekanismTileContainer<MeAntiprotonicNucleosynthesizerBlockEntity>> ME_ANTIPROTONIC_NUCLEOSYNTHESIZER =
             registerPatternTileContainer("me_antiprotonic_nucleosynthesizer", MeAntiprotonicNucleosynthesizerBlockEntity.class, 10, 27);
+    public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_LARGE_ROTARY_CONDENSENTRATOR =
+            optionalHolder("me_large_rotary_condensentrator");
+    public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_LARGE_SOLAR_NEUTRON_ACTIVATOR =
+            optionalHolder("me_large_solar_neutron_activator");
+    public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_LARGE_ELECTROLYTIC_SEPARATOR =
+            optionalHolder("me_large_electrolytic_separator");
+    public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_LARGE_CHEMICAL_INFUSER =
+            optionalHolder("me_large_chemical_infuser");
     public static final ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> ME_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER =
             optionalHolder("me_large_antiprotonic_nucleosynthesizer");
     public static final ContainerTypeRegistryObject<MekanismTileContainer<MePigmentExtractorBlockEntity>> ME_PIGMENT_EXTRACTOR =
@@ -207,6 +215,10 @@ public final class ModMenuTypes {
         containers.put(MeMekanismMachine.ISOTOPIC_CENTRIFUGE, ME_ISOTOPIC_CENTRIFUGE);
         containers.put(MeMekanismMachine.NUTRITIONAL_LIQUIFIER, ME_NUTRITIONAL_LIQUIFIER);
         containers.put(MeMekanismMachine.ANTIPROTONIC_NUCLEOSYNTHESIZER, ME_ANTIPROTONIC_NUCLEOSYNTHESIZER);
+        containers.put(MeMekanismMachine.LARGE_ROTARY_CONDENSENTRATOR, ME_LARGE_ROTARY_CONDENSENTRATOR);
+        containers.put(MeMekanismMachine.LARGE_SOLAR_NEUTRON_ACTIVATOR, ME_LARGE_SOLAR_NEUTRON_ACTIVATOR);
+        containers.put(MeMekanismMachine.LARGE_ELECTROLYTIC_SEPARATOR, ME_LARGE_ELECTROLYTIC_SEPARATOR);
+        containers.put(MeMekanismMachine.LARGE_CHEMICAL_INFUSER, ME_LARGE_CHEMICAL_INFUSER);
         containers.put(MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER, ME_LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER);
         containers.put(MeMekanismMachine.PIGMENT_EXTRACTOR, ME_PIGMENT_EXTRACTOR);
         containers.put(MeMekanismMachine.PIGMENT_MIXER, ME_PIGMENT_MIXER);
