@@ -89,7 +89,7 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
 
     private static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerFactory(
             MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
-        if ("alloying".equals(machine.customFactoryTypeName())) {
+        if ("alloying".equals(machine.machineTypeId())) {
             return registrar.register(machine, MeAlloyingFactoryBlockEntity::new);
         }
         return switch (machine.factoryType()) {
@@ -122,7 +122,7 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
                         : AttributeUpgradeSupport.create(Upgrade.SPEED, Upgrade.ENERGY));
         if (machine.factoryType() != null) {
             builder.with(new AttributeFactoryType(machine.factoryType()));
-        } else if ("alloying".equals(machine.customFactoryTypeName())) {
+        } else if ("alloying".equals(machine.machineTypeId())) {
             EvolvedMekanismCompat.withAlloyingFactoryType(builder);
         }
         if (machine.factoryTier() != null) {
@@ -148,7 +148,7 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
         if (machine.factoryType() != null && machine.factoryTier() != null) {
             return BlockShapes.getShape(machine.factoryTier(), machine.factoryType());
         }
-        if ("alloying".equals(machine.customFactoryTypeName()) && machine.factoryTier() != null) {
+        if ("alloying".equals(machine.machineTypeId()) && machine.factoryTier() != null) {
             return EvolvedMekanismCompat.alloyingFactoryShape(machine.factoryTier());
         }
         return switch (machine) {
@@ -189,7 +189,7 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
     }
 
     private static Class<? extends IInWorldGridNodeHost> factoryGridHost(MeMekanismMachine machine) {
-        if ("alloying".equals(machine.customFactoryTypeName())) {
+        if ("alloying".equals(machine.machineTypeId())) {
             return MeAlloyingFactoryBlockEntity.class;
         }
         return switch (machine.factoryType()) {

@@ -80,7 +80,7 @@ public final class CompatMachineCatalog {
         CompatMod provider = machine.provider();
         CompatRegistrationRoute route = machine.registrationRoute();
         CompatMachineKind kind = machine.machineKind();
-        CompatMachineFamily family = CompatMachineFamily.resolve(route, machine.declaredMachineTypeName());
+        CompatMachineFamily family = machine.family();
         Set<CompatRequirement> requirements = requirements(machine, provider, family);
         return new CompatMachineSpec(
                 provider,
@@ -88,8 +88,8 @@ public final class CompatMachineCatalog {
                 sourceBlockId(machine, provider),
                 ResourceLocation.fromNamespaceAndPath("mekenergistics", machine.registryName()),
                 kind,
-                machine.declaredTierName(),
-                machine.declaredMachineTypeName(),
+                machine.tierId(),
+                machine.machineTypeId(),
                 sideConfigProfile(machine, route, kind),
                 route,
                 family,
@@ -100,7 +100,7 @@ public final class CompatMachineCatalog {
         // The four MEKE-tier alloying factories are supplied by Evolved Mekanism Extras,
         // which combines Mekanism Extras' tiers with Evolved Mekanism's alloying type.
         String namespace = provider == CompatMod.MEKE
-                && "alloying".equals(machine.declaredMachineTypeName())
+                && "alloying".equals(machine.machineTypeId())
                 ? CompatMod.EMEKE.modId()
                 : provider.modId();
         return ResourceLocation.fromNamespaceAndPath(namespace, machine.baseName());
@@ -118,14 +118,14 @@ public final class CompatMachineCatalog {
         }
         if (route == CompatRegistrationRoute.MEKMM_FACTORY
                 || route == CompatRegistrationRoute.MEKE_MEKMM_FACTORY) {
-            return switch (machine.declaredMachineTypeName()) {
+            return switch (machine.machineTypeId()) {
                 case "stamping", "pressing" -> CompatSideConfigProfile.EXTRA;
                 case "planting", "replicating" -> CompatSideConfigProfile.ADVANCED_INPUT_ONLY;
                 default -> CompatSideConfigProfile.ELECTRIC;
             };
         }
         if (kind == CompatMachineKind.ADVANCED_FACTORY) {
-            return switch (machine.declaredMachineTypeName()) {
+            return switch (machine.machineTypeId()) {
                 case "oxidizing", "pigment_extracting" -> CompatSideConfigProfile.CHEMICAL_OUT;
                 case "dissolving" -> CompatSideConfigProfile.DISSOLUTION;
                 case "washing" -> CompatSideConfigProfile.WASHER;
@@ -168,7 +168,7 @@ public final class CompatMachineCatalog {
             CompatMachineFamily family) {
         EnumSet<CompatRequirement> requirements = EnumSet.noneOf(CompatRequirement.class);
         boolean emekeAlloying = provider == CompatMod.MEKE
-                && "alloying".equals(machine.declaredMachineTypeName());
+                && "alloying".equals(machine.machineTypeId());
         if (emekeAlloying) {
             requirements.add(CompatRequirement.EMEKE);
         } else {

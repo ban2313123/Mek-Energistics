@@ -1,166 +1,71 @@
 # 24. 按机器类型的落地 playbook
 
+所有类型都遵循同一原则：BlockEntity 只保留 Mek recipe/cache、能量和上游生命周期；AE 输入由 `MeInputLayout`/router 处理，输出由稳定 `MeOutputPort` 回网。
+
 ## 单 item 输入机器
 
 代表：Enrichment Chamber、Crusher、Energized Smelter。
 
-优先复用：
-
-- 普通机器：`MeElectricMachineBlockEntity`
-- 工厂：`MeItemStackToItemStackFactoryBlockEntity`
-
-检查点：
-
-- `MeMekanismMachine.slotLayout()` 应返回 `SINGLE_ITEM`。
-- `hasRecipeLogic()` 应为 true。
-- `pushPattern` 只接受 `inputHolder.length == 1`。
-- 机器只声明 item 输入端口；key 类型和数值范围由 router 统一校验。
-- 输出只需要 item slot 回网。
-- JEI catalyst 可通过 `FactoryType` 统一注册。
+- 普通机器参考 `MeElectricMachineBlockEntity`，工厂参考 `MeItemStackToItemStackFactoryBlockEntity`；
+- 声明一个 item input port 和 item output port；
+- 不在具体机器检查 `inputHolder.length` 或 AE key 类型。
 
 ## item + chemical 输入机器
 
 代表：Osmium Compressor、Purification Chamber、Chemical Injection Chamber、Metallurgic Infuser。
 
-优先复用：
-
-- 普通 advanced electric 机器：`MeAdvancedElectricMachineBlockEntity`
-- Metallurgic Infuser：`MeMetallurgicInfuserBlockEntity`
-- 工厂：`MeItemStackChemicalToItemStackFactoryBlockEntity`
-
-检查点：
-
-- `pushPattern` 接受两个输入，一个 item，一个 chemical。
-- 不能依赖输入顺序，除非机器槽位语义真的有顺序。
-- item slot 和 chemical tank 作为同一事务的端口交给 support，机器不得自行 simulate/execute。
-- Purifying / Injecting 注意 `useStatisticalMechanics()`，不要把随机消耗逻辑绕开。
+- item slot 和 chemical tank 作为同一事务的端口；
+- 槽位确实有主/副语义时使用固定 lane，否则使用 unordered layout；
+- 不绕过上游 `useStatisticalMechanics()`、容量和过滤器。
 
 ## 双 item 输入机器
 
 代表：Combiner、CNC Stamper。
 
-优先参考：
-
-- 普通机器：`MeCombinerBlockEntity`
-- 工厂：`MeCombiningFactoryBlockEntity`
-- MekMM stamping factory：`MeStampingFactoryBlockEntity`
-
-检查点：
-
-- `hasSecondaryItemInput()` 要返回 true。
-- 主输入槽和副输入槽语义不同，不能随便交换两个输入。
-- 主输入和副输入声明为两个固定 lane，由 router 统一模拟、执行和回滚。
-- side config 通常是 `EXTRA_MACHINE`。
+- 主输入和副输入声明为两个固定 lane；
+- router 统一模拟、执行和回滚；
+- extra/catalyst 槽不能与主槽交换。
 
 ## item 输入 + 副产物输出机器
 
 代表：Precision Sawmill。
 
-优先参考：
-
-- 普通机器：`MePrecisionSawmillBlockEntity`
-- 工厂：`MeSawingFactoryBlockEntity`
-
-检查点：
-
-- `hasSecondaryOutput()` 要返回 true。
-- 输出回网必须同时传主输出和 secondary output。
-- secondary output 可能为空，也可能因概率不产生，不能把空输出当失败。
-- JEI 和 recipe viewer 要使用 sawmill 对应 recipe type。
+- 声明主输出和 secondary output 两个 item port；
+- 副产物为空是合法结果；
+- 输出不与样板预期结果比较，实际存在什么就回收什么。
 
 ## item + fluid + chemical 输入机器
 
 代表：Pressurized Reaction Chamber。
 
-优先参考：`MePressurizedReactionChamberBlockEntity`。
-
-检查点：
-
-- `pushPattern` 接受三个输入：item、fluid、chemical。
-- 三种输入都必须存在，且每种只能出现一次。
-- item、fluid、chemical 端口一次性交给 support；具体机器不得分别执行后再补偿。
-- 输出通常同时包含 item output slot 和 chemical output tank。
-- `ModBlockTypes.sideConfigFor` 必须包含 `ITEM`、`CHEMICAL`、`FLUID`、`ENERGY`。
-- 默认 side config 用 `AttachedSideConfig.REACTION`。
+- 用三个位置敏感 lane 声明 item、fluid、chemical；
+- 所有输入先模拟，任一失败时整体返回 `false`；
+- item、chemical 和 fluid 输出端口全部声明。
 
 ## chemical + chemical 输入机器
 
 代表：Chemical Infuser、Pigment Mixer。
 
-优先参考：
+- 左右 tank 可互换时作为同一候选端口集合；
+- router 负责回溯分配和完整回滚；
+- 输出 chemical tank 直接作为 `MeOutputPort` 声明。
 
-- `MeChemicalInfuserBlockEntity`
-- `MePigmentMixerBlockEntity`
+## fluid/chemical 模式切换机器
 
-检查点：
+代表：Rotary Condensentrator、Antiprotonic Nucleosynthesizer。
 
-- 输入都是 chemical，通常左右 tank 可互换；把两个 tank 声明为同一候选端口集合。
-- router 会按 tank validity、已有内容和容量回溯分配，并在执行失败时恢复全部端口。
-- 输出是 chemical tank，必须通过 `insertChemicalTankIntoNetwork` 回网。
+- 当前 mode 决定 input/output adapter 的端口类型；
+- GUI 改 mode 后同步更新 layout/ports；
+- 样板只在当前物理端口能容纳时执行。
 
-## fluid 和 chemical 可切换机器
+## 多输出或环境依赖机器
 
-代表：Rotary Condensentrator。
+代表：Electrolytic Separator、Chemical Washer、Solar Neutron Activator、Nutritional Liquifier。
 
-优先参考：`MeRotaryCondensentratorBlockEntity`。
-
-检查点：
-
-- `getMode()` 决定当前方向。
-- 当前实现中 `getMode() == true` 时接受 fluid 输入并输出 chemical；`getMode() == false` 时接受 chemical 输入并输出 fluid。
-- 根据当前模式只声明当前物理输入端口，类型验证仍由 router 完成。
-- 输出回网也必须按当前模式选择 tank。
-- GUI/样板使用时要提醒玩家：样板是否可执行取决于机器当前模式。
-
-## 纯 chemical / fluid 输出机器
-
-代表：Chemical Oxidizer、Chemical Washer、Electrolytic Separator、Solar Neutron Activator。
-
-优先参考同目录 `blockentity/machine/chemical` 下现有类。
-
-检查点：
-
-- 输出 tank 数量可能不止一个，例如 Electrolytic Separator 有 left/right tank。
-- 多输出 tank 都要传给 support，否则网络满后其中一边不会被 AE ticker 继续处理。
-- item、chemical、fluid 输出开关彼此独立；所有实际输出 tank 都必须声明给 support。
-- 有 daylight、biome、water source 或环境依赖的机器，不要只按 recipe 判断可执行。
-
-## item 输入 + fluid 输出机器
-
-代表：Nutritional Liquifier。
-
-优先参考：`MeNutritionalLiquifierBlockEntity`。
-
-检查点：
-
-- `pushPattern` 接受一个 item 输入，输出是 fluid tank。
-- 输出 fluid 必须通过 `insertFluidTankIntoNetwork` 回网。
-- `sideConfigFor` 应包含 `ITEM, FLUID, ENERGY`。
-- fluid 输出由 `AeOutputMode.fluids()` 独立控制。
-
-## chemical -> chemical 带模式切换机器
-
-代表：Antiprotonic Nucleosynthesizer。
-
-优先参考：`MeAntiprotonicNucleosynthesizerBlockEntity`。
-
-检查点：
-
-- 输入输出都是 chemical，但机器有模式切换。
-- 根据当前模式声明实际输入/输出 tank；key 类型由 router 验证。
-- 输出回网也必须按当前模式选择 tank。
-- `sideConfigFor` 应包含 `CHEMICAL, ITEM, ENERGY`。
+- 所有实际 output slot/tank 都加入输出端口列表；
+- daylight、biome、water source 等环境条件仍由 Mek recipe/机器逻辑处理；
+- `AeOutputMode` 分别控制 item、chemical、fluid，网络满时保留机器内背压。
 
 ## 无 AE 样板的工具机器
 
-代表：Digital Miner、Teleporter、Oredictionificator、Modification Station、Logistical Sorter。
-
-优先复用：`MeMekanismMachineBlockEntity` 或对应 utility BlockEntity。
-
-检查点：
-
-- `ModBlockEntities` 走 `noAe(...)`。
-- 不注册 `IN_WORLD_GRID_NODE_HOST`。
-- 菜单可直接复用 Mek 原 GUI/container。
-- 仍要确认方块、物品、side config、安装器、模型和语言正常。
-- 不要为了"统一"强行注册 crafting provider。没有明确 pattern 输入输出语义的机器，接入 AE 下单只会制造假自动化。
+Digital Miner、Teleporter、Oredictionificator、Modification Station、Logistical Sorter 等没有明确 crafting provider 语义的机器，不实现 `MeAeMachine`，也不进入 catalog 的 ME variant；公共 registry 只处理 `available()` 且 `hasMeVariant` 的条目。

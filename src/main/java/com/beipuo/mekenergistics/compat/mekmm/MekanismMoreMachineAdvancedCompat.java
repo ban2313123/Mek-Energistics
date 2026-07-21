@@ -75,7 +75,7 @@ public final class MekanismMoreMachineAdvancedCompat {
     }
 
     public static AdvancedFactoryType advancedFactoryType(MeMekanismMachine machine) {
-        String name = machine.moreMachineAdvancedFactoryTypeName().toUpperCase(Locale.ROOT);
+        String name = machine.machineTypeId().toUpperCase(Locale.ROOT);
         return switch (name) {
             case "OXIDIZING" -> AdvancedFactoryType.OXIDIZING;
             case "DISSOLVING" -> AdvancedFactoryType.DISSOLVING;

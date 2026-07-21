@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=east,active=false": {
+      "model": "mekenergistics:block/me_chemical_washer",
+      "y": 90
+    },
+    "facing=east,active=true": {
+      "model": "mekenergistics:block/me_chemical_washer",
+      "y": 90
+    },
+    "facing=north,active=false": {
+      "model": "mekenergistics:block/me_chemical_washer"
+    },
+    "facing=north,active=true": {
+      "model": "mekenergistics:block/me_chemical_washer"
+    },
+    "facing=south,active=false": {
+      "model": "mekenergistics:block/me_chemical_washer",
+      "y": 180
+    },
+    "facing=south,active=true": {
+      "model": "mekenergistics:block/me_chemical_washer",
+      "y": 180
+    },
+    "facing=west,active=false": {
+      "model": "mekenergistics:block/me_chemical_washer",
+      "y": -90
+    },
+    "facing=west,active=true": {
+      "model": "mekenergistics:block/me_chemical_washer",
+      "y": -90
+    }
+  }
+}

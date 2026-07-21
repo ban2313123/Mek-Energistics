@@ -38,6 +38,14 @@ public final class OptionalCompatClasses {
         return ModList.get().isLoaded("emextras");
     }
 
+    public static boolean hasExtendedAe() {
+        return ModList.get().isLoaded("extendedae");
+    }
+
+    public static boolean hasAppliedFlux() {
+        return ModList.get().isLoaded("appflux");
+    }
+
     @Nullable
     public static FactoryTier getEvolvedFactoryTier(String tierName) {
         if (!hasEvolvedMekanism()) {

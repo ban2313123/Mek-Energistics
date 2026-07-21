@@ -4,25 +4,20 @@ import com.beipuo.mekenergistics.client.compat.eme.EvolvedMekanismExtrasAdvanced
 import com.beipuo.mekenergistics.client.compat.eme.EvolvedMekanismExtrasClientScreens;
 import com.beipuo.mekenergistics.client.compat.eme.EvolvedMekanismExtrasMoreMachineClientScreens;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
-import com.beipuo.mekenergistics.compat.catalog.CompatMod;
-import com.beipuo.mekenergistics.compat.catalog.CompatRequirement;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 public final class EmekeMachineClientProvider implements CompatMachineClientProvider {
     @Override
     public void registerScreens(RegisterMenuScreensEvent event) {
-        EvolvedMekanismExtrasClientScreens.register(event);
-        if (hasRequirement(CompatRequirement.EMEKE_ADVANCED_FACTORIES)) {
+        if (CompatMachineCatalog.hasAvailableFamily(CompatMachineFamily.EMEKE_FACTORY)) {
+            EvolvedMekanismExtrasClientScreens.register(event);
+        }
+        if (CompatMachineCatalog.hasAvailableFamily(CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY)) {
             EvolvedMekanismExtrasAdvancedClientScreens.register(event);
         }
-        if (hasRequirement(CompatRequirement.EMEKE_MEKMM_FACTORIES)) {
+        if (CompatMachineCatalog.hasAvailableFamily(CompatMachineFamily.EMEKE_MEKMM_FACTORY)) {
             EvolvedMekanismExtrasMoreMachineClientScreens.register(event);
         }
-    }
-
-    private static boolean hasRequirement(CompatRequirement requirement) {
-        return CompatMachineCatalog.available()
-                .filter(spec -> spec.provider() == CompatMod.EMEKE)
-                .anyMatch(spec -> spec.requirements().contains(requirement));
     }
 }

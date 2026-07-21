@@ -9,6 +9,7 @@ import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraRecyclin
 import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraReplicatingFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraStampingFactoryBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.compat.mekmm.MekanismMoreMachineBaseCompat;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -52,7 +53,7 @@ public final class MekanismExtrasMoreMachineCompat {
         MeMekanismMachine upgradeTarget = machine.getNextFactory();
         if (upgradeTarget != null) {
             builder.replace(new MeUpgradeableAttribute(() -> ModBlocks.getMachineBlock(upgradeTarget).get()));
-            if (upgradeTarget.extraFactoryTierName() != null) {
+            if (upgradeTarget.provider() == CompatMod.MEKE) {
                 builder.replace(new MeExtraUpgradeableAttribute(() -> ModBlocks.getMachineBlock(upgradeTarget).get()));
             }
         }
@@ -60,7 +61,7 @@ public final class MekanismExtrasMoreMachineCompat {
     }
 
     public static ExtraFactoryTier extraFactoryTier(MeMekanismMachine machine) {
-        return ExtraFactoryTier.valueOf(machine.extraFactoryTierName().toUpperCase(Locale.ROOT));
+        return ExtraFactoryTier.valueOf(machine.tierId().toUpperCase(Locale.ROOT));
     }
 
     public static void registerGridNodeHost(

@@ -18,6 +18,7 @@ import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeRollingMillB
 import com.beipuo.mekenergistics.blockentity.compat.mekmm.machine.MeStamperBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.compat.catalog.CompatRegistrationRoute;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
@@ -157,7 +158,7 @@ public final class MekanismMoreMachineBaseCompat {
     }
 
     public static MoreMachineFactoryType moreMachineFactoryType(MeMekanismMachine machine) {
-        String typeName = machine.moreMachineFactoryTypeName() != null ? machine.moreMachineFactoryTypeName() : machine.moreMachineBaseTypeName();
+        String typeName = machine.machineTypeId();
         String name = typeName.toUpperCase(Locale.ROOT);
         return switch (name) {
             case "RECYCLING" -> MoreMachineFactoryType.RECYCLING;
@@ -207,16 +208,11 @@ public final class MekanismMoreMachineBaseCompat {
     @Nullable
     private static MeMekanismMachine getFactoryTargetByRegistryName(BlockState state) {
         ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
-        String path = id.getPath();
-        if (path.startsWith("me_")) {
-            return null;
-        }
-        MeMekanismMachine baseTarget = CompatFactoryTierGraph.findBySourcePath(
-                CompatRegistrationRoute.MEKMM_MACHINE, path);
-        if (baseTarget != null) {
-            return baseTarget;
-        }
-        return CompatFactoryTierGraph.findBySourcePath(CompatRegistrationRoute.MEKMM_FACTORY, path);
+        return CompatMachineCatalog.findBySourceBlockId(id)
+                .filter(spec -> spec.route() == CompatRegistrationRoute.MEKMM_MACHINE
+                        || spec.route() == CompatRegistrationRoute.MEKMM_FACTORY)
+                .map(spec -> spec.machine())
+                .orElse(null);
     }
 
     @Nullable

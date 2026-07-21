@@ -6,6 +6,7 @@ import appeng.api.config.PowerUnit;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
+import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
 import java.util.function.Supplier;
 import mekanism.api.Action;
 import mekanism.api.AutomationType;
@@ -17,11 +18,8 @@ import mekanism.common.capabilities.energy.MachineEnergyContainer;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.neoforged.fml.ModList;
 
 public final class MeNetworkEnergyHelper {
-    private static final String APPLIED_FLUX_MODID = "appflux";
-
     private MeNetworkEnergyHelper() {
     }
 
@@ -70,7 +68,7 @@ public final class MeNetworkEnergyHelper {
         }
         Actionable actionable = action.execute() ? Actionable.MODULATE : Actionable.SIMULATE;
         long extracted = 0;
-        boolean hasAppliedFlux = ModList.get().isLoaded(APPLIED_FLUX_MODID);
+        boolean hasAppliedFlux = OptionalCompatClasses.hasAppliedFlux();
         if (hasAppliedFlux && MekEnergisticsConfig.preferAppliedFluxNetworkFe()) {
             extracted = AppliedFluxEnergyBridge.extractFe(grid, requestedFe, actionable, source);
             requestedFe -= extracted;

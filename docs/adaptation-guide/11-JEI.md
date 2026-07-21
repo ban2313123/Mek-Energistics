@@ -1,11 +1,7 @@
 # 11. JEI
 
-JEI 入口是 `client/jei/MekEnergisticsJeiPlugin.java`。
+主入口是 `client/jei/MekEnergisticsJeiPlugin.java`。Mek 原生 recipe type 可在主插件注册 catalyst；optional recipe viewer 类型必须留在独立 JEI compat 类。
 
-新增有配方机器时要补 recipe catalyst：
+主插件只调用 `OptionalJeiCompat.registerCatalysts(...)`。loader 同时检查 `OptionalCompatClasses` 和 `CompatMachineCatalog.hasAvailableFamily(...)`，再延迟加载对应 JEI compat；主插件不得直接 import optional 实现或调用 `ModList`。
 
-- Mek 原 factory type 机器：优先走 `registerCatalysts(registration, recipeType, FactoryType.X)`。
-- 非 factory type 机器：走 `registerMachines(registration, RecipeViewerRecipeType.X, MeMekanismMachine.X)`。
-- More Machine 扩展：优先放进对应 compat JEI 类，避免主 JEI 插件直接硬引用可选模组类。
-
-如果机器是工厂变体，默认会被 `hiddenStacks()` 隐藏，只保留基础 ME 机器作为 JEI catalyst。新增特殊机器时确认它是否应隐藏。
+工厂变体通常由 catalog 机器集合生成隐藏列表，只保留代表性基础 ME 机器作为 catalyst。新增 family 后验证：目标 family 不可用时不会加载 compat，可用时 catalyst 完整，且隐藏逻辑不会移除唯一入口。

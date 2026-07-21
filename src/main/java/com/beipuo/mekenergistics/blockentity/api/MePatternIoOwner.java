@@ -1,29 +1,20 @@
 package com.beipuo.mekenergistics.blockentity.api;
 
-import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternIoAdapter;
 import java.util.List;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 
-/** Optional contract for owners whose pattern inventory and I/O are supplied externally. */
+/** Required physical pattern I/O contract for owners backed by the common AE support. */
 public interface MePatternIoOwner extends MeAeSupportOwner {
     default List<BasicInventorySlot> getExternalPatternSlots() {
         return List.of();
     }
 
-    default List<? extends MeInputPort> getPatternInputPorts() {
-        return List.of();
-    }
+    MeInputLayout getPatternInputLayout();
 
-    default MeInputLayout getPatternInputLayout() {
-        return MeInputLayout.unordered(getPatternInputPorts());
-    }
-
-    default List<? extends MeOutputPort> getPatternOutputPorts() {
-        return List.of();
-    }
+    List<? extends MeOutputPort> getPatternOutputPorts();
 
     default boolean isPatternBusy() {
         return false;

@@ -104,7 +104,7 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
         AeOutputMode mode = this.owner.getAeOutputMode();
         drainPatternOutputs(mode);
         if (!hasPatternOutputBacklog(mode)) {
-            processSmartPatternViaDeclaredIo();
+            processSmartPatternViaAdapter();
         }
         boolean hasWork = hasAeOutputWork();
         if (hasWork) {
@@ -162,8 +162,8 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
     }
 
     private static IActionSource recipeActionSource(MeAeMachine aeMachine) {
-        MeRecipeMachineAeSupport<?> support = aeMachine.getRecipeAeSupport();
-        return support == null ? null : support.actionSource;
+        AbstractMeAeSupport<?> support = aeMachine.getRecipeAeSupport();
+        return support.actionSource;
     }
 
 }

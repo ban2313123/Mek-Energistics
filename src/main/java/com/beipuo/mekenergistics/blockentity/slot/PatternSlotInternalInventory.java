@@ -4,16 +4,21 @@ import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.inventories.InternalInventory;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import java.util.List;
+import java.util.function.Supplier;
 import mekanism.api.Action;
 import mekanism.api.AutomationType;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import net.minecraft.world.item.ItemStack;
 
 public final class PatternSlotInternalInventory implements InternalInventory {
-    private final MeAeMachine machine;
+    private final Supplier<List<BasicInventorySlot>> slots;
 
     public PatternSlotInternalInventory(MeAeMachine machine) {
-        this.machine = machine;
+        this(machine::getPatternSlots);
+    }
+
+    public PatternSlotInternalInventory(Supplier<List<BasicInventorySlot>> slots) {
+        this.slots = slots;
     }
 
     @Override
@@ -63,6 +68,6 @@ public final class PatternSlotInternalInventory implements InternalInventory {
     }
 
     private List<BasicInventorySlot> getSlots() {
-        return this.machine.getPatternSlots();
+        return this.slots.get();
     }
 }

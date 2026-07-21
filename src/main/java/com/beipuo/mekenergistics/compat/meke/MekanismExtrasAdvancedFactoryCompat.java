@@ -98,7 +98,7 @@ public final class MekanismExtrasAdvancedFactoryCompat {
     }
 
     private static ExtraFactoryTier extraFactoryTier(MeMekanismMachine machine) {
-        return ExtraFactoryTier.valueOf(machine.extraFactoryTierName().toUpperCase(Locale.ROOT));
+        return ExtraFactoryTier.valueOf(machine.tierId().toUpperCase(Locale.ROOT));
     }
 
     public static void registerGridNodeHost(

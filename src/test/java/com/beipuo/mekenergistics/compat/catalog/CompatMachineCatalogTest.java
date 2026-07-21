@@ -34,13 +34,27 @@ class CompatMachineCatalogTest {
             assertNotNull(spec.sideConfigProfile(), spec.machine().name());
             assertEquals(spec.machine().provider(), spec.provider(), spec.machine().name());
             assertEquals(spec.machine().registrationRoute(), spec.route(), spec.machine().name());
-            assertEquals(CompatMachineFamily.resolve(spec.route(), spec.machineTypeId()), spec.family(),
-                    spec.machine().name());
+            assertEquals(spec.machine().family(), spec.family(), spec.machine().name());
+            assertEquals(spec.family().provider(), spec.provider(), spec.machine().name());
+            assertEquals(spec.family().route(), spec.route(), spec.machine().name());
+            assertEquals(spec.family().kind(), spec.kind(), spec.machine().name());
             assertEquals(spec.machine().machineKind(), spec.kind(), spec.machine().name());
             if (spec.kind() != CompatMachineKind.MACHINE) {
                 assertNotNull(spec.tierId(), spec.machine().name());
             }
         });
+    }
+
+    @Test
+    void sourceLookupRequiresTheExactNamespaceAndPath() {
+        CompatMachineSpec recycler = CompatMachineCatalog.get(MeMekanismMachine.RECYCLER);
+        assertEquals(MeMekanismMachine.RECYCLER,
+                CompatMachineCatalog.findBySourceBlockId(recycler.sourceBlockId())
+                        .map(CompatMachineSpec::machine).orElse(null));
+        assertTrue(CompatMachineCatalog.findBySourceBlockId(ResourceLocation.fromNamespaceAndPath(
+                "unrelated_mod", recycler.sourceBlockId().getPath())).isEmpty());
+        assertTrue(CompatMachineCatalog.findBySourceBlockId(ResourceLocation.fromNamespaceAndPath(
+                "mekenergistics", "me_" + recycler.sourceBlockId().getPath())).isEmpty());
     }
 
     @Test
@@ -93,6 +107,17 @@ class CompatMachineCatalogTest {
             assertFalse(type.getName().startsWith("com.jerry."), component.getName());
             assertFalse(type.getName().startsWith("fr.iglee42."), component.getName());
             assertFalse(type.getName().startsWith("io.github.masyumero."), component.getName());
+        }
+    }
+
+    @Test
+    void machineDeclarationsDoNotUsePrimitiveConstructorDiscriminators() {
+        for (var constructor : MeMekanismMachine.class.getDeclaredConstructors()) {
+            Class<?>[] parameterTypes = constructor.getParameterTypes();
+            // Enum bytecode prepends the synthetic name and ordinal parameters.
+            for (int i = 2; i < parameterTypes.length; i++) {
+                assertFalse(parameterTypes[i].isPrimitive(), constructor.toString());
+            }
         }
     }
 

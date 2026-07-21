@@ -2,7 +2,6 @@ package com.beipuo.mekenergistics.blockentity.support;
 
 import com.beipuo.mekenergistics.blockentity.MeMekanismMachineBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
-import mekanism.common.inventory.slot.BasicInventorySlot;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 
@@ -10,14 +9,6 @@ import net.minecraft.nbt.CompoundTag;
 public final class MeMekanismMachineAeSupport extends AbstractMeAeSupport<MeMekanismMachineBlockEntity> {
     public MeMekanismMachineAeSupport(MeMekanismMachineBlockEntity owner) {
         super(owner);
-    }
-
-    public boolean hasSmartPatternWork() {
-        return this.smartPatternMultiplication.hasPendingWork();
-    }
-
-    public boolean processSmartPatternWork() {
-        return processSmartPatternViaAdapter();
     }
 
     public void saveAeState(CompoundTag tag, HolderLookup.Provider registries, AeOutputMode mode) {
@@ -37,11 +28,14 @@ public final class MeMekanismMachineAeSupport extends AbstractMeAeSupport<MeMeka
 
     @Override
     protected boolean hasAeOutputWork() {
-        return this.owner.hasAeOutputWork();
+        return this.smartPatternMultiplication.hasPendingWork()
+                || hasPatternOutputBacklog(this.owner.getAeOutputMode());
     }
 
     @Override
     protected boolean processAeOutputWork() {
-        return this.owner.processAeOutputWork();
+        AeOutputMode mode = this.owner.getAeOutputMode();
+        boolean changed = drainPatternOutputs(mode);
+        return hasPatternOutputBacklog(mode) ? changed : processSmartPatternViaAdapter() || changed;
     }
 }

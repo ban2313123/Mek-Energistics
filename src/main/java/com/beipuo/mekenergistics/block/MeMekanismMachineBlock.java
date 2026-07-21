@@ -8,6 +8,7 @@ import com.beipuo.mekenergistics.blockentity.support.MePatternSlotTransfer;
 import com.beipuo.mekenergistics.common.MeLangEntry;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.extendedae.ExtendedAeRenamerCompat;
+import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
 import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
 import com.beipuo.mekenergistics.item.MeInstallerUpgradeHandler;
 import com.beipuo.mekenergistics.item.MeTierInstallerItem;
@@ -71,7 +72,6 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.Nullable;
 
 public class MeMekanismMachineBlock extends Block implements IHasDescription, ITypeBlock, IHasTileEntity<TileEntityMekanism> {
@@ -252,7 +252,7 @@ public class MeMekanismMachineBlock extends Block implements IHasDescription, IT
     }
 
     private static ItemInteractionResult quartzCuttingKnifeInteraction(Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (ModList.get().isLoaded("extendedae") && !player.isShiftKeyDown()) {
+        if (OptionalCompatClasses.hasExtendedAe() && !player.isShiftKeyDown()) {
             if (level.isClientSide) {
                 return ItemInteractionResult.SUCCESS;
             }

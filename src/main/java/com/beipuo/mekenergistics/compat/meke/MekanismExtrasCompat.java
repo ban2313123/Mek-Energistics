@@ -48,7 +48,7 @@ public final class MekanismExtrasCompat {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerFactoryMachine(
             MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
-        if ("alloying".equals(machine.customFactoryTypeName())) {
+        if ("alloying".equals(machine.machineTypeId())) {
             return registrar.register(machine, MeExtraAlloyingFactoryBlockEntity::new);
         }
         TileEntityTypeRegistryObject<?> registered = switch (machine.factoryType()) {
@@ -70,11 +70,11 @@ public final class MekanismExtrasCompat {
                 .withSideConfig(machine.hasChemicalInput()
                         ? new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY, TransmissionType.CHEMICAL}
                         : new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY})
-                .with(extraUpgradeSupport(machine.factoryTypeName()));
+                .with(extraUpgradeSupport(machine.machineTypeId()));
         if (machine.factoryType() != null) {
             builder.with(new AttributeFactoryType(machine.factoryType()));
             builder.withCustomShape(BlockShapes.getShape(null, machine.factoryType()));
-        } else if ("alloying".equals(machine.customFactoryTypeName())) {
+        } else if ("alloying".equals(machine.machineTypeId())) {
             EvolvedMekanismCompat.withAlloyingFactoryType(builder);
             builder.withCustomShape(EvolvedMekanismCompat.alloyingFactoryShape(null));
         }
@@ -98,7 +98,7 @@ public final class MekanismExtrasCompat {
     }
 
     public static ExtraFactoryTier extraTier(MeMekanismMachine machine) {
-        return ExtraFactoryTier.valueOf(machine.extraFactoryTierName().toUpperCase(Locale.ROOT));
+        return ExtraFactoryTier.valueOf(machine.tierId().toUpperCase(Locale.ROOT));
     }
 
     public static <TILE extends TileEntityMekanism> void withExtraUpgradeable(
@@ -118,9 +118,9 @@ public final class MekanismExtrasCompat {
         if (!(stack.getItem() instanceof ItemExtraTierInstaller installer)) {
             return null;
         }
-        AdvancedTier currentTier = current.extraFactoryTierName() == null
+        AdvancedTier currentTier = current.provider() != CompatMod.MEKE
                 ? null
-                : AdvancedTier.valueOf(current.extraFactoryTierName().toUpperCase(Locale.ROOT));
+                : AdvancedTier.valueOf(current.tierId().toUpperCase(Locale.ROOT));
         AdvancedTier fromTier = installer.getFromTier();
         AdvancedTier toTier = installer.getToTier();
         if (currentTier != fromTier || currentTier == toTier) {
@@ -129,10 +129,10 @@ public final class MekanismExtrasCompat {
         MeMekanismMachine target = currentTier == null
                 ? getFirstExtraFactoryTarget(current, toTier)
                 : getExtraFactoryTarget(current, toTier);
-        if (target == null || target.extraFactoryTierName() == null) {
+        if (target == null || target.provider() != CompatMod.MEKE) {
             return null;
         }
-        AdvancedTier targetTier = AdvancedTier.valueOf(target.extraFactoryTierName().toUpperCase(Locale.ROOT));
+        AdvancedTier targetTier = AdvancedTier.valueOf(target.tierId().toUpperCase(Locale.ROOT));
         return targetTier == toTier ? target : null;
     }
 
@@ -158,7 +158,7 @@ public final class MekanismExtrasCompat {
             return false;
         }
         MeMekanismMachine next = machine.getNextFactory();
-        return next == null || next.isEvolvedMekanismExtrasFactory();
+        return next == null || next.provider() == CompatMod.EMEKE;
     }
 
     public static void registerGridNodeHost(

@@ -12,11 +12,11 @@ import org.junit.jupiter.api.Test;
 
 class CompatFactoryTierGraphTest {
     @Test
-    void indexesEveryFactoryByRouteProviderAndSourcePath() {
+    void indexesEveryFactoryByRouteProviderAndExactSourceId() {
         CompatMachineCatalog.all().forEach(spec -> {
             MeMekanismMachine expected = spec.machine();
-            assertEquals(expected, CompatFactoryTierGraph.findDeclaredBySourcePath(
-                    spec.route(), spec.sourceBlockId().getPath()), spec.machine().name());
+            assertEquals(expected, CompatMachineCatalog.findBySourceBlockId(spec.sourceBlockId())
+                    .map(CompatMachineSpec::machine).orElse(null), spec.machine().name());
             assertEquals(expected, CompatFactoryTierGraph.findDeclaredByRegistryName(
                     spec.machine().registryName()), spec.machine().name());
             if (spec.kind() != CompatMachineKind.MACHINE) {

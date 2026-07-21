@@ -23,17 +23,13 @@ import appeng.api.storage.StorageHelper;
 import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
 import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
-import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternIoAdapter;
-import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -42,7 +38,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
 
-public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
+public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     public static final int AE_PATTERN_SCHEMA = 2;
     private static final String TAG_PATTERN_SCHEMA = "AePatternSchema";
     private static final String TAG_PATTERN_TERMINAL_NAME = "PatternTerminalName";
@@ -53,7 +49,6 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
     protected final IActionSource actionSource;
     protected final List<BasicInventorySlot> patternSlots;
     protected final List<IPatternDetails> patterns = new ArrayList<>();
-    protected final Map<AEKey, IPatternDetails> patternsByDefinition = new HashMap<>();
     protected final MeSmartPatternMultiplication smartPatternMultiplication = new MeSmartPatternMultiplication();
 
     protected IManagedGridNode mainNode;
@@ -68,8 +63,8 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
         this.ownerTile = owner.getAeOwnerTile();
         this.actionSource = IActionSource.ofMachine(owner);
         this.mainNode = createManagedNode();
-        List<BasicInventorySlot> externalSlots = owner instanceof MePatternIoOwner io ? io.getExternalPatternSlots() : List.of();
-        if (externalSlots != null && !externalSlots.isEmpty()) {
+        List<BasicInventorySlot> externalSlots = owner.getExternalPatternSlots();
+        if (!externalSlots.isEmpty()) {
             this.patternSlots = externalSlots;
         } else {
             this.patternSlots = new ArrayList<>(MekEnergisticsConfig.patternSlots());
@@ -101,8 +96,7 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
     }
 
     public final MePatternIoAdapter getPatternIoAdapter() {
-        return this.owner instanceof MePatternIoOwner io ? io.getPatternIoAdapter()
-                : new MePatternIoAdapter(MeInputLayout.empty(), List.of(), false);
+        return this.owner.getPatternIoAdapter();
     }
 
     public final boolean isPatternBusy() {
@@ -140,11 +134,6 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
                 return layout.maxAcceptedCopies(oneCraftInputs);
             }
         });
-    }
-
-    protected final boolean processSmartPatternViaDeclaredIo() {
-        return getPatternIoAdapter().inputLayout().isEmpty()
-                ? processSmartPatternViaOwner() : processSmartPatternViaAdapter();
     }
 
     public final boolean hasPatternOutputBacklog(
@@ -253,14 +242,6 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
         return true;
     }
 
-    public final boolean pushPatternInputs(KeyCounter[] inputHolder, List<? extends MeInputPort> inputPorts) {
-        boolean changed = MePatternInputRouter.route(inputHolder, inputPorts);
-        if (changed) {
-            this.owner.saveChanges();
-        }
-        return changed;
-    }
-
     public final boolean drainOutputPorts(com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode,
             List<? extends MeOutputPort> outputPorts) {
         boolean changed = false;
@@ -298,27 +279,6 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
         return changed;
     }
 
-    protected final boolean processSmartPatternViaOwner() {
-        boolean wasEnabled = this.smartPatternMultiplication.isEnabled();
-        this.smartPatternMultiplication.setEnabled(false);
-        try {
-            return processSmartPatternWithPattern(this.owner::pushPattern);
-        } finally {
-            this.smartPatternMultiplication.setEnabled(wasEnabled);
-        }
-    }
-
-    private boolean processSmartPatternWithPattern(MeSmartPatternMultiplication.PatternFeeder feeder) {
-        boolean changed = this.smartPatternMultiplication.processNext(this.patternsByDefinition, feeder);
-        if (changed) {
-            this.owner.saveChanges();
-            if (this.smartPatternMultiplication.hasPendingWork()) {
-                alertAeTicker();
-            }
-        }
-        return changed;
-    }
-
     protected final void alertAeTicker() {
         this.mainNode.ifPresent((grid, node) -> grid.getTickManager().alertDevice(node));
     }
@@ -337,7 +297,6 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
 
     public final void updatePatterns() {
         this.patterns.clear();
-        this.patternsByDefinition.clear();
         for (BasicInventorySlot patternSlot : this.patternSlots) {
             ItemStack stack = patternSlot.getStack();
             if (!stack.isEmpty()) {
@@ -345,7 +304,6 @@ public abstract class AbstractMeAeSupport<O extends MeAeSupportOwner> {
                         this.ownerTile.getBlockPos(), patternOwnerName());
                 if (pattern != null) {
                     this.patterns.add(pattern);
-                    this.patternsByDefinition.putIfAbsent(pattern.getDefinition(), pattern);
                 }
             }
         }

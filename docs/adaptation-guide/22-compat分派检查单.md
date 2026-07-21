@@ -2,14 +2,15 @@
 
 新增一个模组 compat 后，逐项检查：
 
-- enum 机器在目标模组未安装时 `isAvailable()` 返回 false。
-- 未安装目标模组时，公共静态初始化不会加载目标模组类。
-- `ModBlocks`、`ModItems`、`ModBlockEntities` 只注册 available 机器。
-- `registerMachine` 能给每台机器选到正确 BlockEntity。
-- `registerCapabilities` 只给实现 AE host 的 BlockEntity 注册 `IN_WORLD_GRID_NODE_HOST`。
-- `createBaseBlockType` / `createFactoryBlockType` 保留目标模组原本的 GUI、shape、tier、side config 和升级支持。
-- `getFactoryTarget` 能从原模组机器 block state 找到对应 `MeMekanismMachine`。
-- 菜单和客户端 screen 注册只在目标模组存在时运行。
-- JEI compat 不在主类中直接引用目标模组客户端类。
-- 安装器能处理 base -> basic factory、tier -> next tier、扩展 tier 链。
-- 资源文件覆盖所有 available 机器，不覆盖 unavailable 机器。
+- `CompatMachineFamily`、catalog spec、sourceBlockId、tier/type 和 requirement 正确；
+- 未安装目标模组时 `CompatMachineCatalog.available()` 不包含对应 spec；
+- 公共静态初始化不加载目标模组类，运行时 `ModList` 只出现在 `OptionalCompatClasses`；
+- 每个 catalog family 在对应 server provider 中有 `CompatMachineFamilyAdapter`；
+- `ModBlocks`、`ModBlockEntities`、`ModBlockTypes` 只遍历 `available()`；
+- provider 能为每个 spec 选择正确 BlockEntity、BlockType、Grid host 和 menu；
+- `MePatternIoOwner`/`MeFactoryIoOwner` 声明完整输入布局和输出端口，具体机器不解析 AE key；
+- client provider、JEI compat 和 optional mixin 都有独立 gate；
+- installer 先按完整 sourceBlockId，再使用 provider BlockState resolver；
+- `CompatFactoryTierGraph` 覆盖 base/basic/next/跨附属等级；
+- `runData` 生成所有 `hasMeVariant` catalog 资源，recipe 条件覆盖 optional requirement；
+- 静态 boundary test、`compileJava`、`test`、`build` 和客户端抽测均通过。

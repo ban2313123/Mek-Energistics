@@ -5,6 +5,7 @@ import java.util.function.LongSupplier;
 import org.jetbrains.annotations.Nullable;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.compat.catalog.CompatRegistrationRoute;
@@ -23,10 +24,10 @@ public enum MeMekanismMachine {
     OSMIUM_COMPRESSOR(FactoryType.COMPRESSING, "osmium_compressor", "ME Osmium Compressor"),
     COMBINER(FactoryType.COMBINING, "combiner", "ME Combiner"),
     METALLURGIC_INFUSER(FactoryType.INFUSING, "metallurgic_infuser", "ME Metallurgic Infuser"),
-    ALLOYER("alloyer", "alloying", "ME Alloyer", 'e'),
-    SOLIDIFICATION_CHAMBER("solidification_chamber", "solidifying", "ME Solidification Chamber", 'e'),
-    THERMALIZER("thermalizer", "melting", "ME Thermalizer", 'e'),
-    CHEMIXER("chemixer", "chemixing", "ME Chemical Mixer", 'e'),
+    ALLOYER("alloyer", "alloying", "ME Alloyer", CompatMachineFamily.EMEK_MACHINE),
+    SOLIDIFICATION_CHAMBER("solidification_chamber", "solidifying", "ME Solidification Chamber", CompatMachineFamily.EMEK_MACHINE),
+    THERMALIZER("thermalizer", "melting", "ME Thermalizer", CompatMachineFamily.EMEK_MACHINE),
+    CHEMIXER("chemixer", "chemixing", "ME Chemical Mixer", CompatMachineFamily.EMEK_MACHINE),
     PURIFICATION_CHAMBER(FactoryType.PURIFYING, "purification_chamber", "ME Purification Chamber"),
     CHEMICAL_INJECTION_CHAMBER(FactoryType.INJECTING, "chemical_injection_chamber", "ME Chemical Injection Chamber"),
     PRESSURIZED_REACTION_CHAMBER((FactoryType) null, "pressurized_reaction_chamber", "ME Pressurized Reaction Chamber"),
@@ -100,60 +101,60 @@ public enum MeMekanismMachine {
     ULTIMATE_INJECTING_FACTORY(FactoryTier.ULTIMATE, FactoryType.INJECTING),
     ULTIMATE_INFUSING_FACTORY(FactoryTier.ULTIMATE, FactoryType.INFUSING),
     ULTIMATE_SAWING_FACTORY(FactoryTier.ULTIMATE, FactoryType.SAWING),
-    BASIC_ALLOYING_FACTORY(FactoryTier.BASIC, "alloying", "Alloying", (short) 0),
-    ADVANCED_ALLOYING_FACTORY(FactoryTier.ADVANCED, "alloying", "Alloying", (short) 0),
-    ELITE_ALLOYING_FACTORY(FactoryTier.ELITE, "alloying", "Alloying", (short) 0),
-    ULTIMATE_ALLOYING_FACTORY(FactoryTier.ULTIMATE, "alloying", "Alloying", (short) 0),
-    OVERCLOCKED_SMELTING_FACTORY("overclocked", FactoryType.SMELTING, true),
-    OVERCLOCKED_ENRICHING_FACTORY("overclocked", FactoryType.ENRICHING, true),
-    OVERCLOCKED_CRUSHING_FACTORY("overclocked", FactoryType.CRUSHING, true),
-    OVERCLOCKED_COMPRESSING_FACTORY("overclocked", FactoryType.COMPRESSING, true),
-    OVERCLOCKED_COMBINING_FACTORY("overclocked", FactoryType.COMBINING, true),
-    OVERCLOCKED_PURIFYING_FACTORY("overclocked", FactoryType.PURIFYING, true),
-    OVERCLOCKED_INJECTING_FACTORY("overclocked", FactoryType.INJECTING, true),
-    OVERCLOCKED_INFUSING_FACTORY("overclocked", FactoryType.INFUSING, true),
-    OVERCLOCKED_SAWING_FACTORY("overclocked", FactoryType.SAWING, true),
-    QUANTUM_SMELTING_FACTORY("quantum", FactoryType.SMELTING, true),
-    QUANTUM_ENRICHING_FACTORY("quantum", FactoryType.ENRICHING, true),
-    QUANTUM_CRUSHING_FACTORY("quantum", FactoryType.CRUSHING, true),
-    QUANTUM_COMPRESSING_FACTORY("quantum", FactoryType.COMPRESSING, true),
-    QUANTUM_COMBINING_FACTORY("quantum", FactoryType.COMBINING, true),
-    QUANTUM_PURIFYING_FACTORY("quantum", FactoryType.PURIFYING, true),
-    QUANTUM_INJECTING_FACTORY("quantum", FactoryType.INJECTING, true),
-    QUANTUM_INFUSING_FACTORY("quantum", FactoryType.INFUSING, true),
-    QUANTUM_SAWING_FACTORY("quantum", FactoryType.SAWING, true),
-    DENSE_SMELTING_FACTORY("dense", FactoryType.SMELTING, true),
-    DENSE_ENRICHING_FACTORY("dense", FactoryType.ENRICHING, true),
-    DENSE_CRUSHING_FACTORY("dense", FactoryType.CRUSHING, true),
-    DENSE_COMPRESSING_FACTORY("dense", FactoryType.COMPRESSING, true),
-    DENSE_COMBINING_FACTORY("dense", FactoryType.COMBINING, true),
-    DENSE_PURIFYING_FACTORY("dense", FactoryType.PURIFYING, true),
-    DENSE_INJECTING_FACTORY("dense", FactoryType.INJECTING, true),
-    DENSE_INFUSING_FACTORY("dense", FactoryType.INFUSING, true),
-    DENSE_SAWING_FACTORY("dense", FactoryType.SAWING, true),
-    MULTIVERSAL_SMELTING_FACTORY("multiversal", FactoryType.SMELTING, true),
-    MULTIVERSAL_ENRICHING_FACTORY("multiversal", FactoryType.ENRICHING, true),
-    MULTIVERSAL_CRUSHING_FACTORY("multiversal", FactoryType.CRUSHING, true),
-    MULTIVERSAL_COMPRESSING_FACTORY("multiversal", FactoryType.COMPRESSING, true),
-    MULTIVERSAL_COMBINING_FACTORY("multiversal", FactoryType.COMBINING, true),
-    MULTIVERSAL_PURIFYING_FACTORY("multiversal", FactoryType.PURIFYING, true),
-    MULTIVERSAL_INJECTING_FACTORY("multiversal", FactoryType.INJECTING, true),
-    MULTIVERSAL_INFUSING_FACTORY("multiversal", FactoryType.INFUSING, true),
-    MULTIVERSAL_SAWING_FACTORY("multiversal", FactoryType.SAWING, true),
-    CREATIVE_SMELTING_FACTORY("creative", FactoryType.SMELTING, true),
-    CREATIVE_ENRICHING_FACTORY("creative", FactoryType.ENRICHING, true),
-    CREATIVE_CRUSHING_FACTORY("creative", FactoryType.CRUSHING, true),
-    CREATIVE_COMPRESSING_FACTORY("creative", FactoryType.COMPRESSING, true),
-    CREATIVE_COMBINING_FACTORY("creative", FactoryType.COMBINING, true),
-    CREATIVE_PURIFYING_FACTORY("creative", FactoryType.PURIFYING, true),
-    CREATIVE_INJECTING_FACTORY("creative", FactoryType.INJECTING, true),
-    CREATIVE_INFUSING_FACTORY("creative", FactoryType.INFUSING, true),
-    CREATIVE_SAWING_FACTORY("creative", FactoryType.SAWING, true),
-    OVERCLOCKED_ALLOYING_FACTORY("overclocked", "alloying", "Alloying", (byte) 0),
-    QUANTUM_ALLOYING_FACTORY("quantum", "alloying", "Alloying", (byte) 0),
-    DENSE_ALLOYING_FACTORY("dense", "alloying", "Alloying", (byte) 0),
-    MULTIVERSAL_ALLOYING_FACTORY("multiversal", "alloying", "Alloying", (byte) 0),
-    CREATIVE_ALLOYING_FACTORY("creative", "alloying", "Alloying", (byte) 0),
+    BASIC_ALLOYING_FACTORY(FactoryTier.BASIC, "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
+    ADVANCED_ALLOYING_FACTORY(FactoryTier.ADVANCED, "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
+    ELITE_ALLOYING_FACTORY(FactoryTier.ELITE, "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
+    ULTIMATE_ALLOYING_FACTORY(FactoryTier.ULTIMATE, "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_SMELTING_FACTORY("overclocked", FactoryType.SMELTING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_ENRICHING_FACTORY("overclocked", FactoryType.ENRICHING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_CRUSHING_FACTORY("overclocked", FactoryType.CRUSHING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_COMPRESSING_FACTORY("overclocked", FactoryType.COMPRESSING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_COMBINING_FACTORY("overclocked", FactoryType.COMBINING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_PURIFYING_FACTORY("overclocked", FactoryType.PURIFYING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_INJECTING_FACTORY("overclocked", FactoryType.INJECTING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_INFUSING_FACTORY("overclocked", FactoryType.INFUSING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_SAWING_FACTORY("overclocked", FactoryType.SAWING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_SMELTING_FACTORY("quantum", FactoryType.SMELTING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_ENRICHING_FACTORY("quantum", FactoryType.ENRICHING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_CRUSHING_FACTORY("quantum", FactoryType.CRUSHING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_COMPRESSING_FACTORY("quantum", FactoryType.COMPRESSING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_COMBINING_FACTORY("quantum", FactoryType.COMBINING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_PURIFYING_FACTORY("quantum", FactoryType.PURIFYING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_INJECTING_FACTORY("quantum", FactoryType.INJECTING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_INFUSING_FACTORY("quantum", FactoryType.INFUSING, CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_SAWING_FACTORY("quantum", FactoryType.SAWING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_SMELTING_FACTORY("dense", FactoryType.SMELTING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_ENRICHING_FACTORY("dense", FactoryType.ENRICHING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_CRUSHING_FACTORY("dense", FactoryType.CRUSHING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_COMPRESSING_FACTORY("dense", FactoryType.COMPRESSING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_COMBINING_FACTORY("dense", FactoryType.COMBINING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_PURIFYING_FACTORY("dense", FactoryType.PURIFYING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_INJECTING_FACTORY("dense", FactoryType.INJECTING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_INFUSING_FACTORY("dense", FactoryType.INFUSING, CompatMachineFamily.EMEK_FACTORY),
+    DENSE_SAWING_FACTORY("dense", FactoryType.SAWING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_SMELTING_FACTORY("multiversal", FactoryType.SMELTING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_ENRICHING_FACTORY("multiversal", FactoryType.ENRICHING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_CRUSHING_FACTORY("multiversal", FactoryType.CRUSHING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_COMPRESSING_FACTORY("multiversal", FactoryType.COMPRESSING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_COMBINING_FACTORY("multiversal", FactoryType.COMBINING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_PURIFYING_FACTORY("multiversal", FactoryType.PURIFYING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_INJECTING_FACTORY("multiversal", FactoryType.INJECTING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_INFUSING_FACTORY("multiversal", FactoryType.INFUSING, CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_SAWING_FACTORY("multiversal", FactoryType.SAWING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_SMELTING_FACTORY("creative", FactoryType.SMELTING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_ENRICHING_FACTORY("creative", FactoryType.ENRICHING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_CRUSHING_FACTORY("creative", FactoryType.CRUSHING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_COMPRESSING_FACTORY("creative", FactoryType.COMPRESSING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_COMBINING_FACTORY("creative", FactoryType.COMBINING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_PURIFYING_FACTORY("creative", FactoryType.PURIFYING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_INJECTING_FACTORY("creative", FactoryType.INJECTING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_INFUSING_FACTORY("creative", FactoryType.INFUSING, CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_SAWING_FACTORY("creative", FactoryType.SAWING, CompatMachineFamily.EMEK_FACTORY),
+    OVERCLOCKED_ALLOYING_FACTORY("overclocked", "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
+    QUANTUM_ALLOYING_FACTORY("quantum", "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
+    DENSE_ALLOYING_FACTORY("dense", "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
+    MULTIVERSAL_ALLOYING_FACTORY("multiversal", "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
+    CREATIVE_ALLOYING_FACTORY("creative", "alloying", "Alloying", CompatMachineFamily.EMEK_FACTORY),
     ABSOLUTE_SMELTING_FACTORY("absolute", FactoryType.SMELTING),
     ABSOLUTE_ENRICHING_FACTORY("absolute", FactoryType.ENRICHING),
     ABSOLUTE_CRUSHING_FACTORY("absolute", FactoryType.CRUSHING),
@@ -190,94 +191,94 @@ public enum MeMekanismMachine {
     INFINITE_INJECTING_FACTORY("infinite", FactoryType.INJECTING),
     INFINITE_INFUSING_FACTORY("infinite", FactoryType.INFUSING),
     INFINITE_SAWING_FACTORY("infinite", FactoryType.SAWING),
-    ABSOLUTE_ALLOYING_FACTORY("absolute", "alloying", "Alloying", 0L),
-    SUPREME_ALLOYING_FACTORY("supreme", "alloying", "Alloying", 0L),
-    COSMIC_ALLOYING_FACTORY("cosmic", "alloying", "Alloying", 0L),
-    INFINITE_ALLOYING_FACTORY("infinite", "alloying", "Alloying", 0L),
-    ABSOLUTE_OVERCLOCKED_SMELTING_FACTORY("absolute_overclocked", FactoryType.SMELTING, 0),
-    ABSOLUTE_OVERCLOCKED_ENRICHING_FACTORY("absolute_overclocked", FactoryType.ENRICHING, 0),
-    ABSOLUTE_OVERCLOCKED_CRUSHING_FACTORY("absolute_overclocked", FactoryType.CRUSHING, 0),
-    ABSOLUTE_OVERCLOCKED_COMPRESSING_FACTORY("absolute_overclocked", FactoryType.COMPRESSING, 0),
-    ABSOLUTE_OVERCLOCKED_COMBINING_FACTORY("absolute_overclocked", FactoryType.COMBINING, 0),
-    ABSOLUTE_OVERCLOCKED_PURIFYING_FACTORY("absolute_overclocked", FactoryType.PURIFYING, 0),
-    ABSOLUTE_OVERCLOCKED_INJECTING_FACTORY("absolute_overclocked", FactoryType.INJECTING, 0),
-    ABSOLUTE_OVERCLOCKED_INFUSING_FACTORY("absolute_overclocked", FactoryType.INFUSING, 0),
-    ABSOLUTE_OVERCLOCKED_SAWING_FACTORY("absolute_overclocked", FactoryType.SAWING, 0),
-    SUPREME_QUANTUM_SMELTING_FACTORY("supreme_quantum", FactoryType.SMELTING, 0),
-    SUPREME_QUANTUM_ENRICHING_FACTORY("supreme_quantum", FactoryType.ENRICHING, 0),
-    SUPREME_QUANTUM_CRUSHING_FACTORY("supreme_quantum", FactoryType.CRUSHING, 0),
-    SUPREME_QUANTUM_COMPRESSING_FACTORY("supreme_quantum", FactoryType.COMPRESSING, 0),
-    SUPREME_QUANTUM_COMBINING_FACTORY("supreme_quantum", FactoryType.COMBINING, 0),
-    SUPREME_QUANTUM_PURIFYING_FACTORY("supreme_quantum", FactoryType.PURIFYING, 0),
-    SUPREME_QUANTUM_INJECTING_FACTORY("supreme_quantum", FactoryType.INJECTING, 0),
-    SUPREME_QUANTUM_INFUSING_FACTORY("supreme_quantum", FactoryType.INFUSING, 0),
-    SUPREME_QUANTUM_SAWING_FACTORY("supreme_quantum", FactoryType.SAWING, 0),
-    COSMIC_DENSE_SMELTING_FACTORY("cosmic_dense", FactoryType.SMELTING, 0),
-    COSMIC_DENSE_ENRICHING_FACTORY("cosmic_dense", FactoryType.ENRICHING, 0),
-    COSMIC_DENSE_CRUSHING_FACTORY("cosmic_dense", FactoryType.CRUSHING, 0),
-    COSMIC_DENSE_COMPRESSING_FACTORY("cosmic_dense", FactoryType.COMPRESSING, 0),
-    COSMIC_DENSE_COMBINING_FACTORY("cosmic_dense", FactoryType.COMBINING, 0),
-    COSMIC_DENSE_PURIFYING_FACTORY("cosmic_dense", FactoryType.PURIFYING, 0),
-    COSMIC_DENSE_INJECTING_FACTORY("cosmic_dense", FactoryType.INJECTING, 0),
-    COSMIC_DENSE_INFUSING_FACTORY("cosmic_dense", FactoryType.INFUSING, 0),
-    COSMIC_DENSE_SAWING_FACTORY("cosmic_dense", FactoryType.SAWING, 0),
-    INFINITE_MULTIVERSAL_SMELTING_FACTORY("infinite_multiversal", FactoryType.SMELTING, 0),
-    INFINITE_MULTIVERSAL_ENRICHING_FACTORY("infinite_multiversal", FactoryType.ENRICHING, 0),
-    INFINITE_MULTIVERSAL_CRUSHING_FACTORY("infinite_multiversal", FactoryType.CRUSHING, 0),
-    INFINITE_MULTIVERSAL_COMPRESSING_FACTORY("infinite_multiversal", FactoryType.COMPRESSING, 0),
-    INFINITE_MULTIVERSAL_COMBINING_FACTORY("infinite_multiversal", FactoryType.COMBINING, 0),
-    INFINITE_MULTIVERSAL_PURIFYING_FACTORY("infinite_multiversal", FactoryType.PURIFYING, 0),
-    INFINITE_MULTIVERSAL_INJECTING_FACTORY("infinite_multiversal", FactoryType.INJECTING, 0),
-    INFINITE_MULTIVERSAL_INFUSING_FACTORY("infinite_multiversal", FactoryType.INFUSING, 0),
-    INFINITE_MULTIVERSAL_SAWING_FACTORY("infinite_multiversal", FactoryType.SAWING, 0),
-    ABSOLUTE_OVERCLOCKED_ALLOYING_FACTORY("absolute_overclocked", "alloying", "Alloying", 0),
-    SUPREME_QUANTUM_ALLOYING_FACTORY("supreme_quantum", "alloying", "Alloying", 0),
-    COSMIC_DENSE_ALLOYING_FACTORY("cosmic_dense", "alloying", "Alloying", 0),
-    INFINITE_MULTIVERSAL_ALLOYING_FACTORY("infinite_multiversal", "alloying", "Alloying", 0),
-    ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY("absolute_overclocked", "dissolving", "Dissolving", 0),
-    ABSOLUTE_OVERCLOCKED_OXIDIZING_FACTORY("absolute_overclocked", "oxidizing", "Oxidizing", 0),
-    ABSOLUTE_OVERCLOCKED_PIGMENT_EXTRACTING_FACTORY("absolute_overclocked", "pigment_extracting", "Pigment Extracting", 0),
-    ABSOLUTE_OVERCLOCKED_PAINTING_FACTORY("absolute_overclocked", "painting", "Painting", 0),
-    ABSOLUTE_OVERCLOCKED_PLANTING_FACTORY("absolute_overclocked", "planting", "Planting", 0),
-    ABSOLUTE_OVERCLOCKED_REPLICATING_FACTORY("absolute_overclocked", "replicating", "Replicating", 0),
-    ABSOLUTE_OVERCLOCKED_WASHING_FACTORY("absolute_overclocked", "washing", "Washing", 0),
-    ABSOLUTE_OVERCLOCKED_CRYSTALLIZING_FACTORY("absolute_overclocked", "crystallizing", "Crystallizing", 0),
-    ABSOLUTE_OVERCLOCKED_PRESSURISED_REACTING_FACTORY("absolute_overclocked", "pressurised_reacting", "Pressurised Reacting", 0),
-    ABSOLUTE_OVERCLOCKED_CENTRIFUGING_FACTORY("absolute_overclocked", "centrifuging", "Centrifuging", 0),
-    ABSOLUTE_OVERCLOCKED_LIQUIFYING_FACTORY("absolute_overclocked", "liquifying", "Liquifying", 0),
-    SUPREME_QUANTUM_DISSOLVING_FACTORY("supreme_quantum", "dissolving", "Dissolving", 0),
-    SUPREME_QUANTUM_OXIDIZING_FACTORY("supreme_quantum", "oxidizing", "Oxidizing", 0),
-    SUPREME_QUANTUM_PIGMENT_EXTRACTING_FACTORY("supreme_quantum", "pigment_extracting", "Pigment Extracting", 0),
-    SUPREME_QUANTUM_PAINTING_FACTORY("supreme_quantum", "painting", "Painting", 0),
-    SUPREME_QUANTUM_PLANTING_FACTORY("supreme_quantum", "planting", "Planting", 0),
-    SUPREME_QUANTUM_REPLICATING_FACTORY("supreme_quantum", "replicating", "Replicating", 0),
-    SUPREME_QUANTUM_WASHING_FACTORY("supreme_quantum", "washing", "Washing", 0),
-    SUPREME_QUANTUM_CRYSTALLIZING_FACTORY("supreme_quantum", "crystallizing", "Crystallizing", 0),
-    SUPREME_QUANTUM_PRESSURISED_REACTING_FACTORY("supreme_quantum", "pressurised_reacting", "Pressurised Reacting", 0),
-    SUPREME_QUANTUM_CENTRIFUGING_FACTORY("supreme_quantum", "centrifuging", "Centrifuging", 0),
-    SUPREME_QUANTUM_LIQUIFYING_FACTORY("supreme_quantum", "liquifying", "Liquifying", 0),
-    COSMIC_DENSE_DISSOLVING_FACTORY("cosmic_dense", "dissolving", "Dissolving", 0),
-    COSMIC_DENSE_OXIDIZING_FACTORY("cosmic_dense", "oxidizing", "Oxidizing", 0),
-    COSMIC_DENSE_PIGMENT_EXTRACTING_FACTORY("cosmic_dense", "pigment_extracting", "Pigment Extracting", 0),
-    COSMIC_DENSE_PAINTING_FACTORY("cosmic_dense", "painting", "Painting", 0),
-    COSMIC_DENSE_PLANTING_FACTORY("cosmic_dense", "planting", "Planting", 0),
-    COSMIC_DENSE_REPLICATING_FACTORY("cosmic_dense", "replicating", "Replicating", 0),
-    COSMIC_DENSE_WASHING_FACTORY("cosmic_dense", "washing", "Washing", 0),
-    COSMIC_DENSE_CRYSTALLIZING_FACTORY("cosmic_dense", "crystallizing", "Crystallizing", 0),
-    COSMIC_DENSE_PRESSURISED_REACTING_FACTORY("cosmic_dense", "pressurised_reacting", "Pressurised Reacting", 0),
-    COSMIC_DENSE_CENTRIFUGING_FACTORY("cosmic_dense", "centrifuging", "Centrifuging", 0),
-    COSMIC_DENSE_LIQUIFYING_FACTORY("cosmic_dense", "liquifying", "Liquifying", 0),
-    INFINITE_MULTIVERSAL_DISSOLVING_FACTORY("infinite_multiversal", "dissolving", "Dissolving", 0),
-    INFINITE_MULTIVERSAL_OXIDIZING_FACTORY("infinite_multiversal", "oxidizing", "Oxidizing", 0),
-    INFINITE_MULTIVERSAL_PIGMENT_EXTRACTING_FACTORY("infinite_multiversal", "pigment_extracting", "Pigment Extracting", 0),
-    INFINITE_MULTIVERSAL_PAINTING_FACTORY("infinite_multiversal", "painting", "Painting", 0),
-    INFINITE_MULTIVERSAL_PLANTING_FACTORY("infinite_multiversal", "planting", "Planting", 0),
-    INFINITE_MULTIVERSAL_REPLICATING_FACTORY("infinite_multiversal", "replicating", "Replicating", 0),
-    INFINITE_MULTIVERSAL_WASHING_FACTORY("infinite_multiversal", "washing", "Washing", 0),
-    INFINITE_MULTIVERSAL_CRYSTALLIZING_FACTORY("infinite_multiversal", "crystallizing", "Crystallizing", 0),
-    INFINITE_MULTIVERSAL_PRESSURISED_REACTING_FACTORY("infinite_multiversal", "pressurised_reacting", "Pressurised Reacting", 0),
-    INFINITE_MULTIVERSAL_CENTRIFUGING_FACTORY("infinite_multiversal", "centrifuging", "Centrifuging", 0),
-    INFINITE_MULTIVERSAL_LIQUIFYING_FACTORY("infinite_multiversal", "liquifying", "Liquifying", 0),
+    ABSOLUTE_ALLOYING_FACTORY("absolute", "alloying", "Alloying", CompatMachineFamily.MEKE_FACTORY),
+    SUPREME_ALLOYING_FACTORY("supreme", "alloying", "Alloying", CompatMachineFamily.MEKE_FACTORY),
+    COSMIC_ALLOYING_FACTORY("cosmic", "alloying", "Alloying", CompatMachineFamily.MEKE_FACTORY),
+    INFINITE_ALLOYING_FACTORY("infinite", "alloying", "Alloying", CompatMachineFamily.MEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_SMELTING_FACTORY("absolute_overclocked", FactoryType.SMELTING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_ENRICHING_FACTORY("absolute_overclocked", FactoryType.ENRICHING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_CRUSHING_FACTORY("absolute_overclocked", FactoryType.CRUSHING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_COMPRESSING_FACTORY("absolute_overclocked", FactoryType.COMPRESSING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_COMBINING_FACTORY("absolute_overclocked", FactoryType.COMBINING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_PURIFYING_FACTORY("absolute_overclocked", FactoryType.PURIFYING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_INJECTING_FACTORY("absolute_overclocked", FactoryType.INJECTING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_INFUSING_FACTORY("absolute_overclocked", FactoryType.INFUSING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_SAWING_FACTORY("absolute_overclocked", FactoryType.SAWING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_SMELTING_FACTORY("supreme_quantum", FactoryType.SMELTING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_ENRICHING_FACTORY("supreme_quantum", FactoryType.ENRICHING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_CRUSHING_FACTORY("supreme_quantum", FactoryType.CRUSHING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_COMPRESSING_FACTORY("supreme_quantum", FactoryType.COMPRESSING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_COMBINING_FACTORY("supreme_quantum", FactoryType.COMBINING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_PURIFYING_FACTORY("supreme_quantum", FactoryType.PURIFYING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_INJECTING_FACTORY("supreme_quantum", FactoryType.INJECTING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_INFUSING_FACTORY("supreme_quantum", FactoryType.INFUSING, CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_SAWING_FACTORY("supreme_quantum", FactoryType.SAWING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_SMELTING_FACTORY("cosmic_dense", FactoryType.SMELTING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_ENRICHING_FACTORY("cosmic_dense", FactoryType.ENRICHING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_CRUSHING_FACTORY("cosmic_dense", FactoryType.CRUSHING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_COMPRESSING_FACTORY("cosmic_dense", FactoryType.COMPRESSING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_COMBINING_FACTORY("cosmic_dense", FactoryType.COMBINING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_PURIFYING_FACTORY("cosmic_dense", FactoryType.PURIFYING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_INJECTING_FACTORY("cosmic_dense", FactoryType.INJECTING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_INFUSING_FACTORY("cosmic_dense", FactoryType.INFUSING, CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_SAWING_FACTORY("cosmic_dense", FactoryType.SAWING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_SMELTING_FACTORY("infinite_multiversal", FactoryType.SMELTING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_ENRICHING_FACTORY("infinite_multiversal", FactoryType.ENRICHING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_CRUSHING_FACTORY("infinite_multiversal", FactoryType.CRUSHING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_COMPRESSING_FACTORY("infinite_multiversal", FactoryType.COMPRESSING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_COMBINING_FACTORY("infinite_multiversal", FactoryType.COMBINING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_PURIFYING_FACTORY("infinite_multiversal", FactoryType.PURIFYING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_INJECTING_FACTORY("infinite_multiversal", FactoryType.INJECTING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_INFUSING_FACTORY("infinite_multiversal", FactoryType.INFUSING, CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_SAWING_FACTORY("infinite_multiversal", FactoryType.SAWING, CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_ALLOYING_FACTORY("absolute_overclocked", "alloying", "Alloying", CompatMachineFamily.EMEKE_FACTORY),
+    SUPREME_QUANTUM_ALLOYING_FACTORY("supreme_quantum", "alloying", "Alloying", CompatMachineFamily.EMEKE_FACTORY),
+    COSMIC_DENSE_ALLOYING_FACTORY("cosmic_dense", "alloying", "Alloying", CompatMachineFamily.EMEKE_FACTORY),
+    INFINITE_MULTIVERSAL_ALLOYING_FACTORY("infinite_multiversal", "alloying", "Alloying", CompatMachineFamily.EMEKE_FACTORY),
+    ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY("absolute_overclocked", "dissolving", "Dissolving", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    ABSOLUTE_OVERCLOCKED_OXIDIZING_FACTORY("absolute_overclocked", "oxidizing", "Oxidizing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    ABSOLUTE_OVERCLOCKED_PIGMENT_EXTRACTING_FACTORY("absolute_overclocked", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    ABSOLUTE_OVERCLOCKED_PAINTING_FACTORY("absolute_overclocked", "painting", "Painting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    ABSOLUTE_OVERCLOCKED_PLANTING_FACTORY("absolute_overclocked", "planting", "Planting", CompatMachineFamily.EMEKE_MEKMM_FACTORY),
+    ABSOLUTE_OVERCLOCKED_REPLICATING_FACTORY("absolute_overclocked", "replicating", "Replicating", CompatMachineFamily.EMEKE_MEKMM_FACTORY),
+    ABSOLUTE_OVERCLOCKED_WASHING_FACTORY("absolute_overclocked", "washing", "Washing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    ABSOLUTE_OVERCLOCKED_CRYSTALLIZING_FACTORY("absolute_overclocked", "crystallizing", "Crystallizing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    ABSOLUTE_OVERCLOCKED_PRESSURISED_REACTING_FACTORY("absolute_overclocked", "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    ABSOLUTE_OVERCLOCKED_CENTRIFUGING_FACTORY("absolute_overclocked", "centrifuging", "Centrifuging", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    ABSOLUTE_OVERCLOCKED_LIQUIFYING_FACTORY("absolute_overclocked", "liquifying", "Liquifying", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_DISSOLVING_FACTORY("supreme_quantum", "dissolving", "Dissolving", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_OXIDIZING_FACTORY("supreme_quantum", "oxidizing", "Oxidizing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_PIGMENT_EXTRACTING_FACTORY("supreme_quantum", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_PAINTING_FACTORY("supreme_quantum", "painting", "Painting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_PLANTING_FACTORY("supreme_quantum", "planting", "Planting", CompatMachineFamily.EMEKE_MEKMM_FACTORY),
+    SUPREME_QUANTUM_REPLICATING_FACTORY("supreme_quantum", "replicating", "Replicating", CompatMachineFamily.EMEKE_MEKMM_FACTORY),
+    SUPREME_QUANTUM_WASHING_FACTORY("supreme_quantum", "washing", "Washing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_CRYSTALLIZING_FACTORY("supreme_quantum", "crystallizing", "Crystallizing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_PRESSURISED_REACTING_FACTORY("supreme_quantum", "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_CENTRIFUGING_FACTORY("supreme_quantum", "centrifuging", "Centrifuging", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    SUPREME_QUANTUM_LIQUIFYING_FACTORY("supreme_quantum", "liquifying", "Liquifying", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_DISSOLVING_FACTORY("cosmic_dense", "dissolving", "Dissolving", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_OXIDIZING_FACTORY("cosmic_dense", "oxidizing", "Oxidizing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_PIGMENT_EXTRACTING_FACTORY("cosmic_dense", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_PAINTING_FACTORY("cosmic_dense", "painting", "Painting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_PLANTING_FACTORY("cosmic_dense", "planting", "Planting", CompatMachineFamily.EMEKE_MEKMM_FACTORY),
+    COSMIC_DENSE_REPLICATING_FACTORY("cosmic_dense", "replicating", "Replicating", CompatMachineFamily.EMEKE_MEKMM_FACTORY),
+    COSMIC_DENSE_WASHING_FACTORY("cosmic_dense", "washing", "Washing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_CRYSTALLIZING_FACTORY("cosmic_dense", "crystallizing", "Crystallizing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_PRESSURISED_REACTING_FACTORY("cosmic_dense", "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_CENTRIFUGING_FACTORY("cosmic_dense", "centrifuging", "Centrifuging", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    COSMIC_DENSE_LIQUIFYING_FACTORY("cosmic_dense", "liquifying", "Liquifying", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_DISSOLVING_FACTORY("infinite_multiversal", "dissolving", "Dissolving", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_OXIDIZING_FACTORY("infinite_multiversal", "oxidizing", "Oxidizing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_PIGMENT_EXTRACTING_FACTORY("infinite_multiversal", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_PAINTING_FACTORY("infinite_multiversal", "painting", "Painting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_PLANTING_FACTORY("infinite_multiversal", "planting", "Planting", CompatMachineFamily.EMEKE_MEKMM_FACTORY),
+    INFINITE_MULTIVERSAL_REPLICATING_FACTORY("infinite_multiversal", "replicating", "Replicating", CompatMachineFamily.EMEKE_MEKMM_FACTORY),
+    INFINITE_MULTIVERSAL_WASHING_FACTORY("infinite_multiversal", "washing", "Washing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_CRYSTALLIZING_FACTORY("infinite_multiversal", "crystallizing", "Crystallizing", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_PRESSURISED_REACTING_FACTORY("infinite_multiversal", "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_CENTRIFUGING_FACTORY("infinite_multiversal", "centrifuging", "Centrifuging", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
+    INFINITE_MULTIVERSAL_LIQUIFYING_FACTORY("infinite_multiversal", "liquifying", "Liquifying", CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY),
     BASIC_RECYCLING_FACTORY(FactoryTier.BASIC, "recycling", "Recycling"),
     BASIC_PLANTING_FACTORY(FactoryTier.BASIC, "planting", "Planting"),
     BASIC_STAMPING_FACTORY(FactoryTier.BASIC, "stamping", "Stamping"),
@@ -302,110 +303,108 @@ public enum MeMekanismMachine {
     ULTIMATE_LATHING_FACTORY(FactoryTier.ULTIMATE, "lathing", "Lathing"),
     ULTIMATE_ROLLING_MILL_FACTORY(FactoryTier.ULTIMATE, "rolling_mill", "Rolling Mill"),
     ULTIMATE_REPLICATING_FACTORY(FactoryTier.ULTIMATE, "replicating", "Replicating"),
-    ABSOLUTE_RECYCLING_FACTORY("absolute", "recycling", "Recycling", false, false),
-    ABSOLUTE_PLANTING_FACTORY("absolute", "planting", "Planting", false, false),
-    ABSOLUTE_STAMPING_FACTORY("absolute", "stamping", "Stamping", false, false),
-    ABSOLUTE_LATHING_FACTORY("absolute", "lathing", "Lathing", false, false),
-    ABSOLUTE_ROLLING_MILL_FACTORY("absolute", "rolling_mill", "Rolling Mill", false, false),
-    ABSOLUTE_REPLICATING_FACTORY("absolute", "replicating", "Replicating", false, false),
-    SUPREME_RECYCLING_FACTORY("supreme", "recycling", "Recycling", false, false),
-    SUPREME_PLANTING_FACTORY("supreme", "planting", "Planting", false, false),
-    SUPREME_STAMPING_FACTORY("supreme", "stamping", "Stamping", false, false),
-    SUPREME_LATHING_FACTORY("supreme", "lathing", "Lathing", false, false),
-    SUPREME_ROLLING_MILL_FACTORY("supreme", "rolling_mill", "Rolling Mill", false, false),
-    SUPREME_REPLICATING_FACTORY("supreme", "replicating", "Replicating", false, false),
-    COSMIC_RECYCLING_FACTORY("cosmic", "recycling", "Recycling", false, false),
-    COSMIC_PLANTING_FACTORY("cosmic", "planting", "Planting", false, false),
-    COSMIC_STAMPING_FACTORY("cosmic", "stamping", "Stamping", false, false),
-    COSMIC_LATHING_FACTORY("cosmic", "lathing", "Lathing", false, false),
-    COSMIC_ROLLING_MILL_FACTORY("cosmic", "rolling_mill", "Rolling Mill", false, false),
-    COSMIC_REPLICATING_FACTORY("cosmic", "replicating", "Replicating", false, false),
-    INFINITE_RECYCLING_FACTORY("infinite", "recycling", "Recycling", false, false),
-    INFINITE_PLANTING_FACTORY("infinite", "planting", "Planting", false, false),
-    INFINITE_STAMPING_FACTORY("infinite", "stamping", "Stamping", false, false),
-    INFINITE_LATHING_FACTORY("infinite", "lathing", "Lathing", false, false),
-    INFINITE_ROLLING_MILL_FACTORY("infinite", "rolling_mill", "Rolling Mill", false, false),
-    INFINITE_REPLICATING_FACTORY("infinite", "replicating", "Replicating", false, false),
-    BASIC_OXIDIZING_FACTORY(FactoryTier.BASIC, "oxidizing", "Oxidizing", true),
-    BASIC_DISSOLVING_FACTORY(FactoryTier.BASIC, "dissolving", "Dissolving", true),
-    BASIC_WASHING_FACTORY(FactoryTier.BASIC, "washing", "Washing", true),
-    BASIC_CRYSTALLIZING_FACTORY(FactoryTier.BASIC, "crystallizing", "Crystallizing", true),
-    BASIC_PRESSURISED_REACTING_FACTORY(FactoryTier.BASIC, "pressurised_reacting", "Pressurised Reacting", true),
-    BASIC_CENTRIFUGING_FACTORY(FactoryTier.BASIC, "centrifuging", "Centrifuging", true),
-    BASIC_LIQUIFYING_FACTORY(FactoryTier.BASIC, "liquifying", "Liquifying", true),
-    BASIC_PIGMENT_EXTRACTING_FACTORY(FactoryTier.BASIC, "pigment_extracting", "Pigment Extracting", true),
-    BASIC_PAINTING_FACTORY(FactoryTier.BASIC, "painting", "Painting", true),
-    ADVANCED_OXIDIZING_FACTORY(FactoryTier.ADVANCED, "oxidizing", "Oxidizing", true),
-    ADVANCED_DISSOLVING_FACTORY(FactoryTier.ADVANCED, "dissolving", "Dissolving", true),
-    ADVANCED_WASHING_FACTORY(FactoryTier.ADVANCED, "washing", "Washing", true),
-    ADVANCED_CRYSTALLIZING_FACTORY(FactoryTier.ADVANCED, "crystallizing", "Crystallizing", true),
-    ADVANCED_PRESSURISED_REACTING_FACTORY(FactoryTier.ADVANCED, "pressurised_reacting", "Pressurised Reacting", true),
-    ADVANCED_CENTRIFUGING_FACTORY(FactoryTier.ADVANCED, "centrifuging", "Centrifuging", true),
-    ADVANCED_LIQUIFYING_FACTORY(FactoryTier.ADVANCED, "liquifying", "Liquifying", true),
-    ADVANCED_PIGMENT_EXTRACTING_FACTORY(FactoryTier.ADVANCED, "pigment_extracting", "Pigment Extracting", true),
-    ADVANCED_PAINTING_FACTORY(FactoryTier.ADVANCED, "painting", "Painting", true),
-    ELITE_OXIDIZING_FACTORY(FactoryTier.ELITE, "oxidizing", "Oxidizing", true),
-    ELITE_DISSOLVING_FACTORY(FactoryTier.ELITE, "dissolving", "Dissolving", true),
-    ELITE_WASHING_FACTORY(FactoryTier.ELITE, "washing", "Washing", true),
-    ELITE_CRYSTALLIZING_FACTORY(FactoryTier.ELITE, "crystallizing", "Crystallizing", true),
-    ELITE_PRESSURISED_REACTING_FACTORY(FactoryTier.ELITE, "pressurised_reacting", "Pressurised Reacting", true),
-    ELITE_CENTRIFUGING_FACTORY(FactoryTier.ELITE, "centrifuging", "Centrifuging", true),
-    ELITE_LIQUIFYING_FACTORY(FactoryTier.ELITE, "liquifying", "Liquifying", true),
-    ELITE_PIGMENT_EXTRACTING_FACTORY(FactoryTier.ELITE, "pigment_extracting", "Pigment Extracting", true),
-    ELITE_PAINTING_FACTORY(FactoryTier.ELITE, "painting", "Painting", true),
-    ULTIMATE_OXIDIZING_FACTORY(FactoryTier.ULTIMATE, "oxidizing", "Oxidizing", true),
-    ULTIMATE_DISSOLVING_FACTORY(FactoryTier.ULTIMATE, "dissolving", "Dissolving", true),
-    ULTIMATE_WASHING_FACTORY(FactoryTier.ULTIMATE, "washing", "Washing", true),
-    ULTIMATE_CRYSTALLIZING_FACTORY(FactoryTier.ULTIMATE, "crystallizing", "Crystallizing", true),
-    ULTIMATE_PRESSURISED_REACTING_FACTORY(FactoryTier.ULTIMATE, "pressurised_reacting", "Pressurised Reacting", true),
-    ULTIMATE_CENTRIFUGING_FACTORY(FactoryTier.ULTIMATE, "centrifuging", "Centrifuging", true),
-    ULTIMATE_LIQUIFYING_FACTORY(FactoryTier.ULTIMATE, "liquifying", "Liquifying", true),
-    ULTIMATE_PIGMENT_EXTRACTING_FACTORY(FactoryTier.ULTIMATE, "pigment_extracting", "Pigment Extracting", true),
-    ULTIMATE_PAINTING_FACTORY(FactoryTier.ULTIMATE, "painting", "Painting", true),
-    ABSOLUTE_OXIDIZING_FACTORY("absolute", "oxidizing", "Oxidizing", true),
-    ABSOLUTE_DISSOLVING_FACTORY("absolute", "dissolving", "Dissolving", true),
-    ABSOLUTE_WASHING_FACTORY("absolute", "washing", "Washing", true),
-    ABSOLUTE_CRYSTALLIZING_FACTORY("absolute", "crystallizing", "Crystallizing", true),
-    ABSOLUTE_PRESSURISED_REACTING_FACTORY("absolute", "pressurised_reacting", "Pressurised Reacting", true),
-    ABSOLUTE_CENTRIFUGING_FACTORY("absolute", "centrifuging", "Centrifuging", true),
-    ABSOLUTE_LIQUIFYING_FACTORY("absolute", "liquifying", "Liquifying", true),
-    ABSOLUTE_PIGMENT_EXTRACTING_FACTORY("absolute", "pigment_extracting", "Pigment Extracting", true),
-    ABSOLUTE_PAINTING_FACTORY("absolute", "painting", "Painting", true),
-    SUPREME_OXIDIZING_FACTORY("supreme", "oxidizing", "Oxidizing", true),
-    SUPREME_DISSOLVING_FACTORY("supreme", "dissolving", "Dissolving", true),
-    SUPREME_WASHING_FACTORY("supreme", "washing", "Washing", true),
-    SUPREME_CRYSTALLIZING_FACTORY("supreme", "crystallizing", "Crystallizing", true),
-    SUPREME_PRESSURISED_REACTING_FACTORY("supreme", "pressurised_reacting", "Pressurised Reacting", true),
-    SUPREME_CENTRIFUGING_FACTORY("supreme", "centrifuging", "Centrifuging", true),
-    SUPREME_LIQUIFYING_FACTORY("supreme", "liquifying", "Liquifying", true),
-    SUPREME_PIGMENT_EXTRACTING_FACTORY("supreme", "pigment_extracting", "Pigment Extracting", true),
-    SUPREME_PAINTING_FACTORY("supreme", "painting", "Painting", true),
-    COSMIC_OXIDIZING_FACTORY("cosmic", "oxidizing", "Oxidizing", true),
-    COSMIC_DISSOLVING_FACTORY("cosmic", "dissolving", "Dissolving", true),
-    COSMIC_WASHING_FACTORY("cosmic", "washing", "Washing", true),
-    COSMIC_CRYSTALLIZING_FACTORY("cosmic", "crystallizing", "Crystallizing", true),
-    COSMIC_PRESSURISED_REACTING_FACTORY("cosmic", "pressurised_reacting", "Pressurised Reacting", true),
-    COSMIC_CENTRIFUGING_FACTORY("cosmic", "centrifuging", "Centrifuging", true),
-    COSMIC_LIQUIFYING_FACTORY("cosmic", "liquifying", "Liquifying", true),
-    COSMIC_PIGMENT_EXTRACTING_FACTORY("cosmic", "pigment_extracting", "Pigment Extracting", true),
-    COSMIC_PAINTING_FACTORY("cosmic", "painting", "Painting", true),
-    INFINITE_OXIDIZING_FACTORY("infinite", "oxidizing", "Oxidizing", true),
-    INFINITE_DISSOLVING_FACTORY("infinite", "dissolving", "Dissolving", true),
-    INFINITE_WASHING_FACTORY("infinite", "washing", "Washing", true),
-    INFINITE_CRYSTALLIZING_FACTORY("infinite", "crystallizing", "Crystallizing", true),
-    INFINITE_PRESSURISED_REACTING_FACTORY("infinite", "pressurised_reacting", "Pressurised Reacting", true),
-    INFINITE_CENTRIFUGING_FACTORY("infinite", "centrifuging", "Centrifuging", true),
-    INFINITE_LIQUIFYING_FACTORY("infinite", "liquifying", "Liquifying", true),
-    INFINITE_PIGMENT_EXTRACTING_FACTORY("infinite", "pigment_extracting", "Pigment Extracting", true),
-    INFINITE_PAINTING_FACTORY("infinite", "painting", "Painting", true);
+    ABSOLUTE_RECYCLING_FACTORY("absolute", "recycling", "Recycling", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    ABSOLUTE_PLANTING_FACTORY("absolute", "planting", "Planting", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    ABSOLUTE_STAMPING_FACTORY("absolute", "stamping", "Stamping", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    ABSOLUTE_LATHING_FACTORY("absolute", "lathing", "Lathing", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    ABSOLUTE_ROLLING_MILL_FACTORY("absolute", "rolling_mill", "Rolling Mill", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    ABSOLUTE_REPLICATING_FACTORY("absolute", "replicating", "Replicating", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    SUPREME_RECYCLING_FACTORY("supreme", "recycling", "Recycling", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    SUPREME_PLANTING_FACTORY("supreme", "planting", "Planting", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    SUPREME_STAMPING_FACTORY("supreme", "stamping", "Stamping", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    SUPREME_LATHING_FACTORY("supreme", "lathing", "Lathing", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    SUPREME_ROLLING_MILL_FACTORY("supreme", "rolling_mill", "Rolling Mill", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    SUPREME_REPLICATING_FACTORY("supreme", "replicating", "Replicating", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    COSMIC_RECYCLING_FACTORY("cosmic", "recycling", "Recycling", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    COSMIC_PLANTING_FACTORY("cosmic", "planting", "Planting", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    COSMIC_STAMPING_FACTORY("cosmic", "stamping", "Stamping", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    COSMIC_LATHING_FACTORY("cosmic", "lathing", "Lathing", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    COSMIC_ROLLING_MILL_FACTORY("cosmic", "rolling_mill", "Rolling Mill", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    COSMIC_REPLICATING_FACTORY("cosmic", "replicating", "Replicating", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    INFINITE_RECYCLING_FACTORY("infinite", "recycling", "Recycling", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    INFINITE_PLANTING_FACTORY("infinite", "planting", "Planting", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    INFINITE_STAMPING_FACTORY("infinite", "stamping", "Stamping", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    INFINITE_LATHING_FACTORY("infinite", "lathing", "Lathing", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    INFINITE_ROLLING_MILL_FACTORY("infinite", "rolling_mill", "Rolling Mill", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    INFINITE_REPLICATING_FACTORY("infinite", "replicating", "Replicating", CompatMachineFamily.MEKE_MEKMM_FACTORY),
+    BASIC_OXIDIZING_FACTORY(FactoryTier.BASIC, "oxidizing", "Oxidizing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    BASIC_DISSOLVING_FACTORY(FactoryTier.BASIC, "dissolving", "Dissolving", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    BASIC_WASHING_FACTORY(FactoryTier.BASIC, "washing", "Washing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    BASIC_CRYSTALLIZING_FACTORY(FactoryTier.BASIC, "crystallizing", "Crystallizing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    BASIC_PRESSURISED_REACTING_FACTORY(FactoryTier.BASIC, "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    BASIC_CENTRIFUGING_FACTORY(FactoryTier.BASIC, "centrifuging", "Centrifuging", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    BASIC_LIQUIFYING_FACTORY(FactoryTier.BASIC, "liquifying", "Liquifying", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    BASIC_PIGMENT_EXTRACTING_FACTORY(FactoryTier.BASIC, "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    BASIC_PAINTING_FACTORY(FactoryTier.BASIC, "painting", "Painting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_OXIDIZING_FACTORY(FactoryTier.ADVANCED, "oxidizing", "Oxidizing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_DISSOLVING_FACTORY(FactoryTier.ADVANCED, "dissolving", "Dissolving", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_WASHING_FACTORY(FactoryTier.ADVANCED, "washing", "Washing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_CRYSTALLIZING_FACTORY(FactoryTier.ADVANCED, "crystallizing", "Crystallizing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_PRESSURISED_REACTING_FACTORY(FactoryTier.ADVANCED, "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_CENTRIFUGING_FACTORY(FactoryTier.ADVANCED, "centrifuging", "Centrifuging", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_LIQUIFYING_FACTORY(FactoryTier.ADVANCED, "liquifying", "Liquifying", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_PIGMENT_EXTRACTING_FACTORY(FactoryTier.ADVANCED, "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ADVANCED_PAINTING_FACTORY(FactoryTier.ADVANCED, "painting", "Painting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_OXIDIZING_FACTORY(FactoryTier.ELITE, "oxidizing", "Oxidizing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_DISSOLVING_FACTORY(FactoryTier.ELITE, "dissolving", "Dissolving", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_WASHING_FACTORY(FactoryTier.ELITE, "washing", "Washing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_CRYSTALLIZING_FACTORY(FactoryTier.ELITE, "crystallizing", "Crystallizing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_PRESSURISED_REACTING_FACTORY(FactoryTier.ELITE, "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_CENTRIFUGING_FACTORY(FactoryTier.ELITE, "centrifuging", "Centrifuging", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_LIQUIFYING_FACTORY(FactoryTier.ELITE, "liquifying", "Liquifying", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_PIGMENT_EXTRACTING_FACTORY(FactoryTier.ELITE, "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ELITE_PAINTING_FACTORY(FactoryTier.ELITE, "painting", "Painting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_OXIDIZING_FACTORY(FactoryTier.ULTIMATE, "oxidizing", "Oxidizing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_DISSOLVING_FACTORY(FactoryTier.ULTIMATE, "dissolving", "Dissolving", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_WASHING_FACTORY(FactoryTier.ULTIMATE, "washing", "Washing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_CRYSTALLIZING_FACTORY(FactoryTier.ULTIMATE, "crystallizing", "Crystallizing", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_PRESSURISED_REACTING_FACTORY(FactoryTier.ULTIMATE, "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_CENTRIFUGING_FACTORY(FactoryTier.ULTIMATE, "centrifuging", "Centrifuging", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_LIQUIFYING_FACTORY(FactoryTier.ULTIMATE, "liquifying", "Liquifying", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_PIGMENT_EXTRACTING_FACTORY(FactoryTier.ULTIMATE, "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ULTIMATE_PAINTING_FACTORY(FactoryTier.ULTIMATE, "painting", "Painting", CompatMachineFamily.MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_OXIDIZING_FACTORY("absolute", "oxidizing", "Oxidizing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_DISSOLVING_FACTORY("absolute", "dissolving", "Dissolving", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_WASHING_FACTORY("absolute", "washing", "Washing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_CRYSTALLIZING_FACTORY("absolute", "crystallizing", "Crystallizing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_PRESSURISED_REACTING_FACTORY("absolute", "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_CENTRIFUGING_FACTORY("absolute", "centrifuging", "Centrifuging", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_LIQUIFYING_FACTORY("absolute", "liquifying", "Liquifying", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_PIGMENT_EXTRACTING_FACTORY("absolute", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    ABSOLUTE_PAINTING_FACTORY("absolute", "painting", "Painting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_OXIDIZING_FACTORY("supreme", "oxidizing", "Oxidizing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_DISSOLVING_FACTORY("supreme", "dissolving", "Dissolving", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_WASHING_FACTORY("supreme", "washing", "Washing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_CRYSTALLIZING_FACTORY("supreme", "crystallizing", "Crystallizing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_PRESSURISED_REACTING_FACTORY("supreme", "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_CENTRIFUGING_FACTORY("supreme", "centrifuging", "Centrifuging", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_LIQUIFYING_FACTORY("supreme", "liquifying", "Liquifying", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_PIGMENT_EXTRACTING_FACTORY("supreme", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    SUPREME_PAINTING_FACTORY("supreme", "painting", "Painting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_OXIDIZING_FACTORY("cosmic", "oxidizing", "Oxidizing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_DISSOLVING_FACTORY("cosmic", "dissolving", "Dissolving", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_WASHING_FACTORY("cosmic", "washing", "Washing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_CRYSTALLIZING_FACTORY("cosmic", "crystallizing", "Crystallizing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_PRESSURISED_REACTING_FACTORY("cosmic", "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_CENTRIFUGING_FACTORY("cosmic", "centrifuging", "Centrifuging", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_LIQUIFYING_FACTORY("cosmic", "liquifying", "Liquifying", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_PIGMENT_EXTRACTING_FACTORY("cosmic", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    COSMIC_PAINTING_FACTORY("cosmic", "painting", "Painting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_OXIDIZING_FACTORY("infinite", "oxidizing", "Oxidizing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_DISSOLVING_FACTORY("infinite", "dissolving", "Dissolving", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_WASHING_FACTORY("infinite", "washing", "Washing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_CRYSTALLIZING_FACTORY("infinite", "crystallizing", "Crystallizing", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_PRESSURISED_REACTING_FACTORY("infinite", "pressurised_reacting", "Pressurised Reacting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_CENTRIFUGING_FACTORY("infinite", "centrifuging", "Centrifuging", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_LIQUIFYING_FACTORY("infinite", "liquifying", "Liquifying", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_PIGMENT_EXTRACTING_FACTORY("infinite", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
+    INFINITE_PAINTING_FACTORY("infinite", "painting", "Painting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY);
 
     @Nullable
     private final FactoryType factoryType;
     @Nullable
     private final FactoryTier factoryTier;
-    private final CompatMod provider;
-    private final CompatRegistrationRoute registrationRoute;
-    private final CompatMachineKind machineKind;
+    private final CompatMachineFamily family;
     @Nullable
     private final String tierId;
     private final String machineTypeId;
@@ -415,179 +414,88 @@ public enum MeMekanismMachine {
     MeMekanismMachine(@Nullable FactoryType factoryType, String baseName, String englishName) {
         this.factoryType = factoryType;
         this.factoryTier = null;
-        this.provider = CompatMod.MEKANISM;
-        this.registrationRoute = CompatRegistrationRoute.MEKANISM_MACHINE;
-        this.machineKind = CompatMachineKind.MACHINE;
+        this.family = CompatMachineFamily.MEKANISM_MACHINE;
         this.tierId = null;
         this.machineTypeId = factoryType == null ? baseName : factoryType.getRegistryNameComponent();
         this.baseName = baseName;
         this.englishName = englishName;
     }
 
-    MeMekanismMachine(String baseName, String customFactoryTypeName, String englishName, char evolvedMachine) {
+    MeMekanismMachine(String nameOrTier, String machineTypeId, String englishName, CompatMachineFamily family) {
         this.factoryType = null;
         this.factoryTier = null;
-        this.provider = CompatMod.EMEK;
-        this.registrationRoute = CompatRegistrationRoute.EMEK_MACHINE;
-        this.machineKind = CompatMachineKind.MACHINE;
-        this.tierId = null;
-        this.machineTypeId = customFactoryTypeName;
-        this.baseName = baseName;
-        this.englishName = englishName;
+        this.family = family;
+        this.machineTypeId = machineTypeId;
+        if (family.kind() == CompatMachineKind.MACHINE) {
+            this.tierId = null;
+            this.baseName = nameOrTier;
+            this.englishName = englishName;
+        } else {
+            this.tierId = nameOrTier;
+            this.baseName = nameOrTier + "_" + machineTypeId + "_factory";
+            String tierName = family.provider() == CompatMod.EMEKE
+                    ? displayTierName(nameOrTier) : capitalize(nameOrTier);
+            this.englishName = "ME " + tierName + " " + englishName + " Factory";
+        }
     }
 
     MeMekanismMachine(FactoryTier factoryTier, FactoryType factoryType) {
         this.factoryType = factoryType;
         this.factoryTier = factoryTier;
-        this.provider = CompatMod.MEKANISM;
-        this.registrationRoute = CompatRegistrationRoute.MEKANISM_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
+        this.family = CompatMachineFamily.MEKANISM_FACTORY;
         this.tierId = factoryTier.name().toLowerCase(Locale.ROOT);
         this.machineTypeId = factoryType.getRegistryNameComponent();
         this.baseName = factoryTier.name().toLowerCase(Locale.ROOT) + "_" + factoryType.getRegistryNameComponent() + "_factory";
         this.englishName = "ME " + capitalize(factoryTier.name()) + " " + factoryType.getRegistryNameComponentCapitalized() + " Factory";
     }
 
-    MeMekanismMachine(String evolvedFactoryTierName, FactoryType factoryType, boolean evolvedFactory) {
+    MeMekanismMachine(String evolvedFactoryTierName, FactoryType factoryType, CompatMachineFamily family) {
         this.factoryType = factoryType;
         this.factoryTier = null;
-        this.provider = CompatMod.EMEK;
-        this.registrationRoute = CompatRegistrationRoute.EMEK_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
+        this.family = family;
         this.tierId = evolvedFactoryTierName;
         this.machineTypeId = factoryType.getRegistryNameComponent();
         this.baseName = evolvedFactoryTierName + "_" + factoryType.getRegistryNameComponent() + "_factory";
-        this.englishName = "ME " + capitalize(evolvedFactoryTierName) + " " + factoryType.getRegistryNameComponentCapitalized() + " Factory";
+        String tierName = family.provider() == CompatMod.EMEKE
+                ? displayTierName(evolvedFactoryTierName) : capitalize(evolvedFactoryTierName);
+        this.englishName = "ME " + tierName + " " + factoryType.getRegistryNameComponentCapitalized() + " Factory";
     }
 
-    MeMekanismMachine(FactoryTier factoryTier, String customFactoryTypeName, String factoryEnglishName, short evolvedFactory) {
+    MeMekanismMachine(FactoryTier factoryTier, String customFactoryTypeName, String factoryEnglishName,
+            CompatMachineFamily family) {
         this.factoryType = null;
         this.factoryTier = factoryTier;
-        this.provider = CompatMod.EMEK;
-        this.registrationRoute = CompatRegistrationRoute.EMEK_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
+        this.family = family;
         this.tierId = factoryTier.name().toLowerCase(Locale.ROOT);
         this.machineTypeId = customFactoryTypeName;
         this.baseName = factoryTier.name().toLowerCase(Locale.ROOT) + "_" + customFactoryTypeName + "_factory";
         this.englishName = "ME " + capitalize(factoryTier.name()) + " " + factoryEnglishName + " Factory";
     }
 
-    MeMekanismMachine(String evolvedFactoryTierName, String customFactoryTypeName, String factoryEnglishName, byte evolvedFactory) {
-        this.factoryType = null;
-        this.factoryTier = null;
-        this.provider = CompatMod.EMEK;
-        this.registrationRoute = CompatRegistrationRoute.EMEK_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
-        this.tierId = evolvedFactoryTierName;
-        this.machineTypeId = customFactoryTypeName;
-        this.baseName = evolvedFactoryTierName + "_" + customFactoryTypeName + "_factory";
-        this.englishName = "ME " + capitalize(evolvedFactoryTierName) + " " + factoryEnglishName + " Factory";
-    }
-
-    MeMekanismMachine(String emExtraFactoryTierName, FactoryType factoryType, int evolvedMekanismExtrasFactory) {
-        this.factoryType = factoryType;
-        this.factoryTier = null;
-        this.provider = CompatMod.EMEKE;
-        this.registrationRoute = CompatRegistrationRoute.EMEKE_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
-        this.tierId = emExtraFactoryTierName;
-        this.machineTypeId = factoryType.getRegistryNameComponent();
-        this.baseName = emExtraFactoryTierName + "_" + factoryType.getRegistryNameComponent() + "_factory";
-        this.englishName = "ME " + displayTierName(emExtraFactoryTierName) + " " + factoryType.getRegistryNameComponentCapitalized() + " Factory";
-    }
-
-    MeMekanismMachine(String emExtraFactoryTierName, String customFactoryTypeName, String factoryEnglishName, int evolvedMekanismExtrasFactory) {
-        this.factoryType = null;
-        this.factoryTier = null;
-        this.provider = CompatMod.EMEKE;
-        this.registrationRoute = isEmekeAdvancedType(customFactoryTypeName)
-                ? CompatRegistrationRoute.EMEKE_ADVANCED_FACTORY : CompatRegistrationRoute.EMEKE_FACTORY;
-        this.machineKind = this.registrationRoute == CompatRegistrationRoute.EMEKE_ADVANCED_FACTORY
-                ? CompatMachineKind.ADVANCED_FACTORY : CompatMachineKind.FACTORY;
-        this.tierId = emExtraFactoryTierName;
-        this.machineTypeId = customFactoryTypeName;
-        this.baseName = emExtraFactoryTierName + "_" + customFactoryTypeName + "_factory";
-        this.englishName = "ME " + displayTierName(emExtraFactoryTierName) + " " + factoryEnglishName + " Factory";
-    }
-
     MeMekanismMachine(String extraFactoryTierName, FactoryType factoryType) {
         this.factoryType = factoryType;
         this.factoryTier = null;
-        this.provider = CompatMod.MEKE;
-        this.registrationRoute = CompatRegistrationRoute.MEKE_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
+        this.family = CompatMachineFamily.MEKE_FACTORY;
         this.tierId = extraFactoryTierName;
         this.machineTypeId = factoryType.getRegistryNameComponent();
         this.baseName = extraFactoryTierName + "_" + factoryType.getRegistryNameComponent() + "_factory";
         this.englishName = "ME " + capitalize(extraFactoryTierName) + " " + factoryType.getRegistryNameComponentCapitalized() + " Factory";
     }
 
-    MeMekanismMachine(String extraFactoryTierName, String customFactoryTypeName, String factoryEnglishName, long extraCustomFactory) {
-        this.factoryType = null;
-        this.factoryTier = null;
-        this.provider = CompatMod.MEKE;
-        this.registrationRoute = CompatRegistrationRoute.MEKE_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
-        this.tierId = extraFactoryTierName;
-        this.machineTypeId = customFactoryTypeName;
-        this.baseName = extraFactoryTierName + "_" + customFactoryTypeName + "_factory";
-        this.englishName = "ME " + capitalize(extraFactoryTierName) + " " + factoryEnglishName + " Factory";
-    }
-
     MeMekanismMachine(FactoryTier factoryTier, String moreMachineFactoryTypeName, String factoryEnglishName) {
         this.factoryType = null;
         this.factoryTier = factoryTier;
-        this.provider = CompatMod.MEKMM;
-        this.registrationRoute = CompatRegistrationRoute.MEKMM_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
+        this.family = CompatMachineFamily.MEKMM_FACTORY;
         this.tierId = factoryTier.name().toLowerCase(Locale.ROOT);
         this.machineTypeId = moreMachineFactoryTypeName;
         this.baseName = factoryTier.name().toLowerCase(Locale.ROOT) + "_" + moreMachineFactoryTypeName + "_factory";
         this.englishName = "ME " + capitalize(factoryTier.name()) + " " + factoryEnglishName + " Factory";
     }
 
-    MeMekanismMachine(String extraFactoryTierName, String moreMachineFactoryTypeName, String factoryEnglishName, boolean ignoredAdvancedFactory, boolean ignoredExtraFactory) {
-        this.factoryType = null;
-        this.factoryTier = null;
-        this.provider = CompatMod.MEKE;
-        this.registrationRoute = CompatRegistrationRoute.MEKE_MEKMM_FACTORY;
-        this.machineKind = CompatMachineKind.FACTORY;
-        this.tierId = extraFactoryTierName;
-        this.machineTypeId = moreMachineFactoryTypeName;
-        this.baseName = extraFactoryTierName + "_" + moreMachineFactoryTypeName + "_factory";
-        this.englishName = "ME " + capitalize(extraFactoryTierName) + " " + factoryEnglishName + " Factory";
-    }
-
-    MeMekanismMachine(FactoryTier factoryTier, String moreMachineAdvancedFactoryTypeName, String factoryEnglishName, boolean advancedFactory) {
-        this.factoryType = null;
-        this.factoryTier = factoryTier;
-        this.provider = CompatMod.MEKMM;
-        this.registrationRoute = CompatRegistrationRoute.MEKMM_ADVANCED_FACTORY;
-        this.machineKind = CompatMachineKind.ADVANCED_FACTORY;
-        this.tierId = factoryTier.name().toLowerCase(Locale.ROOT);
-        this.machineTypeId = moreMachineAdvancedFactoryTypeName;
-        this.baseName = factoryTier.name().toLowerCase(Locale.ROOT) + "_" + moreMachineAdvancedFactoryTypeName + "_factory";
-        this.englishName = "ME " + capitalize(factoryTier.name()) + " " + factoryEnglishName + " Factory";
-    }
-
-    MeMekanismMachine(String extraFactoryTierName, String moreMachineAdvancedFactoryTypeName, String factoryEnglishName, boolean advancedFactory) {
-        this.factoryType = null;
-        this.factoryTier = null;
-        this.provider = CompatMod.MEKE;
-        this.registrationRoute = CompatRegistrationRoute.MEKE_MEKMM_ADVANCED_FACTORY;
-        this.machineKind = CompatMachineKind.ADVANCED_FACTORY;
-        this.tierId = extraFactoryTierName;
-        this.machineTypeId = moreMachineAdvancedFactoryTypeName;
-        this.baseName = extraFactoryTierName + "_" + moreMachineAdvancedFactoryTypeName + "_factory";
-        this.englishName = "ME " + capitalize(extraFactoryTierName) + " " + factoryEnglishName + " Factory";
-    }
-
     MeMekanismMachine(String baseName, String moreMachineBaseTypeName, String englishName) {
         this.factoryType = null;
         this.factoryTier = null;
-        this.provider = CompatMod.MEKMM;
-        this.registrationRoute = CompatRegistrationRoute.MEKMM_MACHINE;
-        this.machineKind = CompatMachineKind.MACHINE;
+        this.family = CompatMachineFamily.MEKMM_MACHINE;
         this.tierId = null;
         this.machineTypeId = moreMachineBaseTypeName;
         this.baseName = baseName;
@@ -605,104 +513,27 @@ public enum MeMekanismMachine {
     }
 
     public boolean isFactory() {
-        return this.machineKind != CompatMachineKind.MACHINE;
+        return this.family.kind() != CompatMachineKind.MACHINE;
     }
 
     public boolean isEvolvedMekanismFactory() {
-        return this.provider == CompatMod.EMEK && isFactory() && this.factoryTier == null;
-    }
-
-    public boolean isEvolvedMekanismExtrasFactory() {
-        return this.provider == CompatMod.EMEKE;
-    }
-
-    /** Evolved Mekanism Extras' optional MekAF/MekMM factory families. */
-    public boolean isEvolvedMekanismExtrasAdvancedFactory() {
-        return this.registrationRoute == CompatRegistrationRoute.EMEKE_ADVANCED_FACTORY;
-    }
-
-    public boolean isMekanismExtrasFactory() {
-        return this.provider == CompatMod.MEKE;
-    }
-
-    public boolean isMekanismExtrasMekanismFactory() {
-        return this.registrationRoute == CompatRegistrationRoute.MEKE_FACTORY;
-    }
-
-    public boolean isMoreMachineFactory() {
-        return this.registrationRoute == CompatRegistrationRoute.MEKMM_FACTORY
-                || this.registrationRoute == CompatRegistrationRoute.MEKE_MEKMM_FACTORY;
-    }
-
-    public boolean isMoreMachineAdvancedFactory() {
-        return this.registrationRoute == CompatRegistrationRoute.MEKMM_ADVANCED_FACTORY
-                || this.registrationRoute == CompatRegistrationRoute.MEKE_MEKMM_ADVANCED_FACTORY;
-    }
-
-    public boolean isMoreMachineBaseMachine() {
-        return this.registrationRoute == CompatRegistrationRoute.MEKMM_MACHINE;
-    }
-
-    @Nullable
-    public String extraFactoryTierName() {
-        return this.provider == CompatMod.MEKE ? this.tierId : null;
-    }
-
-    @Nullable
-    public String emExtraFactoryTierName() {
-        return this.provider == CompatMod.EMEKE ? this.tierId : null;
-    }
-
-    @Nullable
-    public String customFactoryTypeName() {
-        if (this.factoryType != null) {
-            return null;
-        }
-        return switch (this.registrationRoute) {
-            case EMEK_MACHINE, EMEK_FACTORY, MEKE_FACTORY, EMEKE_FACTORY, EMEKE_ADVANCED_FACTORY ->
-                    this.machineTypeId;
-            default -> null;
-        };
-    }
-
-    @Nullable
-    public String factoryTypeName() {
-        if (factoryType != null) {
-            return factoryType.getRegistryNameComponent();
-        }
-        return customFactoryTypeName();
-    }
-
-    @Nullable
-    public String moreMachineFactoryTypeName() {
-        return isMoreMachineFactory() ? this.machineTypeId : null;
-    }
-
-    @Nullable
-    public String moreMachineAdvancedFactoryTypeName() {
-        return isMoreMachineAdvancedFactory() ? this.machineTypeId : null;
-    }
-
-    @Nullable
-    public String moreMachineBaseTypeName() {
-        return isMoreMachineBaseMachine() ? this.machineTypeId : null;
-    }
-
-    @Nullable
-    public String requiredModId() {
-        return this.provider == CompatMod.MEKANISM ? null : this.provider.modId();
+        return this.family.provider() == CompatMod.EMEK && isFactory() && this.factoryTier == null;
     }
 
     public CompatMod provider() {
-        return this.provider;
+        return this.family.provider();
     }
 
     public CompatRegistrationRoute registrationRoute() {
-        return this.registrationRoute;
+        return this.family.route();
     }
 
     public CompatMachineKind machineKind() {
-        return this.machineKind;
+        return this.family.kind();
+    }
+
+    public CompatMachineFamily family() {
+        return this.family;
     }
 
     public boolean isAvailable() {
@@ -731,14 +562,12 @@ public enum MeMekanismMachine {
         return "me_" + baseName;
     }
 
-    /** Raw catalog tier identifier without loading optional tier classes. */
     @Nullable
-    public String declaredTierName() {
+    public String tierId() {
         return this.tierId;
     }
 
-    /** Stable recipe/machine family identifier used by the compatibility catalog. */
-    public String declaredMachineTypeName() {
+    public String machineTypeId() {
         return this.machineTypeId;
     }
 
@@ -754,7 +583,7 @@ public enum MeMekanismMachine {
         if (isFactory()) {
             return "description.mekanism.factory";
         }
-        if (this.provider == CompatMod.MEKANISM) {
+        if (this.family.provider() == CompatMod.MEKANISM) {
             return "description.mekanism." + baseName;
         }
         return "description.mekenergistics.machine";
@@ -762,10 +591,10 @@ public enum MeMekanismMachine {
 
     @Nullable
     public TextColor nameColor() {
-        if (this.provider == CompatMod.MEKE) {
+        if (this.family.provider() == CompatMod.MEKE) {
             return OptionalCompatClasses.getMekanismExtrasTierColor(this.tierId);
         }
-        if (this.provider == CompatMod.EMEKE) {
+        if (this.family.provider() == CompatMod.EMEKE) {
             return OptionalCompatClasses.getEvolvedMekanismExtrasTierColor(this.tierId);
         }
         BaseTier tier = baseTier();
@@ -789,8 +618,11 @@ public enum MeMekanismMachine {
     }
 
     public boolean hasRecipeLogic() {
-        return this.factoryType != null || isMoreMachineFactory() || isMoreMachineAdvancedFactory()
-                || isMoreMachineBaseMachine();
+        return this.factoryType != null || switch (this.family.route()) {
+            case MEKMM_MACHINE, MEKMM_FACTORY, MEKMM_ADVANCED_FACTORY,
+                    MEKE_MEKMM_FACTORY, MEKE_MEKMM_ADVANCED_FACTORY -> true;
+            default -> false;
+        };
     }
 
     public boolean hasAdvancedChemicalInput() {
@@ -954,14 +786,6 @@ public enum MeMekanismMachine {
     private static String capitalize(String name) {
         String lower = name.toLowerCase(Locale.ROOT);
         return lower.substring(0, 1).toUpperCase(Locale.ROOT) + lower.substring(1);
-    }
-
-    private static boolean isEmekeAdvancedType(String typeName) {
-        return switch (typeName) {
-            case "oxidizing", "pigment_extracting", "dissolving", "painting", "planting", "replicating",
-                    "washing", "crystallizing", "pressurised_reacting", "centrifuging", "liquifying" -> true;
-            default -> false;
-        };
     }
 
     private static String displayTierName(String name) {

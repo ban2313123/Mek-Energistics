@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
@@ -33,14 +34,65 @@ class CompatMachineGeneratedResourcesTest {
                 .forEach(spec -> {
                     assertGenerated(spec, "data/mekenergistics/recipe", spec.meBlockId().getPath());
                     assertGenerated(spec, "data/mekenergistics/loot_table/blocks", spec.meBlockId().getPath());
+                    assertGenerated(spec, "assets/mekenergistics/blockstates", spec.meBlockId().getPath());
                     assertExactlyOne(spec, "assets/mekenergistics/models/item", spec.meBlockId().getPath());
                     if (spec.kind() != CompatMachineKind.MACHINE) {
-                        assertGenerated(spec, "assets/mekenergistics/blockstates", spec.meBlockId().getPath());
                         assertExactlyOne(spec, "assets/mekenergistics/models/block", spec.meBlockId().getPath());
                         assertExactlyOne(spec, "assets/mekenergistics/models/block",
                                 spec.meBlockId().getPath() + "_active");
                     }
                 });
+    }
+
+    @Test
+    void generatedFilesMatchTheCurrentCatalogBuilders() throws IOException {
+        for (CompatMachineSpec spec : CompatMachineCatalog.all()
+                .filter(entry -> entry.machine().hasMeVariant()).toList()) {
+            String id = spec.meBlockId().getPath();
+            assertGeneratedJsonEquals(CompatMachineDataJson.installerRecipe(spec),
+                    "data/mekenergistics/recipe", id);
+            assertGeneratedJsonEquals(CompatMachineDataJson.selfDropLootTable(spec),
+                    "data/mekenergistics/loot_table/blocks", id);
+            JsonObject blockState = spec.kind() == CompatMachineKind.MACHINE
+                    ? CompatMachineDataJson.machineBlockState(spec)
+                    : CompatMachineDataJson.factoryBlockState(spec);
+            assertGeneratedJsonEquals(blockState, "assets/mekenergistics/blockstates", id);
+            if (!CompatMachineResourceProfile.hasCustomItemModel(spec)) {
+                assertGeneratedJsonEquals(CompatMachineDataJson.itemModel(spec),
+                        "assets/mekenergistics/models/item", id);
+            }
+            if (spec.kind() != CompatMachineKind.MACHINE
+                    && !CompatMachineResourceProfile.hasHandwrittenFactoryBlockModel(spec)) {
+                assertGeneratedJsonEquals(CompatMachineDataJson.factoryModel(spec, false),
+                        "assets/mekenergistics/models/block", id);
+                assertGeneratedJsonEquals(CompatMachineDataJson.factoryModel(spec, true),
+                        "assets/mekenergistics/models/block", id + "_active");
+            }
+        }
+    }
+
+    @Test
+    void generatedTreeContainsOnlyCurrentCatalogResources() throws IOException {
+        Set<Path> expected = new TreeSet<>();
+        for (CompatMachineSpec spec : CompatMachineCatalog.all()
+                .filter(entry -> entry.machine().hasMeVariant()).toList()) {
+            String id = spec.meBlockId().getPath() + ".json";
+            expected.add(Path.of("data/mekenergistics/recipe").resolve(id));
+            expected.add(Path.of("data/mekenergistics/loot_table/blocks").resolve(id));
+            expected.add(Path.of("assets/mekenergistics/blockstates").resolve(id));
+            if (!CompatMachineResourceProfile.hasCustomItemModel(spec)) {
+                expected.add(Path.of("assets/mekenergistics/models/item").resolve(id));
+            }
+            if (spec.kind() != CompatMachineKind.MACHINE
+                    && !CompatMachineResourceProfile.hasHandwrittenFactoryBlockModel(spec)) {
+                expected.add(Path.of("assets/mekenergistics/models/block").resolve(id));
+                expected.add(Path.of("assets/mekenergistics/models/block")
+                        .resolve(spec.meBlockId().getPath() + "_active.json"));
+            }
+        }
+        Set<Path> actual = new TreeSet<>(relativeFiles(GENERATED));
+        actual.removeIf(path -> path.startsWith(".cache"));
+        assertEquals(expected, actual, "Generated resources contain missing or stale catalog files");
     }
 
     @Test
@@ -90,12 +142,53 @@ class CompatMachineGeneratedResourcesTest {
     }
 
     @Test
-    void plantingStationKeepsItsCustomItemTransforms() throws IOException {
-        Path customModel = resource(MAIN, "assets/mekenergistics/models/item", "me_planting_station");
-        JsonObject json = JsonParser.parseString(Files.readString(customModel)).getAsJsonObject();
-        assertTrue(json.has("display"), "Planting station custom item transforms were lost");
-        assertFalse(Files.exists(resource(GENERATED, "assets/mekenergistics/models/item", "me_planting_station")),
-                "Planting station must not be replaced by the generic generated item model");
+    void handwrittenItemModelsKeepTheirCustomTransforms() throws IOException {
+        Set<String> expectedModels = new HashSet<>(Set.of(
+                "me_electrolytic_separator", "me_isotopic_centrifuge", "me_planting_station"));
+        for (String tier : List.of("basic", "advanced", "elite", "ultimate",
+                "absolute", "supreme", "cosmic", "infinite")) {
+            expectedModels.add("me_" + tier + "_centrifuging_factory");
+            expectedModels.add("me_" + tier + "_planting_factory");
+        }
+        Set<String> actualModels = new HashSet<>();
+        int handwrittenModels = 0;
+        for (CompatMachineSpec spec : CompatMachineCatalog.all()
+                .filter(entry -> entry.machine().hasMeVariant()).toList()) {
+            String id = spec.meBlockId().getPath();
+            Path customModel = resource(MAIN, "assets/mekenergistics/models/item", id);
+            if (!Files.isRegularFile(customModel)) {
+                continue;
+            }
+            handwrittenModels++;
+            actualModels.add(id);
+            JsonObject json = JsonParser.parseString(Files.readString(customModel)).getAsJsonObject();
+            assertTrue(json.has("display"), () -> id + " custom item transforms were lost");
+            assertFalse(Files.exists(resource(GENERATED, "assets/mekenergistics/models/item", id)),
+                    () -> id + " must not be replaced by the generic generated item model");
+        }
+        assertEquals(19, handwrittenModels, "Unexpected handwritten catalog item model count");
+        assertEquals(expectedModels, actualModels, "Handwritten item model set changed");
+    }
+
+    @Test
+    void generatedMachineBlockStatesReferenceTheAvailableActiveModel() throws IOException {
+        for (CompatMachineSpec spec : CompatMachineCatalog.all()
+                .filter(entry -> entry.machine().hasMeVariant())
+                .filter(entry -> entry.kind() == CompatMachineKind.MACHINE).toList()) {
+            String id = spec.meBlockId().getPath();
+            JsonObject json = JsonParser.parseString(Files.readString(
+                    resource(GENERATED, "assets/mekenergistics/blockstates", id))).getAsJsonObject();
+            boolean hasActiveModel = Files.isRegularFile(
+                    resource(MAIN, "assets/mekenergistics/models/block", id + "_active"));
+            String expectedModel = "mekenergistics:block/" + id + (hasActiveModel ? "_active" : "");
+            JsonObject variants = json.getAsJsonObject("variants");
+            for (String facing : Set.of("north", "south", "east", "west")) {
+                assertEquals(expectedModel,
+                        variants.getAsJsonObject("facing=" + facing + ",active=true")
+                                .get("model").getAsString(),
+                        spec.machine().name());
+            }
+        }
     }
 
     @Test
@@ -178,6 +271,13 @@ class CompatMachineGeneratedResourcesTest {
     private static JsonObject generatedBlockModel(String name) throws IOException {
         return JsonParser.parseString(Files.readString(resource(
                 GENERATED, "assets/mekenergistics/models/block", name))).getAsJsonObject();
+    }
+
+    private static void assertGeneratedJsonEquals(JsonObject expected, String directory, String name)
+            throws IOException {
+        Path path = resource(GENERATED, directory, name);
+        JsonObject actual = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
+        assertEquals(expected, actual, path.toString());
     }
 
     private static Set<Path> relativeFiles(Path root) throws IOException {

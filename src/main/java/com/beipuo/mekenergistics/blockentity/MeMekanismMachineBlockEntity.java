@@ -10,7 +10,6 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
-import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
 import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import appeng.api.config.Actionable;
@@ -603,6 +602,11 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     }
 
     @Override
+    public MeMekanismMachineAeSupport getRecipeAeSupport() {
+        return getAeSupport();
+    }
+
+    @Override
     public List<BasicInventorySlot> getExternalPatternSlots() {
         List<BasicInventorySlot> result = new ArrayList<>();
         for (int slot = PATTERN_SLOTS_START; slot <= patternSlotsEnd(); slot++) {
@@ -616,16 +620,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     @Override
     public int getLegacyPatternSlotOffset() {
         return PATTERN_SLOTS_START;
-    }
-
-    public boolean hasAeOutputWork() {
-        return hasSmartPatternWork() || getAeSupport().hasPatternOutputBacklog(this.aeOutputMode);
-    }
-
-    public boolean processAeOutputWork() {
-        boolean changed = getAeSupport().drainPatternOutputs(this.aeOutputMode);
-        return getAeSupport().hasPatternOutputBacklog(this.aeOutputMode)
-                ? changed : processSmartPatternWork() || changed;
     }
 
     @Override
@@ -721,14 +715,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     @Override
     public void setSmartPatternMultiplicationEnabled(boolean enabled) {
         getAeSupport().setSmartPatternMultiplicationEnabled(enabled);
-    }
-
-    boolean hasSmartPatternWork() {
-        return getAeSupport().hasSmartPatternWork();
-    }
-
-    boolean processSmartPatternWork() {
-        return getAeSupport().processSmartPatternWork();
     }
 
     private void updatePatterns() {

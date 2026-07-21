@@ -51,6 +51,27 @@ class CompatProviderBoundaryTest {
     }
 
     @Test
+    void runtimeOptionalModChecksAreCentralized() throws IOException {
+        Path sourceRoot = Path.of("src/main/java/com/beipuo/mekenergistics");
+        Path runtimeProbe = Path.of(
+                "src/main/java/com/beipuo/mekenergistics/compat/OptionalCompatClasses.java");
+        Path bootstrapProbe = Path.of(
+                "src/main/java/com/beipuo/mekenergistics/mixin/MekEnergisticsMixinPlugin.java");
+        try (var files = Files.walk(sourceRoot)) {
+            files.filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> !path.equals(runtimeProbe) && !path.equals(bootstrapProbe))
+                    .forEach(path -> {
+                        try {
+                            assertFalse(Files.readString(path).contains("net.neoforged.fml.ModList"),
+                                    path.toString());
+                        } catch (IOException exception) {
+                            throw new AssertionError(exception);
+                        }
+                    });
+        }
+    }
+
+    @Test
     void providerClassNameTablesPointToConcreteSourceProviders() throws IOException {
         assertProviderClassNamesExist(
                 "src/main/java/com/beipuo/mekenergistics/compat/provider/CompatMachineProviders.java",
@@ -97,8 +118,8 @@ class CompatProviderBoundaryTest {
                 "MEKE_MEKMM_ADVANCED_FACTORY");
         assertContainsAll("EmekeMachineClientProvider.java",
                 "EvolvedMekanismExtrasClientScreens", "EvolvedMekanismExtrasAdvancedClientScreens",
-                "EvolvedMekanismExtrasMoreMachineClientScreens", "EMEKE_ADVANCED_FACTORIES",
-                "EMEKE_MEKMM_FACTORIES");
+                "EvolvedMekanismExtrasMoreMachineClientScreens", "EMEKE_FACTORY",
+                "EMEKE_MEKAF_ADVANCED_FACTORY", "EMEKE_MEKMM_FACTORY");
     }
 
     @Test
@@ -168,6 +189,24 @@ class CompatProviderBoundaryTest {
         assertFalse(source.contains("MekanismExtrasCompat.isInstaller"));
         assertFalse(source.contains("EvolvedMekanismCompat.isInstaller"));
         assertFalse(source.contains("EvolvedMekanismExtrasCompat.isInstaller"));
+    }
+
+    @Test
+    void jeiUsesCatalogGatedOptionalIntegrationLoader() throws IOException {
+        String plugin = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/client/jei/MekEnergisticsJeiPlugin.java"));
+        assertTrue(plugin.contains("OptionalJeiCompat.registerCatalysts(registration)"));
+        assertFalse(plugin.contains("net.neoforged.fml.ModList"));
+        assertFalse(plugin.contains("client.jei.compat.MekanismMoreMachineJeiCompat"));
+        assertFalse(plugin.contains("Class.forName"));
+
+        String loader = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/client/jei/OptionalJeiCompat.java"));
+        assertTrue(loader.contains("CompatMachineCatalog.hasAvailableFamily"));
+        assertTrue(loader.contains("OptionalCompatClasses::hasMekmm"));
+        assertTrue(loader.contains("OptionalCompatClasses::hasEvolvedMekanism"));
+        assertFalse(loader.contains("import com.jerry."));
+        assertFalse(loader.contains("import fr.iglee42."));
     }
 
     @Test

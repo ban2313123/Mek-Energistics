@@ -11,7 +11,7 @@ import appeng.api.networking.security.IActionHost;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.helpers.patternprovider.PatternContainer;
-import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -95,10 +95,7 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
         getRecipeAeSupport().setSmartPatternMultiplicationEnabled(enabled);
     }
 
-    default MeRecipeMachineAeSupport<?> getRecipeAeSupport() {
-        throw new IllegalStateException("AE machine must provide a recipe support adapter: "
-                + getClass().getName());
-    }
+    AbstractMeAeSupport<?> getRecipeAeSupport();
 
     default List<IPatternDetails> getAvailablePatterns() {
         return getRecipeAeSupport().getAvailablePatterns();

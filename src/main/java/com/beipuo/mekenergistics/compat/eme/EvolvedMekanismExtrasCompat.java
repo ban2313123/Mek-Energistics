@@ -18,6 +18,9 @@ import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraItemToC
 import com.beipuo.mekenergistics.blockentity.compat.eme.factory.MeEMExtraSawingFactoryBlockEntity;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -64,10 +67,10 @@ public final class EvolvedMekanismExtrasCompat {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerFactoryMachine(
             MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
-        if (machine.isEvolvedMekanismExtrasAdvancedFactory()) {
+        if (CompatMachineCatalog.get(machine).kind() == CompatMachineKind.ADVANCED_FACTORY) {
             return registerAdvancedFactoryMachine(machine, registrar);
         }
-        if ("alloying".equals(machine.customFactoryTypeName())) {
+        if ("alloying".equals(machine.machineTypeId())) {
             return registrar.register(machine, MeEMExtraAlloyingFactoryBlockEntity::new);
         }
         TileEntityTypeRegistryObject<?> registered = switch (machine.factoryType()) {
@@ -82,7 +85,7 @@ public final class EvolvedMekanismExtrasCompat {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerAdvancedFactoryMachine(
             MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
-        TileEntityTypeRegistryObject<?> registered = switch (machine.customFactoryTypeName()) {
+        TileEntityTypeRegistryObject<?> registered = switch (machine.machineTypeId()) {
             case "oxidizing", "pigment_extracting" -> registrar.register(machine, MeEMExtraItemToChemicalFactoryBlockEntity::new);
             case "dissolving" -> registrar.register(machine, MeEMExtraDissolvingFactoryBlockEntity::new);
             case "painting" -> registrar.register(machine, MeEMExtraPaintingFactoryBlockEntity::new);
@@ -93,17 +96,17 @@ public final class EvolvedMekanismExtrasCompat {
             case "pressurised_reacting" -> registrar.register(machine, MeEMExtraPressurizedReactingFactoryBlockEntity::new);
             case "centrifuging" -> registrar.register(machine, MeEMExtraCentrifugingFactoryBlockEntity::new);
             case "liquifying" -> registrar.register(machine, MeEMExtraLiquifyingFactoryBlockEntity::new);
-            default -> throw new IllegalStateException("Unknown EMEKE advanced factory: " + machine.customFactoryTypeName());
+            default -> throw new IllegalStateException("Unknown EMEKE advanced factory: " + machine.machineTypeId());
         };
         return (TileEntityTypeRegistryObject) registered;
     }
 
     public static <TILE extends TileEntityMekanism> BlockTypeTile<TILE> createFactoryBlockType(
             MeMekanismMachine machine, TileEntityTypeRegistryObject<TILE> tileType) {
-        if (machine.isEvolvedMekanismExtrasAdvancedFactory()) {
+        if (CompatMachineCatalog.get(machine).kind() == CompatMachineKind.ADVANCED_FACTORY) {
             return createAdvancedFactoryBlockType(machine, tileType);
         }
-        EMExtraFactoryType type = emExtraFactoryType(machine.factoryTypeName());
+        EMExtraFactoryType type = emExtraFactoryType(machine.machineTypeId());
         var builder = BlockTypeTile.BlockTileBuilder
                 .createBlock(() -> tileType, machine::translationKey)
                 .withGui(() -> ModMenuTypes.ME_EM_EXTRA_FACTORY)
@@ -112,7 +115,7 @@ public final class EvolvedMekanismExtrasCompat {
                 .withSideConfig(machine.hasChemicalInput()
                         ? new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY, TransmissionType.CHEMICAL}
                         : new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY})
-                .with(emExtraUpgradeSupport(machine.factoryTypeName()))
+                .with(emExtraUpgradeSupport(machine.machineTypeId()))
                 .with(new AttributeFactoryType(attributeFactoryType(machine)))
                 .with(new EMExtraAttributeFactoryType(type))
                 .with(new EMExtraAttributeTier<>(emExtraTier(machine)))
@@ -128,22 +131,18 @@ public final class EvolvedMekanismExtrasCompat {
     private static <TILE extends TileEntityMekanism> BlockTypeTile<TILE> createAdvancedFactoryBlockType(
             MeMekanismMachine machine, TileEntityTypeRegistryObject<TILE> tileType) {
         EMExtraFactoryTier tier = emExtraTier(machine);
-        if ("oxidizing".equals(machine.customFactoryTypeName())
-                || "pigment_extracting".equals(machine.customFactoryTypeName())
-                || "dissolving".equals(machine.customFactoryTypeName())
-                || "painting".equals(machine.customFactoryTypeName())
-                || "washing".equals(machine.customFactoryTypeName())
-                || "crystallizing".equals(machine.customFactoryTypeName())
-                || "pressurised_reacting".equals(machine.customFactoryTypeName())
-                || "centrifuging".equals(machine.customFactoryTypeName())
-                || "liquifying".equals(machine.customFactoryTypeName())) {
+        CompatMachineFamily family = CompatMachineCatalog.get(machine).family();
+        if (family == CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY) {
             var builder = EMExtraAdvancedFactory.EMExtraAdvancedFactoryBuilder.createAdvancedFactory(
-                    () -> tileType, AdvancedFactoryType.valueOf(machine.customFactoryTypeName().toUpperCase(Locale.ROOT)), tier);
+                    () -> tileType, AdvancedFactoryType.valueOf(machine.machineTypeId().toUpperCase(Locale.ROOT)), tier);
             builder.replace(new AttributeGui(() -> ModMenuTypes.ME_EM_EXTRA_ADVANCED_FACTORY, null));
             return (BlockTypeTile<TILE>) builder.build();
         }
+        if (family != CompatMachineFamily.EMEKE_MEKMM_FACTORY) {
+            throw new IllegalStateException("Unsupported EMEKE factory family: " + family);
+        }
         var builder = EMExtraMoreMachineFactory.EMExtraMoreMachineFactoryBuilder.createMoreMachineFactory(
-                () -> tileType, MoreMachineFactoryType.valueOf(machine.customFactoryTypeName().equals("planting") ? "PLANTING_STATION" : "REPLICATING"), tier);
+                () -> tileType, MoreMachineFactoryType.valueOf(machine.machineTypeId().equals("planting") ? "PLANTING_STATION" : "REPLICATING"), tier);
         builder.replace(new AttributeGui(() -> ModMenuTypes.ME_EM_EXTRA_MORE_MACHINE_FACTORY, null));
         return (BlockTypeTile<TILE>) builder.build();
     }
@@ -159,7 +158,7 @@ public final class EvolvedMekanismExtrasCompat {
     }
 
     public static EMExtraFactoryTier emExtraTier(MeMekanismMachine machine) {
-        return EMExtraFactoryTier.valueOf(machine.emExtraFactoryTierName().toUpperCase(Locale.ROOT));
+        return EMExtraFactoryTier.valueOf(machine.tierId().toUpperCase(Locale.ROOT));
     }
 
     public static EMExtraFactoryType emExtraFactoryType(FactoryType type) {
@@ -171,7 +170,7 @@ public final class EvolvedMekanismExtrasCompat {
     }
 
     private static FactoryType attributeFactoryType(MeMekanismMachine machine) {
-        return "alloying".equals(machine.customFactoryTypeName()) ? EMFactoryType.ALLOYING : machine.factoryType();
+        return "alloying".equals(machine.machineTypeId()) ? EMFactoryType.ALLOYING : machine.factoryType();
     }
 
     @Nullable
@@ -215,7 +214,7 @@ public final class EvolvedMekanismExtrasCompat {
         if (!(stack.getItem() instanceof EMExtraItemTierInstaller installer)) {
             return null;
         }
-        EMExtraTier currentTier = current.emExtraFactoryTierName() == null
+        EMExtraTier currentTier = current.provider() != CompatMod.EMEKE
                 ? null
                 : emExtraTier(current).getEMExtraTier();
         if (currentTier != installer.getFromTier() || currentTier == installer.getToTier()) {
@@ -224,7 +223,7 @@ public final class EvolvedMekanismExtrasCompat {
         MeMekanismMachine target = currentTier == null
                 ? getFirstEmExtraFactoryTarget(current, installer.getToTier())
                 : getEmExtraFactoryTarget(current, installer.getToTier());
-        if (target == null || target.emExtraFactoryTierName() == null) {
+        if (target == null || target.provider() != CompatMod.EMEKE) {
             return null;
         }
         EMExtraTier targetTier = emExtraTier(target).getEMExtraTier();
@@ -254,7 +253,7 @@ public final class EvolvedMekanismExtrasCompat {
             return false;
         }
         MeMekanismMachine next = machine.getNextFactory();
-        return next == null || next.isEvolvedMekanismExtrasFactory();
+        return next == null || next.provider() == CompatMod.EMEKE;
     }
 
     public static void registerGridNodeHost(

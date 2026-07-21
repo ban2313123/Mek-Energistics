@@ -2,7 +2,6 @@ package com.beipuo.mekenergistics.datagen;
 
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
-import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineSpec;
 import com.beipuo.mekenergistics.compat.catalog.CompatRequirement;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
@@ -17,21 +16,31 @@ final class CompatMachineDataJson {
     }
 
     static JsonObject factoryBlockState(CompatMachineSpec spec) {
+        return blockState(spec, true);
+    }
+
+    static JsonObject machineBlockState(CompatMachineSpec spec) {
+        return blockState(spec, CompatMachineResourceProfile.hasDedicatedActiveMachineModel(spec));
+    }
+
+    private static JsonObject blockState(CompatMachineSpec spec, boolean dedicatedActiveModel) {
         JsonObject variants = new JsonObject();
         addFacingVariants(variants, spec.meBlockId(), false);
-        addFacingVariants(variants, activeModel(spec.meBlockId()), true);
+        addFacingVariants(variants, dedicatedActiveModel ? activeModel(spec.meBlockId()) : spec.meBlockId(), true);
         JsonObject root = new JsonObject();
         root.add("variants", variants);
         return root;
     }
 
     static JsonObject factoryModel(CompatMachineSpec spec, boolean active) {
-        if ("centrifuging".equals(spec.machineTypeId())) {
-            return centrifugingFactoryModel(spec, active);
-        }
-        if ("planting".equals(spec.machineTypeId())) {
-            return plantingFactoryModel(spec, active);
-        }
+        return switch (CompatMachineResourceProfile.factoryModelStyle(spec)) {
+            case CENTRIFUGING -> centrifugingFactoryModel(spec, active);
+            case PLANTING -> plantingFactoryModel(spec, active);
+            case STANDARD -> standardFactoryModel(spec, active);
+        };
+    }
+
+    private static JsonObject standardFactoryModel(CompatMachineSpec spec, boolean active) {
         FactoryModelParts parts = factoryModelParts(spec.machine());
         JsonObject root = new JsonObject();
         root.addProperty("loader", "neoforge:composite");
@@ -200,7 +209,7 @@ final class CompatMachineDataJson {
         entries.add(entry);
 
         JsonObject pool = new JsonObject();
-        boolean legacyRandomSequence = usesLegacyRandomSequence(spec);
+        boolean legacyRandomSequence = CompatMachineResourceProfile.usesLegacyRandomSequence(spec);
         if (legacyRandomSequence) {
             pool.addProperty("rolls", 1.0);
             pool.addProperty("bonus_rolls", 0.0);
@@ -208,7 +217,7 @@ final class CompatMachineDataJson {
             pool.addProperty("rolls", 1);
         }
         pool.add("entries", entries);
-        if (survivesExplosion(spec)) {
+        if (CompatMachineResourceProfile.survivesExplosion(spec)) {
             JsonObject survivesExplosion = new JsonObject();
             survivesExplosion.addProperty("condition", "minecraft:survives_explosion");
             JsonArray conditions = new JsonArray();
@@ -225,27 +234,6 @@ final class CompatMachineDataJson {
             root.addProperty("random_sequence", MekEnergistics.MODID + ":blocks/" + spec.meBlockId().getPath());
         }
         return root;
-    }
-
-    private static boolean survivesExplosion(CompatMachineSpec spec) {
-        return !usesLegacyExternalFactoryLoot(spec) && spec.machine() != MeMekanismMachine.ALLOYER;
-    }
-
-    private static boolean usesLegacyRandomSequence(CompatMachineSpec spec) {
-        if (usesLegacyExternalFactoryLoot(spec)) {
-            return true;
-        }
-        return switch (spec.machine()) {
-            case CHEMIXER, SOLIDIFICATION_CHAMBER, THERMALIZER -> true;
-            default -> false;
-        };
-    }
-
-    private static boolean usesLegacyExternalFactoryLoot(CompatMachineSpec spec) {
-        String sourceNamespace = spec.sourceBlockId().getNamespace();
-        return spec.kind() != CompatMachineKind.MACHINE
-                && (sourceNamespace.equals(CompatMod.MEKMM.modId())
-                || sourceNamespace.equals(CompatMod.MEKE.modId()));
     }
 
     private static Set<String> requiredMods(CompatMachineSpec spec) {
@@ -295,7 +283,7 @@ final class CompatMachineDataJson {
     }
 
     private static FactoryModelParts factoryModelParts(MeMekanismMachine machine) {
-        String type = machine.declaredMachineTypeName();
+        String type = machine.machineTypeId();
         if ("alloying".equals(type)) {
             String root = "evolvedmekanism:block/factory/alloying/";
             return new FactoryModelParts(root + "alloying_factory_front", root + "base",

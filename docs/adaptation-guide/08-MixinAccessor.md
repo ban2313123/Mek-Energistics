@@ -12,6 +12,6 @@
 需要 accessor 的典型场景：
 
 - 替换 energy container。
-- 在 `pushPattern` 中直接访问目标输入槽。
-- 输出回网时访问原机器 output slot/tank。
-- 多输入机器需要区分主槽、副槽。
+- 为 `MeInputLayout` adapter 暴露目标 input slot/tank。
+- 为 `MeOutputPort` adapter 暴露原机器 output slot/tank。
+- 多输入机器需要用 lane 区分主槽、副槽。

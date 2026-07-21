@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=east,active=false": {
+      "model": "mekenergistics:block/me_precision_sawmill",
+      "y": 90
+    },
+    "facing=east,active=true": {
+      "model": "mekenergistics:block/me_precision_sawmill",
+      "y": 90
+    },
+    "facing=north,active=false": {
+      "model": "mekenergistics:block/me_precision_sawmill"
+    },
+    "facing=north,active=true": {
+      "model": "mekenergistics:block/me_precision_sawmill"
+    },
+    "facing=south,active=false": {
+      "model": "mekenergistics:block/me_precision_sawmill",
+      "y": 180
+    },
+    "facing=south,active=true": {
+      "model": "mekenergistics:block/me_precision_sawmill",
+      "y": 180
+    },
+    "facing=west,active=false": {
+      "model": "mekenergistics:block/me_precision_sawmill",
+      "y": -90
+    },
+    "facing=west,active=true": {
+      "model": "mekenergistics:block/me_precision_sawmill",
+      "y": -90
+    }
+  }
+}

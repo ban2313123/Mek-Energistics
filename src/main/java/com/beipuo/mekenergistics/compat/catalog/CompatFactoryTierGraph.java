@@ -27,7 +27,6 @@ public final class CompatFactoryTierGraph {
     private static final Map<FactoryCoordinate, MeMekanismMachine> FACTORIES_BY_ROUTE = buildFactoriesByRoute();
     private static final Map<ProviderCoordinate, MeMekanismMachine> FACTORIES_BY_PROVIDER = buildFactoriesByProvider();
     private static final Map<MachineCoordinate, MeMekanismMachine> BASE_MACHINES = buildBaseMachines();
-    private static final Map<RoutePath, MeMekanismMachine> MACHINES_BY_SOURCE_PATH = buildMachinesBySourcePath();
     private static final Map<String, MeMekanismMachine> MACHINES_BY_REGISTRY_NAME = buildMachinesByRegistryName();
 
     private CompatFactoryTierGraph() {
@@ -232,21 +231,6 @@ public final class CompatFactoryTierGraph {
     }
 
     @Nullable
-    public static MeMekanismMachine findBySourcePath(CompatRegistrationRoute route, String sourcePath) {
-        if (route == null || sourcePath == null) {
-            return null;
-        }
-        return available(MACHINES_BY_SOURCE_PATH.get(new RoutePath(route, sourcePath)));
-    }
-
-    @Nullable
-    static MeMekanismMachine findDeclaredBySourcePath(
-            CompatRegistrationRoute route, String sourcePath) {
-        return route == null || sourcePath == null
-                ? null : MACHINES_BY_SOURCE_PATH.get(new RoutePath(route, sourcePath));
-    }
-
-    @Nullable
     public static MeMekanismMachine findByRegistryName(String registryName) {
         return registryName == null ? null : available(MACHINES_BY_REGISTRY_NAME.get(registryName));
     }
@@ -283,16 +267,6 @@ public final class CompatFactoryTierGraph {
                 new MachineCoordinate(spec.provider(), spec.machineTypeId()),
                 spec.machine(),
                 "base machine coordinate"));
-        return Map.copyOf(machines);
-    }
-
-    private static Map<RoutePath, MeMekanismMachine> buildMachinesBySourcePath() {
-        Map<RoutePath, MeMekanismMachine> machines = new HashMap<>();
-        CompatMachineCatalog.all().forEach(spec -> putUnique(
-                machines,
-                new RoutePath(spec.route(), spec.sourceBlockId().getPath()),
-                spec.machine(),
-                "source path coordinate"));
         return Map.copyOf(machines);
     }
 
@@ -338,6 +312,4 @@ public final class CompatFactoryTierGraph {
     private record MachineCoordinate(CompatMod provider, String machineTypeId) {
     }
 
-    private record RoutePath(CompatRegistrationRoute route, String sourcePath) {
-    }
 }

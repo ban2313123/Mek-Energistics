@@ -52,6 +52,18 @@ class MeInputRoutingBoundaryTest {
         }
     }
 
+    @Test
+    void patternOwnersMustDeclareAConcreteInputLayout() {
+        String owner = read(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/blockentity/api/MePatternIoOwner.java"));
+        String support = read(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/blockentity/support/AbstractMeAeSupport.java"));
+        assertTrue(owner.contains("MeInputLayout getPatternInputLayout();"));
+        assertFalse(owner.contains("getPatternInputPorts()"));
+        assertFalse(support.contains("processSmartPatternViaOwner"));
+        assertFalse(support.contains("pushPatternInputs("));
+    }
+
     private static void assertNoKeyParsing(Path path) {
         String source = read(path);
         assertFalse(source.contains("MePatternInputRouter.PatternInput"), path.toString());

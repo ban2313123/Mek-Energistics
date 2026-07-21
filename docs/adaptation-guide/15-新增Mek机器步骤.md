@@ -1,16 +1,12 @@
 # 15. 新增 Mek 机器的推荐步骤
 
-按这个顺序做，出错时定位最快：
-
-1. 在 `MeMekanismMachine` 添加 enum，确认 `registryName()`、`translationKey()`、`isAvailable()`。
-2. 判断是否能复用已有 BlockEntity 模板；不能复用就新增最小专用 BlockEntity。
-3. 如需访问 Mek 私有字段，新增 mixin accessor 并注册到 `mekenergistics.mixins.json`。
-4. 在 `ModBlockEntities` 选择 `ae(...)` 或 `noAe(...)`，并确认 AE capability 会注册。
-5. 在 BlockEntity 中接入 pattern slots、AE grid node、AE-backed energy、`pushPattern`、输出回网、NBT 保存和 container tracker。
-6. 在 `ModBlockTypes` 补 shape、side config、升级链和特殊 attribute。
-7. 在 `ModBlockTypes.sideConfigFor` 确认 `TransmissionType` 数组与机器能力匹配。
-8. 在 `ModMenuTypes` 选择或新增 container，并在 `ClientSetup` 注册 screen。
-9. 在 JEI 插件或 compat JEI 类补 catalyst。
-10. 检查 `MeInstallerTargetResolver` 能否从原机器升级到 ME 机器。
-11. 补 blockstate、model、recipe、lang。
-12. 运行 `compileJava`，再进游戏验证样板下单、加工、回网和升级。
+1. 在 `MeMekanismMachine` 声明稳定 base name、machine type、tier 和 `CompatMachineFamily`。
+2. 确认 `CompatMachineCatalog` 生成的 `sourceBlockId`、ME ID、requirement 和 side-config profile 正确。
+3. 选择最小上游 BlockEntity 模板；只有访问 Mek 私有字段时才新增 mixin accessor，并配置 optional gate。
+4. 为普通机器实现 `MeAeMachine` + `MePatternIoOwner`，为工厂实现 `MeFactoryAeMachine` + `MeFactoryIoOwner`。
+5. 声明 `MeInputLayout`、输出端口、模式/催化剂约束；不要实现 recipe-specific `pushPattern` 或 AE key parsing。
+6. 在对应 provider/family adapter 绑定 BlockEntity、BlockType、Grid host 和 menu；不要修改公共 registry 的附属分支。
+7. 需要 optional screen/JEI 时只在 client provider/JEI compat 中增加实现。
+8. 确认 `CompatFactoryTierGraph` 和 installer provider 能识别升级目标。
+9. 运行 `runData`，让 catalog/profile 生成重复 blockstate、model、recipe、loot；特殊模型才保留手写资源。
+10. 运行 `compileJava`、`test`、`build`，再启动客户端验证样板下单、加工、输出回网、重载和升级。

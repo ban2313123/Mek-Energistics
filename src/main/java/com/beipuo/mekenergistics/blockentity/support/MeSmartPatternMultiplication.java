@@ -152,44 +152,6 @@ public final class MeSmartPatternMultiplication {
         return changed;
     }
 
-    public boolean processNext(List<IPatternDetails> patterns, PatternFeeder feeder) {
-        Map<AEKey, IPatternDetails> patternsByDefinition = new HashMap<>(patterns.size());
-        for (IPatternDetails pattern : patterns) {
-            patternsByDefinition.putIfAbsent(pattern.getDefinition(), pattern);
-        }
-        return processNext(patternsByDefinition, feeder);
-    }
-
-    public boolean processNext(Map<AEKey, IPatternDetails> patternsByDefinition, PatternFeeder feeder) {
-        boolean changed = false;
-        int patternsVisited = 0;
-        int feeds = 0;
-        clampPendingScanIndex();
-        int scanBudget = Math.min(this.pendingPatterns.size(), MAX_PENDING_ENTRIES_SCANNED_PER_PASS);
-        while (!this.pendingPatterns.isEmpty() && patternsVisited++ < scanBudget && feeds < MAX_FEED_ATTEMPTS_PER_PASS) {
-            PendingPattern pendingPattern = this.pendingPatterns.get(this.nextPendingScanIndex);
-            if (pendingPattern.remaining <= 0) {
-                removePendingAtScanIndex();
-                changed = true;
-                continue;
-            }
-            IPatternDetails patternDetails = patternsByDefinition.get(pendingPattern.definition);
-            if (patternDetails == null) {
-                advancePendingScanIndex();
-                continue;
-            }
-            FeedResult result = feedBestBatch(pendingPattern, patternDetails, feeder, MAX_FEED_ATTEMPTS_PER_PASS - feeds);
-            feeds += result.feedAttempts();
-            changed |= result.changed();
-            if (pendingPattern.remaining <= 0) {
-                removePendingAtScanIndex();
-                continue;
-            }
-            advancePendingScanIndex();
-        }
-        return changed;
-    }
-
     private void clampPendingScanIndex() {
         if (this.nextPendingScanIndex < 0 || this.nextPendingScanIndex >= this.pendingPatterns.size()) {
             this.nextPendingScanIndex = 0;
@@ -325,31 +287,6 @@ public final class MeSmartPatternMultiplication {
         return new FeedResult(changed, feedAttempts);
     }
 
-    private static FeedResult feedBestBatch(PendingPattern pendingPattern, IPatternDetails patternDetails, PatternFeeder feeder, int feedBudget) {
-        boolean changed = false;
-        int feedAttempts = 0;
-        while (pendingPattern.remaining > 0) {
-            long attempt = pendingPattern.nextBatchAttempt();
-            boolean fed = false;
-            while (attempt > 0 && feedAttempts < feedBudget) {
-                feedAttempts++;
-                if (feeder.feed(patternDetails, pendingPattern.toKeyCounters(attempt))) {
-                    pendingPattern.remaining -= attempt;
-                    pendingPattern.recordSuccessfulBatch(attempt);
-                    changed = true;
-                    fed = true;
-                    break;
-                }
-                pendingPattern.recordFailedBatch(attempt);
-                attempt /= 2;
-            }
-            if (!fed) {
-                return new FeedResult(changed, feedAttempts);
-            }
-        }
-        return new FeedResult(changed, feedAttempts);
-    }
-
     public void saveConfig(CompoundTag tag) {
         tag.putBoolean(TAG_ENABLED, this.enabled);
     }
@@ -434,10 +371,6 @@ public final class MeSmartPatternMultiplication {
 
     public interface CapacityAwareFeeder extends Feeder {
         long maxAcceptedCopies(KeyCounter[] oneCraftInputs);
-    }
-
-    public interface PatternFeeder {
-        boolean feed(IPatternDetails patternDetails, KeyCounter[] oneCraftInputs);
     }
 
     private record FeedResult(boolean changed, int feedAttempts) {
