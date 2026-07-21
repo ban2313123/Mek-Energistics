@@ -23,6 +23,17 @@ class MeMachineIoAdapterTest {
     private static final FakeKey IRON = new FakeKey("iron");
 
     @Test
+    void itemOfferCannotExceedTheSlotDeclaredRemainingCapacity() {
+        assertEquals(16, MeMachineIoAdapter.boundedItemOffer(1_000, 48, 64));
+        assertEquals(0, MeMachineIoAdapter.boundedItemOffer(1, 64, 64));
+    }
+
+    @Test
+    void itemOfferKeepsUpgradedSlotLimitsAboveVanillaStackSize() {
+        assertEquals(768, MeMachineIoAdapter.boundedItemOffer(1_000, 3_328, 4_096));
+    }
+
+    @Test
     void routerSimulatesThenCommitsAcrossPorts() {
         FakeInput first = new FakeInput(IRON, 3);
         FakeInput second = new FakeInput(IRON, 5);

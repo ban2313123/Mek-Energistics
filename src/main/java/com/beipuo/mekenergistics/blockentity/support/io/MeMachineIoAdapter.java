@@ -31,9 +31,14 @@ public final class MeMachineIoAdapter {
                 if (!(key instanceof AEItemKey itemKey) || amount <= 0 || amount > Integer.MAX_VALUE) {
                     return 0;
                 }
-                ItemStack offered = itemKey.toStack((int) amount);
+                ItemStack probe = itemKey.toStack(1);
+                int offeredAmount = boundedItemOffer(amount, slot.getCount(), slot.getLimit(probe));
+                if (offeredAmount <= 0) {
+                    return 0;
+                }
+                ItemStack offered = probe.copyWithCount(offeredAmount);
                 ItemStack remainder = slot.insertItem(offered, action, AutomationType.INTERNAL);
-                return offered.getCount() - remainder.getCount();
+                return Math.max(0, Math.min(offeredAmount, offered.getCount() - remainder.getCount()));
             }
 
             @Override
@@ -46,6 +51,14 @@ public final class MeMachineIoAdapter {
                 slot.setStack(((ItemStack) snapshot).copy());
             }
         };
+    }
+
+    static int boundedItemOffer(long requested, int currentCount, int slotLimit) {
+        if (requested <= 0 || currentCount < 0 || slotLimit <= currentCount) {
+            return 0;
+        }
+        long remaining = (long) slotLimit - currentCount;
+        return (int) Math.min(Math.min(requested, remaining), Integer.MAX_VALUE);
     }
 
     /**

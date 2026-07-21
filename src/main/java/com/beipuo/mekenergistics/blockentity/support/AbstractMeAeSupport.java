@@ -20,7 +20,6 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
-import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
 import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
@@ -57,6 +56,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     private NodeState nodeState = NodeState.NEW;
     private CompoundTag retainedNodeData;
+    private final CraftingUpdateState craftingUpdateState = new CraftingUpdateState();
 
     protected AbstractMeAeSupport(O owner) {
         this.owner = owner;
@@ -75,7 +75,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     private IManagedGridNode createManagedNode() {
-        IManagedGridNode node = GridHelper.createManagedNode(this.owner, NodeListener.INSTANCE)
+        IManagedGridNode node = GridHelper.createManagedNode(this.owner, new NodeListener())
                 .setInWorldNode(true)
                 .setTagName(TAG_NODE)
                 .setFlags(GridFlags.REQUIRE_CHANNEL)
@@ -202,7 +202,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         if (this.nodeState == NodeState.NEW) {
             this.mainNode.create(level, pos);
             this.nodeState = NodeState.ACTIVE;
-            updatePatterns();
+            rebuildPatternCache(false);
         }
     }
 
@@ -211,6 +211,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             return;
         }
         retainNodeData();
+        this.craftingUpdateState.markPending();
         this.mainNode.destroy();
         this.nodeState = NodeState.DESTROYED;
     }
@@ -296,6 +297,10 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     public final void updatePatterns() {
+        rebuildPatternCache(true);
+    }
+
+    private void rebuildPatternCache(boolean saveChanges) {
         this.patterns.clear();
         for (BasicInventorySlot patternSlot : this.patternSlots) {
             ItemStack stack = patternSlot.getStack();
@@ -308,7 +313,9 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             }
         }
         requestCraftingUpdate();
-        this.owner.saveChanges();
+        if (saveChanges) {
+            this.owner.saveChanges();
+        }
     }
 
     protected abstract String patternOwnerName();
@@ -319,9 +326,8 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     private void requestCraftingUpdate() {
         IGridNode node = this.mainNode.getNode();
-        if (node != null && node.isActive()) {
-            ICraftingProvider.requestUpdate(this.mainNode);
-        }
+        this.craftingUpdateState.request(node != null && node.isActive(),
+                () -> ICraftingProvider.requestUpdate(this.mainNode));
     }
 
     protected final void saveCommon(CompoundTag tag, HolderLookup.Provider registries) {
@@ -368,7 +374,10 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             loadLegacyInventory(this.patternSlots, tag, registries, offset);
         }
         this.smartPatternMultiplication.loadPending(tag, registries);
-        updatePatterns();
+        // Block entities can be deserialized before they have a level. Decode the
+        // restored patterns after the managed node is created on the first tick.
+        this.patterns.clear();
+        this.craftingUpdateState.markPending();
     }
 
     private boolean hasPatternSlotTags(CompoundTag tag) {
@@ -441,19 +450,46 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         DESTROYED
     }
 
-    private enum NodeListener implements IGridNodeListener<MeAeSupportOwner> {
-        INSTANCE;
-
+    private final class NodeListener implements IGridNodeListener<O> {
         @Override
-        public void onSaveChanges(MeAeSupportOwner nodeOwner, IGridNode node) {
+        public void onSaveChanges(O nodeOwner, IGridNode node) {
             nodeOwner.saveChanges();
         }
 
         @Override
-        public void onStateChanged(MeAeSupportOwner nodeOwner, IGridNode node, State state) {
+        public void onStateChanged(O nodeOwner, IGridNode node, State state) {
             if (node.isActive()) {
+                craftingUpdateState.flush(() -> ICraftingProvider.requestUpdate(mainNode));
                 node.getGrid().getTickManager().alertDevice(node);
             }
+        }
+    }
+
+    static final class CraftingUpdateState {
+        private boolean pending;
+
+        void request(boolean nodeActive, Runnable update) {
+            if (nodeActive) {
+                update.run();
+                this.pending = false;
+            } else {
+                this.pending = true;
+            }
+        }
+
+        void markPending() {
+            this.pending = true;
+        }
+
+        void flush(Runnable update) {
+            if (this.pending) {
+                update.run();
+                this.pending = false;
+            }
+        }
+
+        boolean isPending() {
+            return this.pending;
         }
     }
 
