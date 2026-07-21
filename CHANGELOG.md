@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.0.0-beta
+
+### Change
+
+- Rebuilt ME machine integration around a shared AE support and I/O adapter layer, replacing duplicated lifecycle, pattern, input, output, and smart-batch implementations across Mekanism and supported addons.
+- Changed pattern delivery to route actual AE item, chemical, and fluid keys transactionally into declared machine ports without selecting a path from the Mekanism recipe type. Failed deliveries now roll back instead of leaving partial inputs.
+- Migrated native Mekanism, Mekanism: MoreMachine, Mekanism Extras, Evolved Mekanism, and Evolved Mekanism Extras machines and factories to the shared input routing and actual-output collection model.
+- Centralized optional machine compatibility, registration, client setup, generated resources, factory tier graphs, and installer routes in the compatibility catalog.
+- Added ME versions of the Mekanism: MoreMachine Large Rotary Condensentrator, Large Solar Neutron Activator, Large Electrolytic Separator, Large Chemical Infuser, and Large Antiprotonic Nucleosynthesizer.
+- Matched the five large machines' upstream models, baked transforms, collision and selection bounds, renderers, menus, recipes, loot, and JEI integration without adding Mekanism side-configuration pages.
+- Added independent item, chemical, and fluid output-to-AE controls to the shared pattern window, including support for actual fluid and chemical byproducts.
+- Updated the machine adaptation guide for the catalog-driven support and I/O adapter architecture.
+
+### Fix
+
+- Fixed ME nodes failing to reconnect after chunk unloads, world reloads, or reuse of the same block entity instance by recreating destroyed managed nodes from retained state.
+- Fixed large Mekanism: MoreMachine nodes so cables can connect through the center of any horizontal face without proxying one node into itself, and deferred large-node setup until the block entity is fully constructed.
+- Fixed encoded patterns not being republished reliably after loading, while preserving existing pattern slots, priorities, terminal names, output modes, and pending smart-pattern work.
+- Fixed pattern-terminal node access and restored optional Data Energistics interaction after network and world reloads.
+- Fixed smart-pattern capacity checks for upgraded input slots, guarded extra-slot limit probing, and kept failed multi-input transactions atomic.
+- Fixed ME Metallurgic Infuser conversion patterns so convertible items can enter the extra slot, and corrected pattern-slot quick-move behavior.
+- Fixed large-machine item models, lighting and occlusion behavior, dedicated menu resolution, and the Large Antiprotonic Nucleosynthesizer renderer path.
+
 ## 1.0.7
 
 ### Fix
