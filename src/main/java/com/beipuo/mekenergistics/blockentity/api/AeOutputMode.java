@@ -55,10 +55,6 @@ public enum AeOutputMode {
         };
     }
 
-    private static AeOutputMode byFlags(boolean items, boolean chemicals) {
-        return byFlags(items, chemicals, false);
-    }
-
     private static AeOutputMode byFlags(boolean items, boolean chemicals, boolean fluids) {
         for (AeOutputMode mode : VALUES) {
             if (mode.items == items && mode.chemicals == chemicals && mode.fluids == fluids) {
