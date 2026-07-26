@@ -58,14 +58,9 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
     }
 
     default void setOwner(ServerPlayer player) {
-        IManagedGridNode node = getMainNode();
-        if (node == null) {
-            return;
-        }
+        getRecipeAeSupport().setOwningPlayer(player);
         if (this instanceof TileEntityMekanism tile) {
-            MeOwnerHelper.setOwner(tile, node, player);
-        } else {
-            node.setOwningPlayer(player);
+            MeOwnerHelper.claimMekanismOwnerIfMissing(tile, player);
         }
     }
 

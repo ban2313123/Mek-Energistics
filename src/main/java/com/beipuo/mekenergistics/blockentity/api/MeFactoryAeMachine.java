@@ -115,10 +115,9 @@ public interface MeFactoryAeMachine extends MePatternIoOwner, IGridConnectedBloc
     }
 
     default void setOwner(ServerPlayer player) {
+        getAeSupport().setOwningPlayer(player);
         if (this instanceof mekanism.common.tile.base.TileEntityMekanism tile) {
-            MeOwnerHelper.setOwner(tile, getMainNode(), player);
-        } else {
-            getMainNode().setOwningPlayer(player);
+            MeOwnerHelper.claimMekanismOwnerIfMissing(tile, player);
         }
     }
 

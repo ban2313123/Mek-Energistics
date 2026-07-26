@@ -21,7 +21,6 @@ import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
 import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
-import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner.LargeMachineGridPort;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
@@ -32,7 +31,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.slot.BasicInventorySlot;
@@ -66,7 +64,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     private NodeState nodeState = NodeState.NEW;
     private CompoundTag retainedNodeData;
     private final CraftingUpdateState craftingUpdateState = new CraftingUpdateState();
-    private final Map<BlockPos, LargeMachinePortNode> largeMachinePortNodes = new HashMap<>();
+    private final Map<BlockPos, IManagedGridNode> largeMachinePortNodes = new HashMap<>();
 
     protected AbstractMeAeSupport(O owner) {
         this.owner = owner;
@@ -86,9 +84,6 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     private IManagedGridNode createManagedNode() {
         IManagedGridNode node = GridHelper.createManagedNode(this.owner, new NodeListener())
-                // The support can be requested from an upstream TileEntity constructor, before
-                // subclass machine fields are initialized. Configure large-machine placement at create time.
-                .setInWorldNode(true)
                 .setTagName(TAG_NODE)
                 .setFlags(GridFlags.REQUIRE_CHANNEL)
                 .addService(ICraftingProvider.class, this.owner)
@@ -103,12 +98,13 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return this.mainNode;
     }
 
+    /**
+     * @param side ignored — AE2 rejects any node that is not exposed on the side it asked for, and the
+     *             node already carries the machine's real exposed faces.
+     */
     public final IGridNode getLargeMachineGridNode(BlockPos position, Direction side) {
-        LargeMachinePortNode port = this.largeMachinePortNodes.get(position);
-        if (port == null || side != port.outwardSide()) {
-            return null;
-        }
-        return port.node().getNode();
+        IManagedGridNode port = this.largeMachinePortNodes.get(position);
+        return port == null ? null : port.getNode();
     }
 
     public final List<BasicInventorySlot> getPatternSlots() {
@@ -232,28 +228,59 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             this.nodeState = NodeState.NEW;
         }
         if (this.nodeState == NodeState.NEW) {
-            boolean largeMachine = this.owner.getMachine().isMekmmLargeMachine();
-            this.mainNode.setInWorldNode(!largeMachine);
-            this.mainNode.create(level, largeMachine ? null : pos);
-            if (largeMachine) {
-                createLargeMachinePortNodes(level);
+            this.mainNode.setInWorldNode(true);
+            if (this.owner.getMachine().isMekmmLargeMachine()) {
+                createLargeMachineNodes(level, pos);
+            } else {
+                this.mainNode.create(level, pos);
             }
             this.nodeState = NodeState.ACTIVE;
             rebuildPatternCache(false);
         }
     }
 
-    private void createLargeMachinePortNodes(net.minecraft.world.level.Level level) {
+    /**
+     * Places a node on every block the machine occupies so a cable can attach anywhere along its
+     * surface. The controller keeps the main node — which carries the crafting and ticking services —
+     * while the bounding blocks get bare nodes wired back to it.
+     *
+     * <p>Each node is exposed only on the faces that lead out of the machine, so two nodes of the same
+     * machine never face each other and AE2's in-world scan cannot duplicate the direct connections
+     * made here.
+     */
+    private void createLargeMachineNodes(net.minecraft.world.level.Level level, BlockPos controllerPos) {
         this.largeMachinePortNodes.clear();
-        for (LargeMachineGridPort port : this.owner.getLargeMachineGridPorts()) {
+        MeLargeMachineFootprint footprint =
+                MeLargeMachineFootprint.of(level, controllerPos, this.ownerTile.getBlockState());
+        this.mainNode.setExposedOnSides(footprint.exposedFaces(controllerPos));
+        this.mainNode.create(level, controllerPos);
+        IGridNode mainGridNode = this.mainNode.getNode();
+        if (mainGridNode == null) {
+            return;
+        }
+        int owningPlayerId = mainGridNode.getOwningPlayerId();
+        footprint.forEachExposedPosition((position, exposed) -> {
+            if (position.equals(controllerPos)) {
+                return;
+            }
             IManagedGridNode portNode = GridHelper.createManagedNode(this.owner, new PortNodeListener())
                     .setInWorldNode(true)
-                    .setExposedOnSides(Set.of(port.outwardSide()))
+                    .setExposedOnSides(exposed)
                     .setIdlePowerUsage(0);
-            portNode.create(level, port.position());
-            GridHelper.createConnection(this.mainNode.getNode(), portNode.getNode());
-            this.largeMachinePortNodes.put(
-                    port.position(), new LargeMachinePortNode(port.outwardSide(), portNode));
+            portNode.setOwningPlayerId(owningPlayerId);
+            portNode.create(level, position);
+            GridHelper.createConnection(mainGridNode, portNode.getNode());
+            this.largeMachinePortNodes.put(position, portNode);
+            // The bounding block had no grid node when its capability was last resolved.
+            level.invalidateCapabilities(position);
+        });
+    }
+
+    /** Keeps every node of the machine attributed to the same player for AE2's security checks. */
+    public final void setOwningPlayer(net.minecraft.server.level.ServerPlayer player) {
+        this.mainNode.setOwningPlayer(player);
+        for (IManagedGridNode port : this.largeMachinePortNodes.values()) {
+            port.setOwningPlayer(player);
         }
     }
 
@@ -263,8 +290,12 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         }
         retainNodeData();
         this.craftingUpdateState.markPending();
-        for (LargeMachinePortNode port : this.largeMachinePortNodes.values()) {
-            port.node().destroy();
+        net.minecraft.world.level.Level level = this.ownerTile.getLevel();
+        for (Map.Entry<BlockPos, IManagedGridNode> port : this.largeMachinePortNodes.entrySet()) {
+            port.getValue().destroy();
+            if (level != null) {
+                level.invalidateCapabilities(port.getKey());
+            }
         }
         this.largeMachinePortNodes.clear();
         this.mainNode.destroy();
@@ -511,9 +542,6 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         NEW,
         ACTIVE,
         DESTROYED
-    }
-
-    private record LargeMachinePortNode(Direction outwardSide, IManagedGridNode node) {
     }
 
     private final class PortNodeListener implements IGridNodeListener<O> {

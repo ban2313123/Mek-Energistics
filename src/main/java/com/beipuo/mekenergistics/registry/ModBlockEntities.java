@@ -19,6 +19,7 @@ import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.tile.TileEntityBoundingBlock;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -83,15 +84,19 @@ public final class ModBlockEntities {
                         }
                         if (bounding.getMainTile(pos) instanceof MeAeMachine machine
                                 && machine.getMachine().isMekmmLargeMachine()) {
+                            // Callers may hold on to the host, and the position they hand us is often a
+                            // shared mutable one that the caller re-targets between sides.
+                            BlockPos nodePos = pos.immutable();
                             return new IInWorldGridNodeHost() {
                                 @Override
                                 public IGridNode getGridNode(Direction side) {
-                                    return machine.getRecipeAeSupport().getLargeMachineGridNode(pos, side);
+                                    return machine.getRecipeAeSupport().getLargeMachineGridNode(nodePos, side);
                                 }
 
                                 @Override
                                 public AECableType getCableConnectionType(Direction side) {
-                                    return machine.getCableConnectionType(side);
+                                    IGridNode node = getGridNode(side);
+                                    return node == null ? AECableType.NONE : machine.getCableConnectionType(side);
                                 }
                             };
                         }
