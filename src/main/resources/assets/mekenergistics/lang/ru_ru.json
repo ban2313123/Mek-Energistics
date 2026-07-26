@@ -11,6 +11,7 @@
   "tooltip.mekenergistics.ae_status.online": "МЭ-сеть: В сети",
   "tooltip.mekenergistics.ae_status.offline": "МЭ-сеть: Не в сети",
   "tooltip.mekenergistics.ae_status.booting": "МЭ-сеть: Загрузка",
+  "tooltip.mekenergistics.ae_status.missing_channel": "МЭ-сеть: Нет канала",
   "tooltip.mekenergistics.ae_output.button": "Вывод в AE",
   "tooltip.mekenergistics.ae_output.enabled": "AE: Вкл",
   "tooltip.mekenergistics.ae_output.disabled": "AE: Выкл",

@@ -50,11 +50,9 @@ public class MeGuiMoreMachineFactory extends MeGuiConfigurableTile<TileEntityMor
         }
         // 想尝试使用Emek的gui布局，但似乎有点麻烦，还是采用原始布局吧
         if (isEMLoadAndTierOrdinalAboveOverLocked()) {
-            // 这里采用mekE的布局公式，但要记得减去4，因为mekE是从0开始的
-            // 这两个公式似乎并非完美，在index过大时可能会导致有细微的便宜，但未得到验证
-            int index = tile.tier.ordinal() - 4;
-            imageWidth += (36 * (index + 2)) + (2 * index);
-            inventoryLabelX = (22 * (index + 2)) - (3 * index);
+            int index = evolvedTierIndex();
+            imageWidth += MeFactoryGuiLayout.imageWidthDelta(index);
+            inventoryLabelX = MeFactoryGuiLayout.inventoryLabelX(index);
         }
         titleLabelY = 4;
         dynamicSlots = true;
@@ -62,9 +60,13 @@ public class MeGuiMoreMachineFactory extends MeGuiConfigurableTile<TileEntityMor
 
     private boolean isEMLoadAndTierOrdinalAboveOverLocked() {
         if (Mekmm.hooks.evolvedMekanism.isLoaded()) {
-            return tile.tier.ordinal() >= 4;
+            return tile.tier.ordinal() >= MeFactoryGuiLayout.MEKANISM_TIER_OFFSET;
         }
         return false;
+    }
+
+    private int evolvedTierIndex() {
+        return tile.tier.ordinal() - MeFactoryGuiLayout.MEKANISM_TIER_OFFSET;
     }
 
     @Override
@@ -103,20 +105,14 @@ public class MeGuiMoreMachineFactory extends MeGuiConfigurableTile<TileEntityMor
 
     private int getBarWidth() {
         if (isEMLoadAndTierOrdinalAboveOverLocked()) {
-            // 这里采用mekE的布局公式，但要记得减去4，因为mekE是从0开始的
-            // 这两个公式似乎并非完美，在index过大时可能会导致有细微的便宜，但未得到验证
-            int index = tile.tier.ordinal() - 4;
-            return 210 + 38 * index;
+            return MeFactoryGuiLayout.barWidth(evolvedTierIndex());
         }
         return tile.tier == FactoryTier.ULTIMATE ? 172 : 138;
     }
 
     private int getButtonX() {
         if (isEMLoadAndTierOrdinalAboveOverLocked()) {
-            // 这里采用mekE的布局公式，但要记得减去4，因为mekE是从0开始的
-            // 这两个公式似乎并非完美，在index过大时可能会导致有细微的便宜，但未得到验证
-            int index = tile.tier.ordinal() - 4;
-            return 220 + 38 * index;
+            return MeFactoryGuiLayout.buttonX(evolvedTierIndex());
         }
         return tile.tier == FactoryTier.ULTIMATE ? 182 : 148;
     }

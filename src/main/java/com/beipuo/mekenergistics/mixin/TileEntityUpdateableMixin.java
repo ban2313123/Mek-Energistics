@@ -2,6 +2,8 @@ package com.beipuo.mekenergistics.mixin;
 
 import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
+import mekanism.common.registration.impl.TileEntityTypeRegistryObject;
+import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.base.TileEntityUpdateable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -26,7 +28,15 @@ public abstract class TileEntityUpdateableMixin {
             BlockState state
     ) {
         if (state.getBlock() instanceof MeMekanismMachineBlock block) {
-            return ModBlockEntities.getMachineBlockEntity(block.getMachine()).get();
+            // Nullable by construction: machines that failed availability gating are absent from the
+            // registry map. This runs inside a BlockEntity constructor for every Mekanism tile in
+            // the game, so an unguarded deref here would be a hard crash on world load rather than a
+            // missing machine. Falling back to the original type degrades instead.
+            TileEntityTypeRegistryObject<? extends TileEntityMekanism> registered =
+                    ModBlockEntities.getMachineBlockEntity(block.getMachine());
+            if (registered != null) {
+                return registered.get();
+            }
         }
         return original;
     }

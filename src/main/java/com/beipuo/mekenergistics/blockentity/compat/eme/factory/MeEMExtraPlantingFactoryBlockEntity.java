@@ -1,6 +1,5 @@
 package com.beipuo.mekenergistics.blockentity.compat.eme.factory;
 
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;

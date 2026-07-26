@@ -1,5 +1,8 @@
 package com.beipuo.mekenergistics.compat;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.neoforged.fml.ModList;
 import mekanism.common.tier.FactoryTier;
 import net.minecraft.network.chat.TextColor;
@@ -27,32 +30,66 @@ public final class OptionalCompatClasses {
     private OptionalCompatClasses() {
     }
 
+    /**
+     * Loaded-mod answers, which are fixed once the mod list exists. {@link #hasAppliedFlux()} sits on
+     * the per-tick energy path, so the lookup is not repeated every call.
+     */
+    private static final Map<String, Boolean> LOADED_MODS = new ConcurrentHashMap<>();
+
+    private static boolean isLoaded(String modId) {
+        ModList modList = ModList.get();
+        if (modList == null) {
+            // Too early to answer, and too early to remember the answer.
+            return false;
+        }
+        return LOADED_MODS.computeIfAbsent(modId, modList::isLoaded);
+    }
+
     public static boolean hasMekmm() {
-        return ModList.get().isLoaded("mekmm");
+        return isLoaded("mekmm");
     }
 
     public static boolean hasMekanismExtras() {
-        return ModList.get().isLoaded("mekanism_extras");
+        return isLoaded("mekanism_extras");
     }
 
     public static boolean hasEvolvedMekanism() {
-        return ModList.get().isLoaded("evolvedmekanism");
+        return isLoaded("evolvedmekanism");
     }
 
     public static boolean hasEvolvedMekanismExtras() {
-        return ModList.get().isLoaded("emextras");
+        return isLoaded("emextras");
     }
 
     public static boolean hasExtendedAe() {
-        return ModList.get().isLoaded("extendedae");
+        return isLoaded("extendedae");
     }
 
     public static boolean hasAppliedFlux() {
-        return ModList.get().isLoaded("appflux");
+        return isLoaded("appflux");
     }
+
+    /**
+     * Reflection results keyed by tier id. These resolve to constants, but the lookups sit on
+     * tooltip and GUI layout paths that re-ask every frame, so each tier is resolved once.
+     * {@link Optional} because a miss is a normal answer that must also be remembered.
+     */
+    private static final Map<String, Optional<FactoryTier>> EVOLVED_FACTORY_TIERS = new ConcurrentHashMap<>();
+    private static final Map<String, Optional<TextColor>> MEKE_TIER_COLORS = new ConcurrentHashMap<>();
+    private static final Map<String, Optional<TextColor>> EMEKE_TIER_COLORS = new ConcurrentHashMap<>();
 
     @Nullable
     public static FactoryTier getEvolvedFactoryTier(String tierName) {
+        if (tierName == null) {
+            return null;
+        }
+        return EVOLVED_FACTORY_TIERS
+                .computeIfAbsent(tierName, name -> Optional.ofNullable(resolveEvolvedFactoryTier(name)))
+                .orElse(null);
+    }
+
+    @Nullable
+    private static FactoryTier resolveEvolvedFactoryTier(String tierName) {
         if (!hasEvolvedMekanism()) {
             return null;
         }
@@ -82,6 +119,16 @@ public final class OptionalCompatClasses {
 
     @Nullable
     public static TextColor getMekanismExtrasTierColor(String tierName) {
+        if (tierName == null) {
+            return null;
+        }
+        return MEKE_TIER_COLORS
+                .computeIfAbsent(tierName, name -> Optional.ofNullable(resolveMekanismExtrasTierColor(name)))
+                .orElse(null);
+    }
+
+    @Nullable
+    private static TextColor resolveMekanismExtrasTierColor(String tierName) {
         if (!hasMekanismExtras()) {
             return null;
         }
@@ -97,6 +144,16 @@ public final class OptionalCompatClasses {
 
     @Nullable
     public static TextColor getEvolvedMekanismExtrasTierColor(String tierName) {
+        if (tierName == null) {
+            return null;
+        }
+        return EMEKE_TIER_COLORS
+                .computeIfAbsent(tierName, name -> Optional.ofNullable(resolveEvolvedMekanismExtrasTierColor(name)))
+                .orElse(null);
+    }
+
+    @Nullable
+    private static TextColor resolveEvolvedMekanismExtrasTierColor(String tierName) {
         Object tier = getEvolvedMekanismExtrasFactoryTier(tierName);
         return tier == null ? null : invokeTextColor(invoke(tier, "getEMExtraTier"), "getColor");
     }

@@ -16,6 +16,7 @@
   "tooltip.mekenergistics.ae_status.online": "AE 网络：在线",
   "tooltip.mekenergistics.ae_status.offline": "AE 网络：离线",
   "tooltip.mekenergistics.ae_status.booting": "AE 网络：启动中",
+  "tooltip.mekenergistics.ae_status.missing_channel": "AE 网络：缺少通道",
   "tooltip.mekenergistics.ae_output.button": "输出到 AE",
   "tooltip.mekenergistics.ae_output.enabled": "AE：开",
   "tooltip.mekenergistics.ae_output.disabled": "AE：关",
