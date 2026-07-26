@@ -56,6 +56,21 @@ class MeMachineEnergyProfileTest {
         assertSame(MeMekanismMachine.COMBINER, baseOf(MeMekanismMachine.BASIC_COMBINING_FACTORY));
     }
 
+    /**
+     * Evolved Mekanism gives its machines Mekanism's own energy values rather than adding config of
+     * its own, so the shared profile covers them without depending on that mod. The lookup itself
+     * filters on mod availability and so needs a running game; what is assertable here is the join
+     * key it relies on -- a factory and its base machine must agree on {@code machineTypeId}.
+     */
+    @Test
+    void evolvedMekanismFactoriesShareTheBaseMachineJoinKey() {
+        assertEquals(MeMekanismMachine.ALLOYER.machineTypeId(),
+                MeMekanismMachine.BASIC_ALLOYING_FACTORY.machineTypeId());
+        assertEquals("chemixing", MeMekanismMachine.CHEMIXER.machineTypeId());
+        assertEquals("melting", MeMekanismMachine.THERMALIZER.machineTypeId());
+        assertEquals("solidifying", MeMekanismMachine.SOLIDIFICATION_CHAMBER.machineTypeId());
+    }
+
     /** Building a supplier must not read config -- that would need a running game. */
     @Test
     void suppliersAreBuiltLazily() {

@@ -82,7 +82,8 @@ final class MeMachineEnergyProfile {
     private static boolean hasMekanismConfig(MeMekanismMachine machine) {
         return switch (machine) {
             case ENRICHMENT_CHAMBER, CRUSHER, ENERGIZED_SMELTER, PRECISION_SAWMILL, OSMIUM_COMPRESSOR,
-                    COMBINER, METALLURGIC_INFUSER, PURIFICATION_CHAMBER, CHEMICAL_INJECTION_CHAMBER -> true;
+                    COMBINER, METALLURGIC_INFUSER, PURIFICATION_CHAMBER, CHEMICAL_INJECTION_CHAMBER,
+                    ALLOYER, CHEMIXER, THERMALIZER, SOLIDIFICATION_CHAMBER -> true;
             default -> false;
         };
     }
@@ -98,6 +99,11 @@ final class MeMachineEnergyProfile {
             case METALLURGIC_INFUSER -> MekanismConfig.usage.metallurgicInfuser.getAsLong();
             case PURIFICATION_CHAMBER -> MekanismConfig.usage.purificationChamber.getAsLong();
             case CHEMICAL_INJECTION_CHAMBER -> MekanismConfig.usage.chemicalInjectionChamber.getAsLong();
+            // Evolved Mekanism gives its own machines Mekanism's values rather than adding config
+            // of its own (see EMBlockTypes), so these need no dependency on that mod.
+            case ALLOYER, CHEMIXER -> MekanismConfig.usage.combiner.getAsLong();
+            case THERMALIZER -> MekanismConfig.usage.chemicalOxidizer.getAsLong();
+            case SOLIDIFICATION_CHAMBER -> MekanismConfig.usage.pressurizedReactionBase.getAsLong();
             default -> DEFAULT_USAGE;
         };
     }
@@ -113,6 +119,9 @@ final class MeMachineEnergyProfile {
             case METALLURGIC_INFUSER -> MekanismConfig.storage.metallurgicInfuser.getAsLong();
             case PURIFICATION_CHAMBER -> MekanismConfig.storage.purificationChamber.getAsLong();
             case CHEMICAL_INJECTION_CHAMBER -> MekanismConfig.storage.chemicalInjectionChamber.getAsLong();
+            case ALLOYER, CHEMIXER -> MekanismConfig.storage.combiner.getAsLong();
+            case THERMALIZER -> MekanismConfig.storage.chemicalOxidizer.getAsLong();
+            case SOLIDIFICATION_CHAMBER -> MekanismConfig.storage.pressurizedReactionBase.getAsLong();
             default -> DEFAULT_STORAGE;
         };
     }
