@@ -14,25 +14,34 @@ public final class MekEnergisticsConfig {
     private static final int MAX_PATTERN_PAGES = 16;
 
     private static ModConfigSpec.IntValue patternPages;
-    private static ModConfigSpec.BooleanValue hideJeiMachineVariants;
     private static ModConfigSpec.BooleanValue preferAppliedFluxNetworkFe;
     private static ModConfigSpec.BooleanValue preferLocalFe;
-    private static ModConfigSpec spec;
+    private static ModConfigSpec serverSpec;
+
+    private static ModConfigSpec.BooleanValue hideJeiMachineVariants;
+    private static ModConfigSpec clientSpec;
 
     private MekEnergisticsConfig() {
     }
 
     public static void register(ModContainer container) {
+        container.registerConfig(ModConfig.Type.SERVER, buildServerSpec());
+        container.registerConfig(ModConfig.Type.CLIENT, buildClientSpec());
+    }
+
+    /**
+     * Values that decide machine container structure and energy routing. These must be identical on
+     * both sides of a connection: {@link #patternSlots()} feeds inventory slot indices, so a client
+     * disagreeing with the server would mis-index every slot interaction. SERVER configs are synced
+     * to connected clients, COMMON ones are not.
+     */
+    private static ModConfigSpec buildServerSpec() {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         patternPages = builder
                 .comment("Number of 4x9 encoded pattern pages available in each ME machine.",
                         "Default: 2 pages, 72 pattern slots.",
                         "Reducing this value hides higher slots, but their saved NBT remains on the machine.")
                 .defineInRange("patternPages", DEFAULT_PATTERN_PAGES, MIN_PATTERN_PAGES, MAX_PATTERN_PAGES);
-        hideJeiMachineVariants = builder
-                .comment("Hide redundant ME machine variants from JEI.",
-                        "When enabled, JEI keeps the basic ME machine as the recipe catalyst and hides ME factory variants from the item list.")
-                .define("hideJeiMachineVariants", true);
         preferAppliedFluxNetworkFe = builder
                 .comment("Prefer FE stored in Applied Flux cells when an ME machine is connected to an AE network.",
                         "When enabled, Applied Flux FE is drained before AE network energy.",
@@ -43,12 +52,30 @@ public final class MekEnergisticsConfig {
                         "When enabled, local FE is drained before network energy.",
                         "When disabled, network energy is drained before local FE.")
                 .define("preferLocalFe", true);
-        spec = builder.build();
-        container.registerConfig(ModConfig.Type.COMMON, spec);
+        serverSpec = builder.build();
+        return serverSpec;
+    }
+
+    private static ModConfigSpec buildClientSpec() {
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+        hideJeiMachineVariants = builder
+                .comment("Hide redundant ME machine variants from JEI.",
+                        "When enabled, JEI keeps the basic ME machine as the recipe catalyst and hides ME factory variants from the item list.")
+                .define("hideJeiMachineVariants", true);
+        clientSpec = builder.build();
+        return clientSpec;
+    }
+
+    private static boolean serverReady() {
+        return serverSpec != null && serverSpec.isLoaded();
+    }
+
+    private static boolean clientReady() {
+        return clientSpec != null && clientSpec.isLoaded();
     }
 
     public static int patternPages() {
-        return patternPages == null ? DEFAULT_PATTERN_PAGES : patternPages.get();
+        return serverReady() ? patternPages.get() : DEFAULT_PATTERN_PAGES;
     }
 
     public static int patternSlots() {
@@ -56,14 +83,14 @@ public final class MekEnergisticsConfig {
     }
 
     public static boolean hideJeiMachineVariants() {
-        return hideJeiMachineVariants == null || hideJeiMachineVariants.get();
+        return !clientReady() || hideJeiMachineVariants.get();
     }
 
     public static boolean preferAppliedFluxNetworkFe() {
-        return preferAppliedFluxNetworkFe != null && preferAppliedFluxNetworkFe.get();
+        return serverReady() && preferAppliedFluxNetworkFe.get();
     }
 
     public static boolean preferLocalFe() {
-        return preferLocalFe == null || preferLocalFe.get();
+        return !serverReady() || preferLocalFe.get();
     }
 }

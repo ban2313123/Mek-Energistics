@@ -39,6 +39,12 @@ run/
 repo/
 !**/src/**/repo/
 
+### Dev client / server logs ###
+logs/
+*.log
+*.log.gz
+*.err.log
+
 ### Project ###
 docs/kubejs-recipe-customization.md
 docs/multiblock-design-notes.md

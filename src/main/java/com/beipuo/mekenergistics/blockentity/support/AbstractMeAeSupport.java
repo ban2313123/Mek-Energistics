@@ -113,23 +113,55 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return Collections.unmodifiableList(this.patternSlots);
     }
 
+    /**
+     * Physical pattern I/O is structural: every port is a stateless wrapper holding a final
+     * reference to a slot or tank that the owner creates once and never replaces. Rebuilding it
+     * allocates a port per slot/tank plus the enclosing lists, and the tick path queries it about
+     * nine times per machine, so it is built once and reused.
+     *
+     * <p>Only the structure is cached. {@link MePatternIoOwner#isPatternBusy()} is per-tick state
+     * and is always read live.
+     */
+    private MeInputLayout cachedInputLayout;
+    private List<? extends MeOutputPort> cachedOutputPorts;
+
+    private MeInputLayout patternInputLayout() {
+        if (this.cachedInputLayout == null) {
+            this.cachedInputLayout = this.owner.getPatternInputLayout();
+        }
+        return this.cachedInputLayout;
+    }
+
+    private List<? extends MeOutputPort> patternOutputPorts() {
+        if (this.cachedOutputPorts == null) {
+            this.cachedOutputPorts = List.copyOf(this.owner.getPatternOutputPorts());
+        }
+        return this.cachedOutputPorts;
+    }
+
+    /** Drops the cached I/O structure; call if an owner ever swaps a slot or tank instance. */
+    public final void invalidatePatternIoCache() {
+        this.cachedInputLayout = null;
+        this.cachedOutputPorts = null;
+    }
+
     public final MePatternIoAdapter getPatternIoAdapter() {
-        return this.owner.getPatternIoAdapter();
+        return new MePatternIoAdapter(patternInputLayout(), patternOutputPorts(), this.owner.isPatternBusy());
     }
 
     public final boolean isPatternBusy() {
-        return this.smartPatternMultiplication.hasPendingWork() || getPatternIoAdapter().busy();
+        return this.smartPatternMultiplication.hasPendingWork() || this.owner.isPatternBusy();
     }
 
     public final boolean pushPatternWithAdapter(IPatternDetails patternDetails, KeyCounter[] inputs) {
         if (!this.mainNode.isActive() || patternDetails == null || inputs == null
-                || !this.patterns.contains(patternDetails) || getPatternIoAdapter().busy()) {
+                || !this.patterns.contains(patternDetails) || this.owner.isPatternBusy()) {
             return false;
         }
         if (this.smartPatternMultiplication.isEnabled()) {
             return enqueueSmartPattern(patternDetails, inputs);
         }
-        boolean changed = getPatternIoAdapter().inputLayout().route(inputs);
+        boolean changed = patternInputLayout().route(inputs);
         if (changed) {
             this.owner.saveChanges();
         }
@@ -137,8 +169,8 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     protected final boolean processSmartPatternViaAdapter() {
-        MeInputLayout layout = getPatternIoAdapter().inputLayout();
-        if (layout.isEmpty() || getPatternIoAdapter().busy()) {
+        MeInputLayout layout = patternInputLayout();
+        if (layout.isEmpty() || this.owner.isPatternBusy()) {
             return false;
         }
         return processSmartPattern(new MeSmartPatternMultiplication.CapacityAwareFeeder() {
@@ -156,7 +188,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     public final boolean hasPatternOutputBacklog(
             com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode) {
-        for (MeOutputPort output : getPatternIoAdapter().outputPorts()) {
+        for (MeOutputPort output : patternOutputPorts()) {
             AEKey key = output.key();
             if (key != null && output.amount() > 0 && outputModeAllows(mode, key)) {
                 return true;
@@ -167,7 +199,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     public final boolean drainPatternOutputs(
             com.beipuo.mekenergistics.blockentity.api.AeOutputMode mode) {
-        return drainOutputPorts(mode, getPatternIoAdapter().outputPorts());
+        return drainOutputPorts(mode, patternOutputPorts());
     }
 
     public final IInventorySlotHolder withPatternSlots(IInventorySlotHolder original) {

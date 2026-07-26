@@ -1,5 +1,8 @@
 package com.beipuo.mekenergistics.compat;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.neoforged.fml.ModList;
 import mekanism.common.tier.FactoryTier;
 import net.minecraft.network.chat.TextColor;
@@ -51,8 +54,27 @@ public final class OptionalCompatClasses {
         return ModList.get().isLoaded("appflux");
     }
 
+    /**
+     * Reflection results keyed by tier id. These resolve to constants, but the lookups sit on
+     * tooltip and GUI layout paths that re-ask every frame, so each tier is resolved once.
+     * {@link Optional} because a miss is a normal answer that must also be remembered.
+     */
+    private static final Map<String, Optional<FactoryTier>> EVOLVED_FACTORY_TIERS = new ConcurrentHashMap<>();
+    private static final Map<String, Optional<TextColor>> MEKE_TIER_COLORS = new ConcurrentHashMap<>();
+    private static final Map<String, Optional<TextColor>> EMEKE_TIER_COLORS = new ConcurrentHashMap<>();
+
     @Nullable
     public static FactoryTier getEvolvedFactoryTier(String tierName) {
+        if (tierName == null) {
+            return null;
+        }
+        return EVOLVED_FACTORY_TIERS
+                .computeIfAbsent(tierName, name -> Optional.ofNullable(resolveEvolvedFactoryTier(name)))
+                .orElse(null);
+    }
+
+    @Nullable
+    private static FactoryTier resolveEvolvedFactoryTier(String tierName) {
         if (!hasEvolvedMekanism()) {
             return null;
         }
@@ -82,6 +104,16 @@ public final class OptionalCompatClasses {
 
     @Nullable
     public static TextColor getMekanismExtrasTierColor(String tierName) {
+        if (tierName == null) {
+            return null;
+        }
+        return MEKE_TIER_COLORS
+                .computeIfAbsent(tierName, name -> Optional.ofNullable(resolveMekanismExtrasTierColor(name)))
+                .orElse(null);
+    }
+
+    @Nullable
+    private static TextColor resolveMekanismExtrasTierColor(String tierName) {
         if (!hasMekanismExtras()) {
             return null;
         }
@@ -97,6 +129,16 @@ public final class OptionalCompatClasses {
 
     @Nullable
     public static TextColor getEvolvedMekanismExtrasTierColor(String tierName) {
+        if (tierName == null) {
+            return null;
+        }
+        return EMEKE_TIER_COLORS
+                .computeIfAbsent(tierName, name -> Optional.ofNullable(resolveEvolvedMekanismExtrasTierColor(name)))
+                .orElse(null);
+    }
+
+    @Nullable
+    private static TextColor resolveEvolvedMekanismExtrasTierColor(String tierName) {
         Object tier = getEvolvedMekanismExtrasFactoryTier(tierName);
         return tier == null ? null : invokeTextColor(invoke(tier, "getEMExtraTier"), "getColor");
     }
