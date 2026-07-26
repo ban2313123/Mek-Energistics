@@ -11,7 +11,6 @@ import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.compat.catalog.CompatRegistrationRoute;
 import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
 import mekanism.api.tier.BaseTier;
-import mekanism.common.config.MekanismConfig;
 import mekanism.common.content.blocktype.FactoryType;
 import mekanism.common.tier.FactoryTier;
 import net.minecraft.network.chat.TextColor;
@@ -404,140 +403,78 @@ public enum MeMekanismMachine {
     INFINITE_PIGMENT_EXTRACTING_FACTORY("infinite", "pigment_extracting", "Pigment Extracting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY),
     INFINITE_PAINTING_FACTORY("infinite", "painting", "Painting", CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY);
 
-    @Nullable
-    private final FactoryType factoryType;
-    @Nullable
-    private final FactoryTier factoryTier;
-    private final CompatMachineFamily family;
-    @Nullable
-    private final String tierId;
-    private final String machineTypeId;
-    private final String baseName;
-    private final String englishName;
+    private final MeMachineDefinition definition;
 
     MeMekanismMachine(@Nullable FactoryType factoryType, String baseName, String englishName) {
-        this.factoryType = factoryType;
-        this.factoryTier = null;
-        this.family = CompatMachineFamily.MEKANISM_MACHINE;
-        this.tierId = null;
-        this.machineTypeId = factoryType == null ? baseName : factoryType.getRegistryNameComponent();
-        this.baseName = baseName;
-        this.englishName = englishName;
+        this.definition = MeMachineDefinition.mekanismMachine(factoryType, baseName, englishName);
     }
 
     MeMekanismMachine(String nameOrTier, String machineTypeId, String englishName, CompatMachineFamily family) {
-        this.factoryType = null;
-        this.factoryTier = null;
-        this.family = family;
-        this.machineTypeId = machineTypeId;
-        if (family.kind() == CompatMachineKind.MACHINE) {
-            this.tierId = null;
-            this.baseName = nameOrTier;
-            this.englishName = englishName;
-        } else {
-            this.tierId = nameOrTier;
-            this.baseName = nameOrTier + "_" + machineTypeId + "_factory";
-            String tierName = family.provider() == CompatMod.EMEKE
-                    ? displayTierName(nameOrTier) : capitalize(nameOrTier);
-            this.englishName = "ME " + tierName + " " + englishName + " Factory";
-        }
+        this.definition = MeMachineDefinition.familyEntry(nameOrTier, machineTypeId, englishName, family);
     }
 
     MeMekanismMachine(FactoryTier factoryTier, FactoryType factoryType) {
-        this.factoryType = factoryType;
-        this.factoryTier = factoryTier;
-        this.family = CompatMachineFamily.MEKANISM_FACTORY;
-        this.tierId = factoryTier.name().toLowerCase(Locale.ROOT);
-        this.machineTypeId = factoryType.getRegistryNameComponent();
-        this.baseName = factoryTier.name().toLowerCase(Locale.ROOT) + "_" + factoryType.getRegistryNameComponent() + "_factory";
-        this.englishName = "ME " + capitalize(factoryTier.name()) + " " + factoryType.getRegistryNameComponentCapitalized() + " Factory";
+        this.definition = MeMachineDefinition.mekanismFactory(factoryTier, factoryType);
     }
 
     MeMekanismMachine(String evolvedFactoryTierName, FactoryType factoryType, CompatMachineFamily family) {
-        this.factoryType = factoryType;
-        this.factoryTier = null;
-        this.family = family;
-        this.tierId = evolvedFactoryTierName;
-        this.machineTypeId = factoryType.getRegistryNameComponent();
-        this.baseName = evolvedFactoryTierName + "_" + factoryType.getRegistryNameComponent() + "_factory";
-        String tierName = family.provider() == CompatMod.EMEKE
-                ? displayTierName(evolvedFactoryTierName) : capitalize(evolvedFactoryTierName);
-        this.englishName = "ME " + tierName + " " + factoryType.getRegistryNameComponentCapitalized() + " Factory";
+        this.definition = MeMachineDefinition.factory(evolvedFactoryTierName, factoryType, family);
     }
 
     MeMekanismMachine(FactoryTier factoryTier, String customFactoryTypeName, String factoryEnglishName,
             CompatMachineFamily family) {
-        this.factoryType = null;
-        this.factoryTier = factoryTier;
-        this.family = family;
-        this.tierId = factoryTier.name().toLowerCase(Locale.ROOT);
-        this.machineTypeId = customFactoryTypeName;
-        this.baseName = factoryTier.name().toLowerCase(Locale.ROOT) + "_" + customFactoryTypeName + "_factory";
-        this.englishName = "ME " + capitalize(factoryTier.name()) + " " + factoryEnglishName + " Factory";
+        this.definition = MeMachineDefinition.factory(
+                factoryTier, customFactoryTypeName, factoryEnglishName, family);
     }
 
     MeMekanismMachine(String extraFactoryTierName, FactoryType factoryType) {
-        this.factoryType = factoryType;
-        this.factoryTier = null;
-        this.family = CompatMachineFamily.MEKE_FACTORY;
-        this.tierId = extraFactoryTierName;
-        this.machineTypeId = factoryType.getRegistryNameComponent();
-        this.baseName = extraFactoryTierName + "_" + factoryType.getRegistryNameComponent() + "_factory";
-        this.englishName = "ME " + capitalize(extraFactoryTierName) + " " + factoryType.getRegistryNameComponentCapitalized() + " Factory";
+        this.definition = MeMachineDefinition.factory(
+                extraFactoryTierName, factoryType, CompatMachineFamily.MEKE_FACTORY);
     }
 
     MeMekanismMachine(FactoryTier factoryTier, String moreMachineFactoryTypeName, String factoryEnglishName) {
-        this.factoryType = null;
-        this.factoryTier = factoryTier;
-        this.family = CompatMachineFamily.MEKMM_FACTORY;
-        this.tierId = factoryTier.name().toLowerCase(Locale.ROOT);
-        this.machineTypeId = moreMachineFactoryTypeName;
-        this.baseName = factoryTier.name().toLowerCase(Locale.ROOT) + "_" + moreMachineFactoryTypeName + "_factory";
-        this.englishName = "ME " + capitalize(factoryTier.name()) + " " + factoryEnglishName + " Factory";
+        this.definition = MeMachineDefinition.factory(
+                factoryTier, moreMachineFactoryTypeName, factoryEnglishName,
+                CompatMachineFamily.MEKMM_FACTORY);
     }
 
     MeMekanismMachine(String baseName, String moreMachineBaseTypeName, String englishName) {
-        this.factoryType = null;
-        this.factoryTier = null;
-        this.family = CompatMachineFamily.MEKMM_MACHINE;
-        this.tierId = null;
-        this.machineTypeId = moreMachineBaseTypeName;
-        this.baseName = baseName;
-        this.englishName = englishName;
+        this.definition = MeMachineDefinition.mekmmMachine(baseName, moreMachineBaseTypeName, englishName);
     }
 
     @Nullable
     public FactoryType factoryType() {
-        return factoryType;
+        return definition.factoryType();
     }
 
     @Nullable
     public FactoryTier factoryTier() {
-        return factoryTier != null ? factoryTier : evolvedFactoryTier();
+        return definition.factoryTier() != null ? definition.factoryTier() : evolvedFactoryTier();
     }
 
     public boolean isFactory() {
-        return this.family.kind() != CompatMachineKind.MACHINE;
+        return definition.family().kind() != CompatMachineKind.MACHINE;
     }
 
     public boolean isEvolvedMekanismFactory() {
-        return this.family.provider() == CompatMod.EMEK && isFactory() && this.factoryTier == null;
+        return definition.family().provider() == CompatMod.EMEK && isFactory()
+                && definition.factoryTier() == null;
     }
 
     public CompatMod provider() {
-        return this.family.provider();
+        return definition.family().provider();
     }
 
     public CompatRegistrationRoute registrationRoute() {
-        return this.family.route();
+        return definition.family().route();
     }
 
     public CompatMachineKind machineKind() {
-        return this.family.kind();
+        return definition.family().kind();
     }
 
     public CompatMachineFamily family() {
-        return this.family;
+        return definition.family();
     }
 
     public boolean isAvailable() {
@@ -559,11 +496,11 @@ public enum MeMekanismMachine {
     }
 
     public String baseName() {
-        return baseName;
+        return definition.baseName();
     }
 
     public String registryName() {
-        return "me_" + baseName;
+        return "me_" + definition.baseName();
     }
 
     public boolean isMekmmLargeMachine() {
@@ -577,15 +514,15 @@ public enum MeMekanismMachine {
 
     @Nullable
     public String tierId() {
-        return this.tierId;
+        return definition.tierId();
     }
 
     public String machineTypeId() {
-        return this.machineTypeId;
+        return definition.machineTypeId();
     }
 
     public String englishName() {
-        return englishName;
+        return definition.englishName();
     }
 
     public String translationKey() {
@@ -596,19 +533,19 @@ public enum MeMekanismMachine {
         if (isFactory()) {
             return "description.mekanism.factory";
         }
-        if (this.family.provider() == CompatMod.MEKANISM) {
-            return "description.mekanism." + baseName;
+        if (definition.family().provider() == CompatMod.MEKANISM) {
+            return "description.mekanism." + definition.baseName();
         }
         return "description.mekenergistics.machine";
     }
 
     @Nullable
     public TextColor nameColor() {
-        if (this.family.provider() == CompatMod.MEKE) {
-            return OptionalCompatClasses.getMekanismExtrasTierColor(this.tierId);
+        if (definition.family().provider() == CompatMod.MEKE) {
+            return OptionalCompatClasses.getMekanismExtrasTierColor(definition.tierId());
         }
-        if (this.family.provider() == CompatMod.EMEKE) {
-            return OptionalCompatClasses.getEvolvedMekanismExtrasTierColor(this.tierId);
+        if (definition.family().provider() == CompatMod.EMEKE) {
+            return OptionalCompatClasses.getEvolvedMekanismExtrasTierColor(definition.tierId());
         }
         BaseTier tier = baseTier();
         return tier == null ? null : tier.getColor();
@@ -619,85 +556,35 @@ public enum MeMekanismMachine {
     }
 
     public boolean hasSecondaryItemInput() {
-        return this.factoryType == FactoryType.COMBINING || this == CNC_STAMPER || this == CHEMIXER;
+        return MeMachineIoProfile.hasSecondaryItemInput(this);
     }
 
     public boolean hasChemicalInput() {
-        return this.factoryType == FactoryType.COMPRESSING
-                || this.factoryType == FactoryType.INFUSING
-                || this.factoryType == FactoryType.INJECTING
-                || this.factoryType == FactoryType.PURIFYING
-                || this == CHEMIXER;
+        return MeMachineIoProfile.hasChemicalInput(this);
     }
 
     public boolean hasRecipeLogic() {
-        return this.factoryType != null || switch (this.family.route()) {
-            case MEKMM_MACHINE, MEKMM_FACTORY, MEKMM_ADVANCED_FACTORY,
-                    MEKE_MEKMM_FACTORY, MEKE_MEKMM_ADVANCED_FACTORY -> true;
-            default -> false;
-        };
+        return MeMachineIoProfile.hasRecipeLogic(this);
     }
 
     public boolean hasAdvancedChemicalInput() {
-        return this.factoryType == FactoryType.COMPRESSING
-                || this.factoryType == FactoryType.INJECTING
-                || this.factoryType == FactoryType.PURIFYING;
+        return MeMachineIoProfile.hasAdvancedChemicalInput(this);
     }
 
     public boolean hasSecondaryOutput() {
-        return this.factoryType == FactoryType.SAWING;
+        return MeMachineIoProfile.hasSecondaryOutput(this);
     }
 
     public SlotLayout slotLayout() {
-        if (hasSecondaryItemInput()) {
-            return SlotLayout.DOUBLE_ITEM;
-        }
-        if (this == CNC_STAMPER) {
-            return SlotLayout.DOUBLE_ITEM;
-        }
-        if (hasChemicalInput()) {
-            return SlotLayout.ITEM_CHEMICAL;
-        }
-        if (hasSecondaryOutput()) {
-            return SlotLayout.SAWING;
-        }
-        return SlotLayout.SINGLE_ITEM;
+        return MeMachineIoProfile.slotLayout(this);
     }
 
     public LongSupplier energyUsage() {
-        if (isFactory()) {
-            return () -> 50L;
-        }
-        return switch (this) {
-            case ENRICHMENT_CHAMBER -> MekanismConfig.usage.enrichmentChamber;
-            case CRUSHER -> MekanismConfig.usage.crusher;
-            case ENERGIZED_SMELTER -> MekanismConfig.usage.energizedSmelter;
-            case PRECISION_SAWMILL -> MekanismConfig.usage.precisionSawmill;
-            case OSMIUM_COMPRESSOR -> MekanismConfig.usage.osmiumCompressor;
-            case COMBINER -> MekanismConfig.usage.combiner;
-            case METALLURGIC_INFUSER -> MekanismConfig.usage.metallurgicInfuser;
-            case PURIFICATION_CHAMBER -> MekanismConfig.usage.purificationChamber;
-            case CHEMICAL_INJECTION_CHAMBER -> MekanismConfig.usage.chemicalInjectionChamber;
-            default -> () -> 50L;
-        };
+        return MeMachineEnergyProfile.usage(this);
     }
 
     public LongSupplier energyStorage() {
-        if (isFactory()) {
-            return () -> 2_000_000L;
-        }
-        return switch (this) {
-            case ENRICHMENT_CHAMBER -> MekanismConfig.storage.enrichmentChamber;
-            case CRUSHER -> MekanismConfig.storage.crusher;
-            case ENERGIZED_SMELTER -> MekanismConfig.storage.energizedSmelter;
-            case PRECISION_SAWMILL -> MekanismConfig.storage.precisionSawmill;
-            case OSMIUM_COMPRESSOR -> MekanismConfig.storage.osmiumCompressor;
-            case COMBINER -> MekanismConfig.storage.combiner;
-            case METALLURGIC_INFUSER -> MekanismConfig.storage.metallurgicInfuser;
-            case PURIFICATION_CHAMBER -> MekanismConfig.storage.purificationChamber;
-            case CHEMICAL_INJECTION_CHAMBER -> MekanismConfig.storage.chemicalInjectionChamber;
-            default -> () -> 2_000_000L;
-        };
+        return MeMachineEnergyProfile.storage(this);
     }
 
     @Nullable
@@ -793,24 +680,8 @@ public enum MeMekanismMachine {
 
     @Nullable
     private FactoryTier evolvedFactoryTier() {
-        return isEvolvedMekanismFactory() ? OptionalCompatClasses.getEvolvedFactoryTier(this.tierId) : null;
-    }
-
-    private static String capitalize(String name) {
-        String lower = name.toLowerCase(Locale.ROOT);
-        return lower.substring(0, 1).toUpperCase(Locale.ROOT) + lower.substring(1);
-    }
-
-    private static String displayTierName(String name) {
-        String[] parts = name.split("_");
-        StringBuilder result = new StringBuilder();
-        for (String part : parts) {
-            if (!result.isEmpty()) {
-                result.append(' ');
-            }
-            result.append(capitalize(part));
-        }
-        return result.toString();
+        return isEvolvedMekanismFactory()
+                ? OptionalCompatClasses.getEvolvedFactoryTier(definition.tierId()) : null;
     }
 
     public enum SlotLayout {
