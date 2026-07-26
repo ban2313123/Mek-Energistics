@@ -45,6 +45,18 @@ final class MeMachineIoProfile {
         return machine.factoryType() == FactoryType.SAWING;
     }
 
+    /**
+     * A coarse shape hint, not a full description of a machine's I/O. Every caller only asks whether
+     * the result is {@link MeMekanismMachine.SlotLayout#SINGLE_ITEM}, which is what makes the
+     * approximation safe.
+     *
+     * <p>It genuinely is an approximation: no constant expresses item + item + chemical, so
+     * {@link MeMekanismMachine#CHEMIXER} -- whose tile has a main slot, an extra slot and a chemical
+     * tank, all three matched by its recipe -- reports {@code DOUBLE_ITEM} and loses the chemical.
+     * That is not a live defect: pattern routing comes from each block entity's own
+     * {@code getPatternInputLayout}, and the ME Chemixer declares all three lanes there. Anyone
+     * giving this method more authority has to extend the enum first.
+     */
     static MeMekanismMachine.SlotLayout slotLayout(MeMekanismMachine machine) {
         if (hasSecondaryItemInput(machine)) {
             return MeMekanismMachine.SlotLayout.DOUBLE_ITEM;
