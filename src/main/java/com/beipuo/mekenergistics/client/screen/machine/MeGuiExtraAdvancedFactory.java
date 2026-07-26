@@ -54,8 +54,8 @@ public class MeGuiExtraAdvancedFactory extends MeGuiConfigurableTile<TileEntityE
         }
 
         int index = tile.tier.ordinal();
-        imageWidth += (36 * (index + 2)) + (2 * index);
-        inventoryLabelX = (22 * (index + 2)) - (3 * index);
+        imageWidth += MeFactoryGuiLayout.imageWidthDelta(index);
+        inventoryLabelX = MeFactoryGuiLayout.inventoryLabelX(index);
 
         titleLabelY = 4;
         dynamicSlots = true;
@@ -148,12 +148,12 @@ public class MeGuiExtraAdvancedFactory extends MeGuiConfigurableTile<TileEntityE
 
     private int getBarWidth() {
         int index = tile.tier.ordinal();
-        return 210 + 38 * index;
+        return MeFactoryGuiLayout.barWidth(index);
     }
 
     private int getButtonX() {
         int index = tile.tier.ordinal();
-        return 220 + 38 * index;
+        return MeFactoryGuiLayout.buttonX(index);
     }
 
     @Override

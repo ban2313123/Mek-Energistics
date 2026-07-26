@@ -43,8 +43,8 @@ public class MeGuiExtraMoreMachineFactory extends MeGuiConfigurableTile<TileEnti
         }
 
         int index = tile.tier.ordinal();
-        imageWidth += (36 * (index + 2)) + (2 * index);
-        inventoryLabelX = (22 * (index + 2)) - (3 * index);
+        imageWidth += MeFactoryGuiLayout.imageWidthDelta(index);
+        inventoryLabelX = MeFactoryGuiLayout.inventoryLabelX(index);
 
         titleLabelY = 4;
         dynamicSlots = true;
@@ -83,11 +83,11 @@ public class MeGuiExtraMoreMachineFactory extends MeGuiConfigurableTile<TileEnti
     }
 
     private int getBarWidth() {
-        return 210 + 38 * tile.tier.ordinal();
+        return MeFactoryGuiLayout.barWidth(tile.tier.ordinal());
     }
 
     private int getButtonX() {
-        return 220 + 38 * tile.tier.ordinal();
+        return MeFactoryGuiLayout.buttonX(tile.tier.ordinal());
     }
 
     @Override
