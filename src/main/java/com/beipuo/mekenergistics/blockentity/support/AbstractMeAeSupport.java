@@ -534,10 +534,6 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return result;
     }
 
-    final NodeState nodeStateForTesting() {
-        return this.nodeState;
-    }
-
     enum NodeState {
         NEW,
         ACTIVE,

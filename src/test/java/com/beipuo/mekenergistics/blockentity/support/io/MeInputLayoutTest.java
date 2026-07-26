@@ -10,6 +10,7 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.testfixture.FakeInputPort;
 import com.beipuo.mekenergistics.testfixture.FakeKey;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -105,7 +106,7 @@ class MeInputLayoutTest {
 
     @Test
     void theLayoutKeepsItsOwnCopyOfThePortsItWasGiven() {
-        List<FakeInputPort> mutable = new java.util.ArrayList<>();
+        List<FakeInputPort> mutable = new ArrayList<>();
         mutable.add(new FakeInputPort(IRON, 64));
         MeInputLayout layout = MeInputLayout.unordered(mutable);
 

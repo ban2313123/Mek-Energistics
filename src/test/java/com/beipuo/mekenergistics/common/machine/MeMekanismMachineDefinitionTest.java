@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
-import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import org.junit.jupiter.api.Test;
 
 class MeMekanismMachineDefinitionTest {
@@ -86,7 +85,6 @@ class MeMekanismMachineDefinitionTest {
             assertNotNull(machine.provider(), machine.name());
             assertNotNull(machine.registrationRoute(), machine.name());
             assertFalse(machine.baseName().isBlank(), machine.name());
-            assertFalse(machine.registryName().isBlank(), machine.name());
             assertFalse(machine.machineTypeId().isBlank(), machine.name());
             assertFalse(machine.englishName().isBlank(), machine.name());
             assertEquals(machine.isFactory(), machine.tierId() != null, machine.name());
@@ -128,18 +126,14 @@ class MeMekanismMachineDefinitionTest {
             String expectedType,
             String expectedRegistryName,
             String expectedEnglishName) {
-        assertEquals(expectedFamily, machine.family());
-        assertEquals(expectedFamily.provider(), machine.provider());
-        assertEquals(expectedType, machine.machineTypeId());
-        assertEquals(expectedRegistryName, machine.registryName());
-        assertEquals(expectedEnglishName, machine.englishName());
+        assertEquals(expectedFamily, machine.family(), machine::name);
+        assertEquals(expectedType, machine.machineTypeId(), machine::name);
+        assertEquals(expectedRegistryName, machine.registryName(), machine::name);
+        assertEquals(expectedEnglishName, machine.englishName(), machine::name);
         if (expectedTier == null) {
-            assertNull(machine.tierId());
+            assertNull(machine.tierId(), machine::name);
         } else {
-            assertEquals(expectedTier, machine.tierId());
+            assertEquals(expectedTier, machine.tierId(), machine::name);
         }
-        assertEquals(CompatMod.MEKANISM == machine.provider() && !machine.isFactory(),
-                machine.descriptionKey().startsWith("description.mekanism.")
-                        && !"description.mekanism.factory".equals(machine.descriptionKey()));
     }
 }

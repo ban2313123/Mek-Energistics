@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import mekanism.common.lib.transmitter.TransmissionType;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +43,7 @@ class AeOutputModeTest {
     void everyCombinationOfTheThreeFlagsHasItsOwnConstant() {
         Set<List<Boolean>> combinations = EnumSet.allOf(AeOutputMode.class).stream()
                 .map(mode -> List.of(mode.items(), mode.chemicals(), mode.fluids()))
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
         // Eight constants for 2^3 combinations. If that stops holding, toggle() starts resolving to
         // the BOTH fallback and turns exports back on behind the player's back.

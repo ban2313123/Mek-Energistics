@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
@@ -164,7 +165,7 @@ class CompatMachineGeneratedResourcesTest {
         try (Stream<Path> paths = Files.walk(root)) {
             return paths.filter(Files::isRegularFile)
                     .map(root::relativize)
-                    .collect(java.util.stream.Collectors.toSet());
+                    .collect(Collectors.toSet());
         }
     }
 }
