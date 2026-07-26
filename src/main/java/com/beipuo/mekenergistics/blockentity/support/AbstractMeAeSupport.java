@@ -54,6 +54,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     protected final TileEntityMekanism ownerTile;
     protected final IActionSource actionSource;
     protected final List<BasicInventorySlot> patternSlots;
+    private final List<BasicInventorySlot> patternSlotsView;
     protected final List<IPatternDetails> patterns = new ArrayList<>();
     protected final MeSmartPatternMultiplication smartPatternMultiplication = new MeSmartPatternMultiplication();
 
@@ -75,11 +76,13 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         if (!externalSlots.isEmpty()) {
             this.patternSlots = externalSlots;
         } else {
-            this.patternSlots = new ArrayList<>(MekEnergisticsConfig.patternSlots());
-            for (int i = 0; i < MekEnergisticsConfig.patternSlots(); i++) {
+            int slotCount = MekEnergisticsConfig.patternSlots();
+            this.patternSlots = new ArrayList<>(slotCount);
+            for (int i = 0; i < slotCount; i++) {
                 this.patternSlots.add(MePatternInventorySlot.create(PatternDetailsHelper::isEncodedPattern, this::updatePatterns));
             }
         }
+        this.patternSlotsView = Collections.unmodifiableList(this.patternSlots);
     }
 
     private IManagedGridNode createManagedNode() {
@@ -109,8 +112,9 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return port.node().getNode();
     }
 
+    /** Wrapped once: the backing list is final, and the inventory queries this on every call. */
     public final List<BasicInventorySlot> getPatternSlots() {
-        return Collections.unmodifiableList(this.patternSlots);
+        return this.patternSlotsView;
     }
 
     /**

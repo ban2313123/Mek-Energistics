@@ -69,14 +69,15 @@ public final class MeNetworkEnergyHelper {
         Actionable actionable = action.execute() ? Actionable.MODULATE : Actionable.SIMULATE;
         long extracted = 0;
         boolean hasAppliedFlux = OptionalCompatClasses.hasAppliedFlux();
-        if (hasAppliedFlux && MekEnergisticsConfig.preferAppliedFluxNetworkFe()) {
+        boolean appliedFluxFirst = hasAppliedFlux && MekEnergisticsConfig.preferAppliedFluxNetworkFe();
+        if (appliedFluxFirst) {
             extracted = AppliedFluxEnergyBridge.extractFe(grid, requestedFe, actionable, source);
             requestedFe -= extracted;
         }
         long aeExtracted = extractAeEnergyAsFe(grid, requestedFe, actionable);
         extracted += aeExtracted;
         requestedFe -= aeExtracted;
-        if (hasAppliedFlux && !MekEnergisticsConfig.preferAppliedFluxNetworkFe()) {
+        if (hasAppliedFlux && !appliedFluxFirst) {
             extracted += AppliedFluxEnergyBridge.extractFe(grid, requestedFe, actionable, source);
         }
         return extracted;

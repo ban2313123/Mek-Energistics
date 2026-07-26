@@ -30,28 +30,43 @@ public final class OptionalCompatClasses {
     private OptionalCompatClasses() {
     }
 
+    /**
+     * Loaded-mod answers, which are fixed once the mod list exists. {@link #hasAppliedFlux()} sits on
+     * the per-tick energy path, so the lookup is not repeated every call.
+     */
+    private static final Map<String, Boolean> LOADED_MODS = new ConcurrentHashMap<>();
+
+    private static boolean isLoaded(String modId) {
+        ModList modList = ModList.get();
+        if (modList == null) {
+            // Too early to answer, and too early to remember the answer.
+            return false;
+        }
+        return LOADED_MODS.computeIfAbsent(modId, modList::isLoaded);
+    }
+
     public static boolean hasMekmm() {
-        return ModList.get().isLoaded("mekmm");
+        return isLoaded("mekmm");
     }
 
     public static boolean hasMekanismExtras() {
-        return ModList.get().isLoaded("mekanism_extras");
+        return isLoaded("mekanism_extras");
     }
 
     public static boolean hasEvolvedMekanism() {
-        return ModList.get().isLoaded("evolvedmekanism");
+        return isLoaded("evolvedmekanism");
     }
 
     public static boolean hasEvolvedMekanismExtras() {
-        return ModList.get().isLoaded("emextras");
+        return isLoaded("emextras");
     }
 
     public static boolean hasExtendedAe() {
-        return ModList.get().isLoaded("extendedae");
+        return isLoaded("extendedae");
     }
 
     public static boolean hasAppliedFlux() {
-        return ModList.get().isLoaded("appflux");
+        return isLoaded("appflux");
     }
 
     /**
