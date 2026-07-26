@@ -110,6 +110,71 @@ class MekEnergisticsHardeningTest {
     }
 
     /**
+     * Injections into an optional mod must not be mandatory. These target third-party internals --
+     * ExtendedAE's {@code ContainerRenamer.setter} is a private static helper -- so an upstream
+     * rename is a normal event. With the default {@code require = 1} that becomes a startup crash;
+     * with {@code require = 0} the feature quietly stops working, which is the right trade for an
+     * optional enhancement.
+     */
+    @Test
+    void injectionsIntoOptionalModsTolerateAMissingTarget() throws IOException {
+        List<String> mandatory = new ArrayList<>();
+        for (String subPackage : new String[] {"extendedae", "dataenergistics"}) {
+            Path dir = MIXIN_DIR.resolve(subPackage);
+            if (!Files.isDirectory(dir)) {
+                continue;
+            }
+            try (Stream<Path> files = Files.list(dir)) {
+                for (Path mixin : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                    String source = Files.readString(mixin);
+                    Matcher injection = Pattern.compile("@(Inject|ModifyArg|ModifyVariable|Redirect)\\(")
+                            .matcher(source);
+                    while (injection.find()) {
+                        String body = annotationBody(source, injection.end() - 1);
+                        if (!body.contains("require = 0")) {
+                            mandatory.add(mixin.getFileName() + " @" + injection.group(1));
+                        }
+                    }
+                }
+            }
+        }
+        assertEquals(List.of(), mandatory,
+                "Injections into optional mods must pass require = 0 so a moved target degrades instead of crashing");
+    }
+
+    /**
+     * Annotation body from its opening parenthesis to the matching close. Parentheses inside string
+     * literals are skipped -- mixin method descriptors are full of them, e.g.
+     * {@code "canRename(Ljava/lang/Object;)Z"}.
+     */
+    private static String annotationBody(String source, int openParen) {
+        int depth = 0;
+        boolean inString = false;
+        for (int i = openParen; i < source.length(); i++) {
+            char c = source.charAt(i);
+            if (inString) {
+                if (c == '\\') {
+                    i++;
+                } else if (c == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            switch (c) {
+                case '"' -> inString = true;
+                case '(' -> depth++;
+                case ')' -> {
+                    if (--depth == 0) {
+                        return source.substring(openParen + 1, i);
+                    }
+                }
+                default -> { }
+            }
+        }
+        throw new AssertionError("Unbalanced annotation starting at offset " + openParen);
+    }
+
+    /**
      * Registering against BlockEntity/Block makes Jade run these providers for every block in the
      * game just to fail an instanceof check.
      */
