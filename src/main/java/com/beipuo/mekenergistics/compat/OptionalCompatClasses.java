@@ -101,6 +101,36 @@ public final class OptionalCompatClasses {
         return tier == null ? null : invokeTextColor(invoke(tier, "getEMExtraTier"), "getColor");
     }
 
+    /**
+     * Parallel operations of a Mekanism Extras factory tier, or 0 when unavailable. Unlike Evolved
+     * Mekanism -- whose {@code EMFactoryTier} exposes real {@link FactoryTier} instances -- Extras
+     * declares its own enum, so the process count has to be read reflectively.
+     */
+    public static int getMekanismExtrasFactoryProcesses(String tierName) {
+        return hasMekanismExtras()
+                ? factoryProcesses("com.jerry.mekextras.common.tier.ExtraFactoryTier", tierName) : 0;
+    }
+
+    public static int getEvolvedMekanismExtrasFactoryProcesses(String tierName) {
+        return hasEvolvedMekanismExtras()
+                ? factoryProcesses("io.github.masyumero.emextras.common.tier.EMExtraFactoryTier", tierName) : 0;
+    }
+
+    private static int factoryProcesses(String tierClassName, String tierName) {
+        if (tierName == null) {
+            return 0;
+        }
+        try {
+            Object tier = Class.forName(tierClassName)
+                    .getField(tierName.toUpperCase(java.util.Locale.ROOT))
+                    .get(null);
+            Object processes = tier == null ? null : tier.getClass().getField("processes").get(tier);
+            return processes instanceof Integer count ? count : 0;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return 0;
+        }
+    }
+
     public static boolean hasMekmmAdvancedFactories() {
         return hasMekmm() && hasClassResource(MEKAF_ITEM_TO_CHEMICAL_FACTORY);
     }

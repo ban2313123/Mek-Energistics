@@ -1,5 +1,6 @@
 package com.beipuo.mekenergistics.common.machine;
 
+import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
 import com.beipuo.mekenergistics.compat.catalog.CompatFactoryTierGraph;
 import java.util.function.LongSupplier;
 import mekanism.api.math.MathUtils;
@@ -16,8 +17,10 @@ import org.jetbrains.annotations.Nullable;
  * {@code max(baseStorage / 2, baseUsage) * tier.processes}. A factory therefore costs the same per
  * item as its base machine and buffers enough for the operations it runs in parallel.
  *
- * <p>Machines contributed by optional mods keep the neutral defaults: their configs live in those
- * mods and are not reachable from here. That is a known gap, not a balance decision.
+ * <p>Evolved Mekanism's machines are covered here too, because that mod reuses Mekanism's own values
+ * rather than adding config of its own. MoreMachine does have its own config, which lives in an
+ * optional mod, so that mapping sits in {@code MekanismMoreMachineBaseCompat} instead. Anything
+ * still unrecognised falls back to the defaults below.
  *
  * <p>Config values are read inside the returned suppliers rather than when the supplier is built,
  * because touching {@link MekanismConfig} pulls in Minecraft's registries and cannot happen outside
@@ -73,10 +76,23 @@ final class MeMachineEnergyProfile {
         return source != null && hasMekanismConfig(source) ? source : null;
     }
 
-    /** Parallel operations the factory runs, or 0 when the tier comes from a mod we cannot read. */
+    /**
+     * Parallel operations the factory runs, or 0 when the tier is from a mod we cannot read.
+     *
+     * <p>Evolved Mekanism needs no special case: its {@code EMFactoryTier} holds real
+     * {@link FactoryTier} instances. The Extras mods declare their own tier enums, so their counts
+     * come back reflectively -- 11/13/15/17 for Mekanism Extras, 12/14/16/18 for Evolved Extras.
+     */
     private static int processCount(MeMekanismMachine machine) {
         FactoryTier tier = machine.factoryTier();
-        return tier == null ? 0 : tier.processes;
+        if (tier != null) {
+            return tier.processes;
+        }
+        return switch (machine.provider()) {
+            case MEKE -> OptionalCompatClasses.getMekanismExtrasFactoryProcesses(machine.tierId());
+            case EMEKE -> OptionalCompatClasses.getEvolvedMekanismExtrasFactoryProcesses(machine.tierId());
+            default -> 0;
+        };
     }
 
     private static boolean hasMekanismConfig(MeMekanismMachine machine) {
