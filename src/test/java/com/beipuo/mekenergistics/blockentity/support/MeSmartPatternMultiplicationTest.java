@@ -5,24 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import appeng.api.stacks.AEKey;
-import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import com.beipuo.mekenergistics.blockentity.support.io.MeInputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternInputRouter;
+import com.beipuo.mekenergistics.testfixture.FakeInputPort;
+import com.beipuo.mekenergistics.testfixture.FakeKey;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import mekanism.api.Action;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.Test;
 
 class MeSmartPatternMultiplicationTest {
@@ -257,70 +248,6 @@ class MeSmartPatternMultiplicationTest {
         }
     }
 
-    private static final class FakeKey extends AEKey {
-        private final String id;
-
-        private FakeKey(String id) {
-            this.id = id;
-        }
-
-        @Override
-        public AEKeyType getType() {
-            throw new UnsupportedOperationException("Tests do not serialize fake keys");
-        }
-
-        @Override
-        public AEKey dropSecondary() {
-            return this;
-        }
-
-        @Override
-        public CompoundTag toTag(HolderLookup.Provider registries) {
-            CompoundTag tag = new CompoundTag();
-            tag.putString("id", this.id);
-            return tag;
-        }
-
-        @Override
-        public Object getPrimaryKey() {
-            return this.id;
-        }
-
-        @Override
-        public ResourceLocation getId() {
-            return ResourceLocation.fromNamespaceAndPath("mekenergistics_test", this.id);
-        }
-
-        @Override
-        public void writeToPacket(RegistryFriendlyByteBuf data) {
-            data.writeUtf(this.id);
-        }
-
-        @Override
-        protected Component computeDisplayName() {
-            return Component.literal(this.id);
-        }
-
-        @Override
-        public void addDrops(long amount, List<ItemStack> drops, Level level, BlockPos pos) {
-        }
-
-        @Override
-        public boolean hasComponents() {
-            return false;
-        }
-
-        @Override
-        public boolean equals(Object object) {
-            return this == object || object instanceof FakeKey other && this.id.equals(other.id);
-        }
-
-        @Override
-        public int hashCode() {
-            return this.id.hashCode();
-        }
-    }
-
     private static final class MaximumBatchFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
         private final AEKey key;
         private final long maxAcceptedPerCall;
@@ -381,31 +308,31 @@ class MeSmartPatternMultiplicationTest {
 
     private static final class RouterBackedFactoryFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {
         private final AEKey key;
-        private final List<FactoryInputPort> ports;
+        private final List<FakeInputPort> ports;
 
         private RouterBackedFactoryFeeder(AEKey key, int slotCount, long capacityPerSlot) {
             this.key = key;
             this.ports = new ArrayList<>(slotCount);
             for (int i = 0; i < slotCount; i++) {
-                this.ports.add(new FactoryInputPort(key, capacityPerSlot));
+                this.ports.add(new FakeInputPort(key, capacityPerSlot));
             }
         }
 
         private void consumeFromEverySlot(long amount) {
-            this.ports.forEach(port -> port.amount = Math.max(0, port.amount - amount));
+            this.ports.forEach(port -> port.setAmount(Math.max(0, port.amount() - amount)));
         }
 
         private void autoBalance() {
             long total = loaded();
             long perSlot = total / this.ports.size();
             long remainder = total % this.ports.size();
-            for (FactoryInputPort port : this.ports) {
-                port.amount = perSlot + (remainder-- > 0 ? 1 : 0);
+            for (FakeInputPort port : this.ports) {
+                port.setAmount(perSlot + (remainder-- > 0 ? 1 : 0));
             }
         }
 
         private long loaded() {
-            return this.ports.stream().mapToLong(port -> port.amount).sum();
+            return this.ports.stream().mapToLong(FakeInputPort::amount).sum();
         }
 
         @Override
@@ -417,44 +344,6 @@ class MeSmartPatternMultiplicationTest {
         public boolean feed(KeyCounter[] oneCraftInputs) {
             return oneCraftInputs[0].get(this.key) > 0
                     && MePatternInputRouter.route(oneCraftInputs, this.ports);
-        }
-    }
-
-    private static final class FactoryInputPort implements MeInputPort {
-        private final AEKey key;
-        private final long capacity;
-        private long amount;
-
-        private FactoryInputPort(AEKey key, long capacity) {
-            this.key = key;
-            this.capacity = capacity;
-        }
-
-        @Override
-        public boolean supports(AEKey key) {
-            return this.key.equals(key);
-        }
-
-        @Override
-        public long insert(AEKey key, long amount, Action action) {
-            if (!supports(key) || amount <= 0) {
-                return 0;
-            }
-            long accepted = Math.min(amount, this.capacity - this.amount);
-            if (action.execute()) {
-                this.amount += accepted;
-            }
-            return Math.max(0, accepted);
-        }
-
-        @Override
-        public Object snapshot() {
-            return this.amount;
-        }
-
-        @Override
-        public void restore(Object snapshot) {
-            this.amount = (long) snapshot;
         }
     }
 
