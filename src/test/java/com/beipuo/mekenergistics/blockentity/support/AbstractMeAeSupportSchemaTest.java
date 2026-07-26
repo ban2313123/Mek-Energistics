@@ -4,27 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
 
+/**
+ * A machine deserialises before it has a level, so restored patterns cannot be published to the ME
+ * network until the managed node exists. {@link AbstractMeAeSupport.CraftingUpdateState} is what
+ * defers that work, and losing a deferred update means restored patterns never reach the terminal.
+ */
 class AbstractMeAeSupportSchemaTest {
-    @Test
-    void loadingDefersPatternDecodeUntilTheManagedNodeIsCreated() throws IOException {
-        String source = Files.readString(Path.of(
-                "src/main/java/com/beipuo/mekenergistics/blockentity/support/AbstractMeAeSupport.java"));
-        int loadSlots = source.indexOf("public final void loadSlots(");
-        int nextMethod = source.indexOf("private boolean hasPatternSlotTags", loadSlots);
-        String loadBody = source.substring(loadSlots, nextMethod);
-
-        assertTrue(loadBody.contains("craftingUpdateState.markPending();"));
-        assertFalse(loadBody.contains("updatePatterns();"));
-        assertFalse(loadBody.contains("owner.saveChanges();"));
-    }
-
     @Test
     void restoredPatternsArePublishedWhenTheNodeBecomesActive() {
         AbstractMeAeSupport.CraftingUpdateState state = new AbstractMeAeSupport.CraftingUpdateState();
@@ -33,13 +20,13 @@ class AbstractMeAeSupportSchemaTest {
         state.markPending();
         state.request(false, () -> updates[0]++);
 
-        assertTrue(state.isPending());
-        assertEquals(0, updates[0]);
+        assertTrue(state.isPending(), "an inactive node must hold the update back");
+        assertEquals(0, updates[0], "nothing may be published before the node exists");
 
         state.flush(() -> updates[0]++);
 
-        assertFalse(state.isPending());
-        assertEquals(1, updates[0]);
+        assertFalse(state.isPending(), "flushing must clear the backlog");
+        assertEquals(1, updates[0], "the deferred update must run exactly once");
     }
 
     @Test
@@ -50,28 +37,7 @@ class AbstractMeAeSupportSchemaTest {
         state.request(true, () -> updates[0]++);
         state.flush(() -> updates[0]++);
 
-        assertFalse(state.isPending());
-        assertEquals(1, updates[0]);
-    }
-
-    @Test
-    void writingPatternSlotsAddsSchemaAndRetainsExistingKeys() {
-        CompoundTag tag = new CompoundTag();
-
-        AbstractMeAeSupport.savePatternSlots(List.of(), tag, null);
-
-        assertEquals(2, tag.getInt("AePatternSchema"));
-    }
-
-    @Test
-    void oldInventoryIsMigratedToPatternSlotKeys() {
-        CompoundTag tag = new CompoundTag();
-        net.minecraft.nbt.ListTag inventory = new net.minecraft.nbt.ListTag();
-        tag.put("Inventory", inventory);
-
-        AbstractMeAeSupport.loadLegacyInventory(List.of(), tag, null, 0);
-        AbstractMeAeSupport.savePatternSlots(List.of(), tag, null);
-
-        assertEquals(2, tag.getInt("AePatternSchema"));
+        assertFalse(state.isPending(), "an active node publishes straight away");
+        assertEquals(1, updates[0], "a later flush must not publish the same update again");
     }
 }

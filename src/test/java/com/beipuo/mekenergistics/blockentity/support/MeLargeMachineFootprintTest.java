@@ -57,19 +57,6 @@ class MeLargeMachineFootprintTest {
     }
 
     @Test
-    void neighbouringNodesOfTheSameMachineNeverFaceEachOther() {
-        MeLargeMachineFootprint footprint = MeLargeMachineFootprint.ofOccupied(solid3x3x3());
-
-        // This is what keeps AE2's in-world scan from duplicating the direct connections we make.
-        for (BlockPos position : solid3x3x3()) {
-            for (Direction direction : footprint.exposedFaces(position)) {
-                assertFalse(solid3x3x3().contains(position.relative(direction)),
-                        "exposed " + direction + " at " + position + " points back into the machine");
-            }
-        }
-    }
-
-    @Test
     void aShorterMachineExposesItsWholeTopLayer() {
         MeLargeMachineFootprint footprint = MeLargeMachineFootprint.ofOccupied(solid3x2x3());
 

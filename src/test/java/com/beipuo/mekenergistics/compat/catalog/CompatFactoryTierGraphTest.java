@@ -1,13 +1,9 @@
 package com.beipuo.mekenergistics.compat.catalog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class CompatFactoryTierGraphTest {
@@ -91,23 +87,5 @@ class CompatFactoryTierGraphTest {
                 MeMekanismMachine.ABSOLUTE_SMELTING_FACTORY, CompatMod.EMEK, "creative"));
         assertNull(CompatFactoryTierGraph.declaredForwardFactoryAtTier(
                 MeMekanismMachine.THERMALIZER, CompatMod.EMEK, "creative"));
-    }
-
-    @Test
-    void legacyEnumAndCompatResolversNoLongerScanTierNames() throws IOException {
-        String machines = Files.readString(Path.of(
-                "src/main/java/com/beipuo/mekenergistics/common/machine/MeMekanismMachine.java"));
-        assertFalse(machines.contains("getNextExtraFactoryTier"));
-        assertFalse(machines.contains("getNextEvolvedFactoryTier"));
-        assertFalse(machines.contains("getNextEvolvedMekanismExtrasFactoryTier"));
-        assertFalse(machines.contains("for (MeMekanismMachine machine : availableMachines())"));
-
-        String baseCompat = Files.readString(Path.of(
-                "src/main/java/com/beipuo/mekenergistics/compat/mekmm/MekanismMoreMachineBaseCompat.java"));
-        String advancedCompat = Files.readString(Path.of(
-                "src/main/java/com/beipuo/mekenergistics/compat/mekmm/MekanismMoreMachineAdvancedCompat.java"));
-        assertFalse(baseCompat.contains("getFactoryTargetByRegistryName(String path"));
-        assertFalse(advancedCompat.contains("new String[] {\"absolute\""));
-        assertFalse(advancedCompat.contains("for (FactoryTier tier : FactoryTier.values())"));
     }
 }

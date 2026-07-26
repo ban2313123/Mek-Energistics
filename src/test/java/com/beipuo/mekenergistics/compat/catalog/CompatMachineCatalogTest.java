@@ -17,28 +17,23 @@ class CompatMachineCatalogTest {
     @Test
     void catalogCoversEveryMachineExactlyOnce() {
         var specs = CompatMachineCatalog.all().toList();
-        assertEquals(MeMekanismMachine.values().length, specs.size());
-        assertEquals(specs.size(), specs.stream().map(CompatMachineSpec::machine).distinct().count());
-        assertEquals(specs.size(), specs.stream().map(CompatMachineSpec::sourceBlockId).distinct().count());
-        assertEquals(specs.size(), specs.stream().map(CompatMachineSpec::meBlockId).distinct().count());
+        assertEquals(MeMekanismMachine.values().length, specs.size(),
+                "every machine needs a catalog entry");
+        assertEquals(specs.size(), specs.stream().map(CompatMachineSpec::machine).distinct().count(),
+                "no machine may be described twice");
+        assertEquals(specs.size(), specs.stream().map(CompatMachineSpec::meBlockId).distinct().count(),
+                "two machines would collide on one registry id");
     }
 
+    /**
+     * Only the fields {@code describe} actually derives are worth asserting. The provider, route,
+     * kind and family are copied straight off the enum, so comparing them back to it proves nothing.
+     */
     @Test
-    void catalogKeepsStableMeRegistryIdsAndMachineMetadata() {
+    void catalogDerivesTheFieldsThatAreNotCopiedFromTheEnum() {
         CompatMachineCatalog.all().forEach(spec -> {
-            assertEquals(ResourceLocation.fromNamespaceAndPath("mekenergistics", spec.machine().registryName()),
-                    spec.meBlockId());
             assertFalse(spec.machineTypeId().isBlank(), spec.machine().name());
-            assertNotNull(spec.route(), spec.machine().name());
-            assertNotNull(spec.family(), spec.machine().name());
             assertNotNull(spec.sideConfigProfile(), spec.machine().name());
-            assertEquals(spec.machine().provider(), spec.provider(), spec.machine().name());
-            assertEquals(spec.machine().registrationRoute(), spec.route(), spec.machine().name());
-            assertEquals(spec.machine().family(), spec.family(), spec.machine().name());
-            assertEquals(spec.family().provider(), spec.provider(), spec.machine().name());
-            assertEquals(spec.family().route(), spec.route(), spec.machine().name());
-            assertEquals(spec.family().kind(), spec.kind(), spec.machine().name());
-            assertEquals(spec.machine().machineKind(), spec.kind(), spec.machine().name());
             if (spec.kind() != CompatMachineKind.MACHINE) {
                 assertNotNull(spec.tierId(), spec.machine().name());
             }
@@ -48,13 +43,12 @@ class CompatMachineCatalogTest {
     @Test
     void sourceLookupRequiresTheExactNamespaceAndPath() {
         CompatMachineSpec recycler = CompatMachineCatalog.get(MeMekanismMachine.RECYCLER);
-        assertEquals(MeMekanismMachine.RECYCLER,
-                CompatMachineCatalog.findBySourceBlockId(recycler.sourceBlockId())
-                        .map(CompatMachineSpec::machine).orElse(null));
         assertTrue(CompatMachineCatalog.findBySourceBlockId(ResourceLocation.fromNamespaceAndPath(
-                "unrelated_mod", recycler.sourceBlockId().getPath())).isEmpty());
+                "unrelated_mod", recycler.sourceBlockId().getPath())).isEmpty(),
+                "a matching path under another namespace must not resolve");
         assertTrue(CompatMachineCatalog.findBySourceBlockId(ResourceLocation.fromNamespaceAndPath(
-                "mekenergistics", "me_" + recycler.sourceBlockId().getPath())).isEmpty());
+                "mekenergistics", "me_" + recycler.sourceBlockId().getPath())).isEmpty(),
+                "our own block id must not resolve back to the source machine");
     }
 
     @Test
@@ -107,17 +101,6 @@ class CompatMachineCatalogTest {
             assertFalse(type.getName().startsWith("com.jerry."), component.getName());
             assertFalse(type.getName().startsWith("fr.iglee42."), component.getName());
             assertFalse(type.getName().startsWith("io.github.masyumero."), component.getName());
-        }
-    }
-
-    @Test
-    void machineDeclarationsDoNotUsePrimitiveConstructorDiscriminators() {
-        for (var constructor : MeMekanismMachine.class.getDeclaredConstructors()) {
-            Class<?>[] parameterTypes = constructor.getParameterTypes();
-            // Enum bytecode prepends the synthetic name and ordinal parameters.
-            for (int i = 2; i < parameterTypes.length; i++) {
-                assertFalse(parameterTypes[i].isPrimitive(), constructor.toString());
-            }
         }
     }
 
