@@ -5,6 +5,8 @@
   "gui.mekenergistics.me_patterns.rename": "Rename pattern assembly",
   "gui.mekenergistics.me_patterns.smart_multiplication.on": "Smart pattern multiplication: On",
   "gui.mekenergistics.me_patterns.smart_multiplication.off": "Smart pattern multiplication: Off",
+  "gui.mekenergistics.me_patterns.terminal_visibility.shown": "Shown in Pattern Access Terminal",
+  "gui.mekenergistics.me_patterns.terminal_visibility.hidden": "Hidden from Pattern Access Terminal",
   "gui.mekenergistics.me_patterns.ae_output.item": "Item output to AE: %s",
   "gui.mekenergistics.me_patterns.ae_output.chemical": "Chemical output to AE: %s",
   "gui.mekenergistics.me_patterns.ae_output.fluid": "Fluid output to AE: %s",

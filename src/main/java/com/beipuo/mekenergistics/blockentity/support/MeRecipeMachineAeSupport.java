@@ -78,6 +78,7 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
         if (trackSmartPatternMultiplication) {
             container.track(SyncableBoolean.create(this.owner::isSmartPatternMultiplicationEnabled, this.owner::setSmartPatternMultiplicationEnabled));
         }
+        container.track(SyncableBoolean.create(this::isVisibleInPatternAccessTerminal, this::setVisibleInPatternAccessTerminal));
     }
 
     /** Drains declared outputs before allowing another smart batch into the machine. */

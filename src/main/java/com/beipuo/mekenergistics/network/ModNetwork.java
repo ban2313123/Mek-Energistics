@@ -4,6 +4,7 @@ import com.beipuo.mekenergistics.network.packet.CycleAeOutputModePacket;
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputTypePacket;
 import com.beipuo.mekenergistics.network.packet.SetPatternTerminalNamePacket;
 import com.beipuo.mekenergistics.network.packet.SetSmartPatternMultiplicationPacket;
+import com.beipuo.mekenergistics.network.packet.SetTerminalVisibilityPacket;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -17,5 +18,6 @@ public final class ModNetwork {
         registrar.playToServer(CycleAeOutputTypePacket.TYPE, CycleAeOutputTypePacket.STREAM_CODEC, CycleAeOutputTypePacket::handle);
         registrar.playToServer(SetPatternTerminalNamePacket.TYPE, SetPatternTerminalNamePacket.STREAM_CODEC, SetPatternTerminalNamePacket::handle);
         registrar.playToServer(SetSmartPatternMultiplicationPacket.TYPE, SetSmartPatternMultiplicationPacket.STREAM_CODEC, SetSmartPatternMultiplicationPacket::handle);
+        registrar.playToServer(SetTerminalVisibilityPacket.TYPE, SetTerminalVisibilityPacket.STREAM_CODEC, SetTerminalVisibilityPacket::handle);
     }
 }

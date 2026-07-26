@@ -87,6 +87,15 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
         getRecipeAeSupport().setPatternTerminalName(name);
     }
 
+    @Override
+    default boolean isVisibleInTerminal() {
+        return getRecipeAeSupport().isVisibleInPatternAccessTerminal();
+    }
+
+    default void setVisibleInPatternAccessTerminal(boolean visible) {
+        getRecipeAeSupport().setVisibleInPatternAccessTerminal(visible);
+    }
+
     default boolean isSmartPatternMultiplicationEnabled() {
         return getRecipeAeSupport().isSmartPatternMultiplicationEnabled();
     }

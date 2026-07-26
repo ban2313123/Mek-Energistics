@@ -48,6 +48,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     public static final int AE_PATTERN_SCHEMA = 2;
     private static final String TAG_PATTERN_SCHEMA = "AePatternSchema";
     private static final String TAG_PATTERN_TERMINAL_NAME = "PatternTerminalName";
+    private static final String TAG_TERMINAL_VISIBLE = "PatternTerminalVisible";
     private static final String TAG_NODE = "node";
 
     protected final O owner;
@@ -60,6 +61,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     protected IManagedGridNode mainNode;
     protected int patternPriority;
     protected String patternTerminalName = "";
+    protected boolean visibleInPatternAccessTerminal = true;
 
     private NodeState nodeState = NodeState.NEW;
     private CompoundTag retainedNodeData;
@@ -196,6 +198,18 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         }
         this.patternTerminalName = com.beipuo.mekenergistics.blockentity.api.MeAeMachine.sanitizePatternTerminalName(name);
         requestCraftingUpdate();
+    }
+
+    public final boolean isVisibleInPatternAccessTerminal() {
+        return this.visibleInPatternAccessTerminal;
+    }
+
+    public final void setVisibleInPatternAccessTerminal(boolean visible) {
+        if (this.visibleInPatternAccessTerminal == visible) {
+            return;
+        }
+        this.visibleInPatternAccessTerminal = visible;
+        this.owner.saveChanges();
     }
 
     public final void createOnFirstTick() {
@@ -385,6 +399,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     public final void save(CompoundTag tag) {
         tag.putInt("PatternPriority", this.patternPriority);
         this.smartPatternMultiplication.saveConfig(tag);
+        tag.putBoolean(TAG_TERMINAL_VISIBLE, this.visibleInPatternAccessTerminal);
         tag.remove(TAG_PATTERN_TERMINAL_NAME);
         saveNode(tag);
     }
@@ -405,6 +420,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     public final void load(CompoundTag tag) {
         this.patternPriority = tag.getInt("PatternPriority");
         this.smartPatternMultiplication.loadConfig(tag);
+        this.visibleInPatternAccessTerminal = !tag.contains(TAG_TERMINAL_VISIBLE) || tag.getBoolean(TAG_TERMINAL_VISIBLE);
         this.patternTerminalName = MePatternTerminalNames.migrateLegacy(this.ownerTile, tag.getString(TAG_PATTERN_TERMINAL_NAME));
         loadNode(tag);
     }

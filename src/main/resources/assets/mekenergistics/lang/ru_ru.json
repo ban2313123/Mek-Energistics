@@ -5,6 +5,8 @@
   "gui.mekenergistics.me_patterns.rename": "Переименовать машину",
   "gui.mekenergistics.me_patterns.smart_multiplication.on": "Умное умножение шаблона: Вкл",
   "gui.mekenergistics.me_patterns.smart_multiplication.off": "Умное умножение шаблона: Выкл",
+  "gui.mekenergistics.me_patterns.terminal_visibility.shown": "Отображается в терминале доступа к шаблонам",
+  "gui.mekenergistics.me_patterns.terminal_visibility.hidden": "Скрыто из терминала доступа к шаблонам",
   "config.jade.plugin_mekenergistics.ae_status": "Статус МЭ-сети",
   "tooltip.mekenergistics.ae_status.online": "МЭ-сеть: В сети",
   "tooltip.mekenergistics.ae_status.offline": "МЭ-сеть: Не в сети",

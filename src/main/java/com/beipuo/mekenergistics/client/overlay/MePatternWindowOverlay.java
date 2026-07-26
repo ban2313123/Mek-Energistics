@@ -13,6 +13,7 @@ import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputTypePacket;
 import com.beipuo.mekenergistics.network.packet.SetPatternTerminalNamePacket;
 import com.beipuo.mekenergistics.network.packet.SetSmartPatternMultiplicationPacket;
+import com.beipuo.mekenergistics.network.packet.SetTerminalVisibilityPacket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -62,6 +63,8 @@ public final class MePatternWindowOverlay {
     private static final Component RENAME_BUTTON_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.rename");
     private static final Component SMART_MULTIPLICATION_ON_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.smart_multiplication.on");
     private static final Component SMART_MULTIPLICATION_OFF_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.smart_multiplication.off");
+    private static final Component TERMINAL_VISIBLE_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.terminal_visibility.shown");
+    private static final Component TERMINAL_HIDDEN_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.terminal_visibility.hidden");
     private static final int TAB_X = 0;
     private static final int TAB_Y = 62;
     private static final int TAB_SIZE = 26;
@@ -73,6 +76,8 @@ public final class MePatternWindowOverlay {
     private static final ResourceLocation LEFT_BUTTON = MekanismUtils.getResource(ResourceType.GUI_BUTTON, "left.png");
     private static final ResourceLocation RIGHT_BUTTON = MekanismUtils.getResource(ResourceType.GUI_BUTTON, "right.png");
     private static final ResourceLocation CHECK_BUTTON = MekanismUtils.getResource(ResourceType.GUI_BUTTON, "checkmark.png");
+    private static final ResourceLocation PUBLIC_BUTTON = MekanismUtils.getResource(ResourceType.GUI_BUTTON, "public.png");
+    private static final ResourceLocation PRIVATE_BUTTON = MekanismUtils.getResource(ResourceType.GUI_BUTTON, "private.png");
     private static final ResourceLocation PATTERN_BUTTON_ICON = ResourceLocation.fromNamespaceAndPath(MekEnergistics.MODID, "textures/gui/button/pattern_button.png");
     private static final ResourceLocation EMPTY_PATTERN_ICON = ResourceLocation.fromNamespaceAndPath(MekEnergistics.MODID, "textures/gui/slot/pattern_empty.png");
     private static final int WINDOW_WIDTH = 178;
@@ -141,12 +146,14 @@ public final class MePatternWindowOverlay {
         if (container.getTileEntity() instanceof MeAeMachine machine) {
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
                     new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
-                    new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode));
+                    new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode),
+                    new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
         if (container.getTileEntity() instanceof MeFactoryAeMachine machine) {
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
                     new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
-                    new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode));
+                    new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode),
+                    new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
         return null;
     }
@@ -185,7 +192,18 @@ public final class MePatternWindowOverlay {
 
     private record Target(GuiMekanism<?> gui, MekanismTileContainer<?> container,
                           List<BasicInventorySlot> patternSlots, NameAccess nameAccess,
-                          SmartMultiplicationAccess smartMultiplicationAccess, OutputAccess outputAccess) {
+                          SmartMultiplicationAccess smartMultiplicationAccess, OutputAccess outputAccess,
+                          TerminalVisibilityAccess terminalVisibilityAccess) {
+    }
+
+    private record TerminalVisibilityAccess(Supplier<Boolean> getter, Consumer<Boolean> setter) {
+        private boolean get() {
+            return Boolean.TRUE.equals(this.getter.get());
+        }
+
+        private void set(boolean visible) {
+            this.setter.accept(visible);
+        }
     }
 
     private record NameAccess(Supplier<String> getter, Consumer<String> setter) {
@@ -245,10 +263,12 @@ public final class MePatternWindowOverlay {
         private final List<PatternGuiVirtualSlot> slots = new ArrayList<>(SLOTS_PER_PAGE);
         private final GuiTextField nameField;
         private final MekanismImageButton smartMultiplicationButton;
+        private final MekanismImageButton terminalVisibilityButton;
         private int currentPage;
         private boolean nameEditorOpen;
         private String lastSavedName;
         private boolean smartMultiplicationEnabled;
+        private boolean visibleInTerminal;
 
         private MePatternWindow(IGuiWrapper gui, int x, int y, Target target) {
             super(gui, x, y, WINDOW_WIDTH, WINDOW_HEIGHT, SelectedWindowData.UNSPECIFIED);
@@ -265,6 +285,15 @@ public final class MePatternWindowOverlay {
             this.smartMultiplicationButton = addChild(new MekanismImageButton(gui, relativeX + 18, relativeY + 4, 12, CHECK_BUTTON,
                     (element, mouseX, mouseY) -> toggleSmartPatternMultiplication()));
             updateSmartMultiplicationTooltip();
+            this.visibleInTerminal = this.target.terminalVisibilityAccess().get();
+            this.terminalVisibilityButton = addChild(new MekanismImageButton(gui, relativeX + 32, relativeY + 4, 12, PUBLIC_BUTTON,
+                    (element, mouseX, mouseY) -> toggleTerminalVisibility()) {
+                @Override
+                protected ResourceLocation getResource() {
+                    return MePatternWindow.this.visibleInTerminal ? PUBLIC_BUTTON : PRIVATE_BUTTON;
+                }
+            });
+            updateTerminalVisibilityTooltip();
             addChild(new MekanismImageButton(gui, relativeX + 158, relativeY + 4, 12, CHECK_BUTTON, (element, mouseX, mouseY) -> toggleNameEditor()))
                     .setTooltip(Tooltip.create(RENAME_BUTTON_TOOLTIP));
             this.lastSavedName = this.target.nameAccess().get();
@@ -293,6 +322,18 @@ public final class MePatternWindowOverlay {
 
         private void updateSmartMultiplicationTooltip() {
             this.smartMultiplicationButton.setTooltip(Tooltip.create(this.smartMultiplicationEnabled ? SMART_MULTIPLICATION_ON_TOOLTIP : SMART_MULTIPLICATION_OFF_TOOLTIP));
+        }
+
+        private boolean toggleTerminalVisibility() {
+            this.visibleInTerminal = !this.visibleInTerminal;
+            this.target.terminalVisibilityAccess().set(this.visibleInTerminal);
+            PacketDistributor.sendToServer(new SetTerminalVisibilityPacket(this.target.container().getTileEntity().getBlockPos(), this.visibleInTerminal));
+            updateTerminalVisibilityTooltip();
+            return true;
+        }
+
+        private void updateTerminalVisibilityTooltip() {
+            this.terminalVisibilityButton.setTooltip(Tooltip.create(this.visibleInTerminal ? TERMINAL_VISIBLE_TOOLTIP : TERMINAL_HIDDEN_TOOLTIP));
         }
 
         private boolean toggleNameEditor() {
@@ -386,6 +427,11 @@ public final class MePatternWindowOverlay {
             if (syncedSmartMultiplication != this.smartMultiplicationEnabled) {
                 this.smartMultiplicationEnabled = syncedSmartMultiplication;
                 updateSmartMultiplicationTooltip();
+            }
+            boolean syncedTerminalVisibility = this.target.terminalVisibilityAccess().get();
+            if (syncedTerminalVisibility != this.visibleInTerminal) {
+                this.visibleInTerminal = syncedTerminalVisibility;
+                updateTerminalVisibilityTooltip();
             }
             drawTitleText(guiGraphics, PATTERN_WINDOW_TITLE, 6);
             drawScrollingString(guiGraphics, Component.literal((this.currentPage + 1) + "/" + pageCount()),

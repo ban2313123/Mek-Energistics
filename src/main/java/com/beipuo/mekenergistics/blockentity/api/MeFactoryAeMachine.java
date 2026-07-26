@@ -78,6 +78,15 @@ public interface MeFactoryAeMachine extends MePatternIoOwner, IGridConnectedBloc
         getAeSupport().cycleAeOutputMode(type);
     }
 
+    @Override
+    default boolean isVisibleInTerminal() {
+        return getAeSupport().isVisibleInPatternAccessTerminal();
+    }
+
+    default void setVisibleInPatternAccessTerminal(boolean visible) {
+        getAeSupport().setVisibleInPatternAccessTerminal(visible);
+    }
+
     default boolean isSmartPatternMultiplicationEnabled() {
         return getAeSupport().isSmartPatternMultiplicationEnabled();
     }
@@ -101,6 +110,8 @@ public interface MeFactoryAeMachine extends MePatternIoOwner, IGridConnectedBloc
                 mode -> getAeSupport().setAeOutputMode(AeOutputMode.byId(mode))));
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(
                 this::isSmartPatternMultiplicationEnabled, this::setSmartPatternMultiplicationEnabled));
+        container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(
+                this::isVisibleInTerminal, this::setVisibleInPatternAccessTerminal));
     }
 
     default void setOwner(ServerPlayer player) {
