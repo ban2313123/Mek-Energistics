@@ -114,11 +114,22 @@ class MeMekanismMachineDefinitionTest {
         assertFalse(MeMekanismMachine.DIGITAL_MINER.hasRecipeLogic());
     }
 
+    /**
+     * Factories inherit their base machine's energy instead of a flat constant, so the suppliers now
+     * read Mekanism's config. Building them must stay side-effect free -- touching MekanismConfig
+     * loads Minecraft registries, which cannot happen outside a running game -- so this asserts a
+     * supplier is produced without evaluating it. The derivation itself is covered by
+     * {@link MeMachineEnergyProfileTest}.
+     */
     @Test
-    void factoriesKeepDefaultEnergyProfile() {
-        assertEquals(50L, MeMekanismMachine.BASIC_SMELTING_FACTORY.energyUsage().getAsLong());
-        assertEquals(2_000_000L,
-                MeMekanismMachine.BASIC_SMELTING_FACTORY.energyStorage().getAsLong());
+    void energyProfileIsBuiltWithoutReadingConfig() {
+        for (MeMekanismMachine machine : new MeMekanismMachine[] {
+                MeMekanismMachine.BASIC_SMELTING_FACTORY,
+                MeMekanismMachine.ULTIMATE_PURIFYING_FACTORY,
+                MeMekanismMachine.ENRICHMENT_CHAMBER}) {
+            assertNotNull(machine.energyUsage(), machine.name());
+            assertNotNull(machine.energyStorage(), machine.name());
+        }
     }
 
     private static void assertDefinition(
