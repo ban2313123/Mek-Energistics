@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.0.0
+
+### English
+
+#### Change
+
+- Moved the item, chemical, and fluid output-to-AE controls into the shared pattern window and added a persisted per-machine toggle for showing patterns in the Pattern Access Terminal.
+- Expanded Mekanism: MoreMachine large-machine networking so AE2 cables can connect anywhere on an exposed multiblock surface, with correctly owned nodes for AE2 security.
+- Matched ME factory energy usage and storage to the base machine and factory tier it mirrors, including Evolved Mekanism, Mekanism: MoreMachine, Mekanism Extras, and Evolved Mekanism Extras machines and factories.
+- Reduced per-tick overhead by caching stable pattern I/O layouts, optional-mod lookups, factory tier reflection, pattern-slot views, and machine block lookups.
+- Reorganized machine definitions, energy profiles, I/O profiles, factory GUI geometry, and optional compatibility boundaries, with stronger transaction, output-drain, save-compatibility, and architecture tests.
+
+#### Fix
+
+- Fixed `patternPages` and `preferLocalFe` configuration values not being synchronized from the server, which could make clients address the wrong machine inventory slots.
+- Fixed optional large-machine and Evolved Mekanism Extras mixins loading when their target classes were absent, and made missing optional block entities or ExtendedAE rename hooks degrade safely instead of crashing startup or world loading.
+- Fixed ME factories using a flat 50 J/t cost and 2,000,000 J buffer instead of the upstream machine's configured energy values and tier process count.
+- Fixed Jade AE status tooltips using unrelated AE2 translation keys and added consistent localized text for the missing-channel state.
+
+### 中文
+
+#### 变更
+
+- 将物品、化学品和流体的 AE 输出控制移入共用样板窗口，并新增按机器持久化的“是否在样板访问终端中显示”开关。
+- 扩展 Mekanism: MoreMachine 大型机器的网络连接，使 AE2 线缆可连接多方块结构任意外露表面，并为所有节点设置正确的 AE2 安全所有者。
+- 使 ME 工厂的能耗与储能匹配其对应基础机器和工厂等级，覆盖 Evolved Mekanism、Mekanism: MoreMachine、Mekanism Extras 与 Evolved Mekanism Extras 的机器和工厂。
+- 缓存稳定的样板 I/O 布局、可选模组检测、工厂等级反射结果、样板槽视图与机器方块查询，降低每 tick 的重复开销。
+- 重构机器定义、能量配置、I/O 配置、工厂 GUI 布局及可选兼容边界，并加强事务安全、输出提取、存档兼容与架构测试。
+
+#### 修复
+
+- 修复 `patternPages` 与 `preferLocalFe` 配置未从服务端同步，导致客户端可能访问错误机器物品栏槽位的问题。
+- 修复大型机器与 Evolved Mekanism Extras 的 Mixin 在目标类不存在时仍会加载的问题；当可选方块实体或 ExtendedAE 重命名钩子缺失时，现在会安全降级而非导致启动或世界加载崩溃。
+- 修复 ME 工厂统一使用 50 J/t 与 2,000,000 J 储能，而未采用上游机器配置能耗及对应等级并行数的问题。
+- 修复 Jade 的 AE 状态提示错误使用无关 AE2 翻译键的问题，并补充统一的“缺少频道”本地化文本。
+
 ## 2.0.0-beta
 
 ### Change
