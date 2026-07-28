@@ -1,9 +1,7 @@
 package com.beipuo.mekenergistics.blockentity.compat.eme.machine;
 
-import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
@@ -17,22 +15,16 @@ import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntitySolidifierAccessor;
 import fr.iglee42.evolvedmekanism.recipes.SolidificationRecipe;
 import fr.iglee42.evolvedmekanism.tiles.machine.TileEntitySolidifier;
-import mekanism.api.Action;
-import mekanism.api.AutomationType;
 import mekanism.api.IContentsListener;
 import mekanism.api.recipes.cache.CachedRecipe;
 import mekanism.common.capabilities.fluid.BasicFluidTank;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.slot.InputInventorySlot;
-import mekanism.common.inventory.slot.OutputInventorySlot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import org.jetbrains.annotations.NotNull;
 
 public class MeSolidifierBlockEntity extends TileEntitySolidifier implements ICraftingProvider, MeSmartCableConnection, IActionHost, MeAeMachine {

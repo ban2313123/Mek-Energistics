@@ -5,6 +5,7 @@ import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.item.MeMachineBlockItem;
 import java.util.EnumMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.IEventBus;
@@ -48,14 +49,36 @@ public final class ModBlocks {
         return MACHINES.values().stream().map(MeBlockRegistryObject::get).toArray(Block[]::new);
     }
 
+    /**
+     * Reverse index for {@link #getMachine(Block)}, which sits on block-interaction paths and would
+     * otherwise scan every registered machine. Built lazily rather than in the static initializer
+     * because the {@link DeferredBlock} holders cannot be dereferenced until registration has run.
+     */
+    private static volatile Map<Block, MeMekanismMachine> machinesByBlock;
+
     @Nullable
     public static MeMekanismMachine getMachine(Block block) {
-        for (Map.Entry<MeMekanismMachine, MeBlockRegistryObject<MeMekanismMachineBlock, MeMachineBlockItem>> entry : MACHINES.entrySet()) {
-            if (entry.getValue().get() == block) {
-                return entry.getKey();
+        if (block == null) {
+            return null;
+        }
+        return machinesByBlock().get(block);
+    }
+
+    private static Map<Block, MeMekanismMachine> machinesByBlock() {
+        Map<Block, MeMekanismMachine> index = machinesByBlock;
+        if (index == null) {
+            synchronized (ModBlocks.class) {
+                index = machinesByBlock;
+                if (index == null) {
+                    index = new IdentityHashMap<>(MACHINES.size());
+                    for (Map.Entry<MeMekanismMachine, MeBlockRegistryObject<MeMekanismMachineBlock, MeMachineBlockItem>> entry : MACHINES.entrySet()) {
+                        index.put(entry.getValue().get(), entry.getKey());
+                    }
+                    machinesByBlock = index;
+                }
             }
         }
-        return null;
+        return index;
     }
 
     public static void register(IEventBus eventBus) {

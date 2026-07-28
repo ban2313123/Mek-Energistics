@@ -41,8 +41,8 @@ public class MeGuiExtraFactory extends MeGuiConfigurableTile<TileEntityExtraFact
             inventoryLabelY = 75;
         }
         int index = tile.tier.ordinal();
-        imageWidth += (36 * (index + 2)) + (2 * index);
-        inventoryLabelX = (22 * (index + 2)) - (3 * index);
+        imageWidth += MeFactoryGuiLayout.imageWidthDelta(index);
+        inventoryLabelX = MeFactoryGuiLayout.inventoryLabelX(index);
         titleLabelY = 4;
         dynamicSlots = true;
     }
@@ -58,10 +58,10 @@ public class MeGuiExtraFactory extends MeGuiConfigurableTile<TileEntityExtraFact
             if (tile instanceof TileEntityExtraItemStackChemicalToItemStackFactory factory) {
                 int index = tile.tier.ordinal();
                 addRenderableWidget(new GuiChemicalBar(this, GuiChemicalBar.getProvider(factory.getChemicalTank(), tile.getChemicalTanks(null)), 7, 76,
-                        210 + 38 * index, 4, true))
+                        MeFactoryGuiLayout.barWidth(index), 4, true))
                         .warning(WarningType.NO_MATCHING_RECIPE, tile.getWarningCheck(RecipeError.NOT_ENOUGH_SECONDARY_INPUT, 0));
                 dumpButton = addRenderableWidget(new GuiDumpButton<>(this, (TileEntityExtraFactory<?> & IHasDumpButton) tile,
-                        220 + 38 * index, 76));
+                        MeFactoryGuiLayout.buttonX(index), 76));
             }
         }
 

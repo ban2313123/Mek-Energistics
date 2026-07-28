@@ -3,8 +3,6 @@ package com.beipuo.mekenergistics.blockentity.factory;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 
-import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.List;
@@ -19,7 +17,6 @@ import mekanism.common.tile.factory.TileEntityItemStackToItemStackFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;

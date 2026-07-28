@@ -1,9 +1,7 @@
 package com.beipuo.mekenergistics.blockentity.compat.mekmm.machine;
 
-import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
-import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
@@ -17,7 +15,6 @@ import com.beipuo.mekenergistics.mixin.TileEntityFluidReplicatorAccessor;
 import com.jerry.mekmm.common.tile.machine.TileEntityFluidReplicator;
 import java.util.List;
 import mekanism.api.IContentsListener;
-import mekanism.api.chemical.IChemicalTank;
 import mekanism.common.capabilities.holder.chemical.IChemicalTankHolder;
 import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
 import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;

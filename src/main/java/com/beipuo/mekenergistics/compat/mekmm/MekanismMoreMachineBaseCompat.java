@@ -38,6 +38,7 @@ import com.jerry.meklm.common.content.blocktype.LargeMachineBlockShapes;
 import com.jerry.meklm.common.registries.LargeMachineContainerTypes;
 import com.jerry.mekmm.common.registries.MoreMachineContainerTypes;
 import com.jerry.mekmm.common.config.MoreMachineConfig;
+import java.util.function.LongSupplier;
 import java.util.Locale;
 import mekanism.api.Upgrade;
 import mekanism.common.block.attribute.Attribute;
@@ -124,6 +125,40 @@ public final class MekanismMoreMachineBaseCompat {
         return built;
     }
 
+    /**
+     * MoreMachine's own energy config. It lives in an optional mod, so the shared
+     * {@code MeMachineEnergyProfile} cannot reach it and falls back to a neutral default for these
+     * machines -- the mapping belongs here, behind the compat boundary, alongside the large-machine
+     * wiring below.
+     */
+    private static LongSupplier moreMachineUsage(MeMekanismMachine machine) {
+        return switch (machine) {
+            case RECYCLER -> MoreMachineConfig.usage.recycler;
+            case PLANTING_STATION -> MoreMachineConfig.usage.plantingStation;
+            case CNC_STAMPER -> MoreMachineConfig.usage.cnc_stamper;
+            case CNC_LATHE -> MoreMachineConfig.usage.cnc_lathe;
+            case CNC_ROLLING_MILL -> MoreMachineConfig.usage.cnc_rollingMill;
+            case REPLICATOR -> MoreMachineConfig.usage.itemReplicator;
+            case CHEMICAL_REPLICATOR -> MoreMachineConfig.usage.chemicalReplicator;
+            case FLUID_REPLICATOR -> MoreMachineConfig.usage.fluidReplicator;
+            default -> machine.energyUsage();
+        };
+    }
+
+    private static LongSupplier moreMachineStorage(MeMekanismMachine machine) {
+        return switch (machine) {
+            case RECYCLER -> MoreMachineConfig.storage.recycler;
+            case PLANTING_STATION -> MoreMachineConfig.storage.plantingStation;
+            case CNC_STAMPER -> MoreMachineConfig.storage.cnc_stamper;
+            case CNC_LATHE -> MoreMachineConfig.storage.cnc_lathe;
+            case CNC_ROLLING_MILL -> MoreMachineConfig.storage.cnc_rollingMill;
+            case REPLICATOR -> MoreMachineConfig.storage.itemReplicator;
+            case CHEMICAL_REPLICATOR -> MoreMachineConfig.storage.chemicalReplicator;
+            case FLUID_REPLICATOR -> MoreMachineConfig.storage.fluidReplicator;
+            default -> machine.energyStorage();
+        };
+    }
+
     public static <TILE extends TileEntityMekanism> BlockTypeTile<TILE> createBaseBlockType(
             MeMekanismMachine machine, TileEntityTypeRegistryObject<TILE> tileType) {
         if (machine.isMekmmLargeMachine()) {
@@ -132,7 +167,7 @@ public final class MekanismMoreMachineBaseCompat {
         var builder = BlockTypeTile.BlockTileBuilder
                 .createBlock(() -> tileType, machine::translationKey)
                 .withGui(() -> baseContainer(machine))
-                .withEnergyConfig(machine.energyUsage(), machine.energyStorage())
+                .withEnergyConfig(moreMachineUsage(machine), moreMachineStorage(machine))
                 .with(new AttributeStateFacing(), Attributes.ACTIVE_LIGHT, Attributes.INVENTORY, Attributes.REDSTONE, Attributes.SECURITY, Attributes.COMPARATOR)
                 .withSideConfig(machine == MeMekanismMachine.CHEMICAL_REPLICATOR
                         ? new TransmissionType[] {TransmissionType.ITEM, TransmissionType.ENERGY, TransmissionType.CHEMICAL}

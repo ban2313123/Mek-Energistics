@@ -16,6 +16,7 @@
   "tooltip.mekenergistics.ae_status.online": "AE Network: Online",
   "tooltip.mekenergistics.ae_status.offline": "AE Network: Offline",
   "tooltip.mekenergistics.ae_status.booting": "AE Network: Booting",
+  "tooltip.mekenergistics.ae_status.missing_channel": "AE Network: Missing Channel",
   "tooltip.mekenergistics.ae_output.button": "Output to AE",
   "tooltip.mekenergistics.ae_output.enabled": "AE: On",
   "tooltip.mekenergistics.ae_output.disabled": "AE: Off",
