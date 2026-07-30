@@ -2,8 +2,8 @@ package com.beipuo.mekenergistics.compat.jade;
 
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
-import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import mekanism.common.block.prefab.BlockFactoryMachine;
+import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.resources.ResourceLocation;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IComponentProvider;
@@ -21,12 +21,13 @@ public class MekEnergisticsJadePlugin implements IWailaPlugin {
     // provider to fail its instanceof check and bail.
     @Override
     public void register(IWailaCommonRegistration registration) {
-        registration.registerBlockDataProvider(MeAeStatusDataProvider.INSTANCE, MeAeMachine.class);
-        registration.registerBlockDataProvider(MeAeStatusDataProvider.INSTANCE, MeFactoryAeMachine.class);
+        registration.registerBlockDataProvider(MeAeStatusDataProvider.INSTANCE, TileEntityMekanism.class);
     }
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
+        registration.registerBlockComponent(
+                (IComponentProvider<BlockAccessor>) MeAeStatusComponentProvider.INSTANCE, BlockFactoryMachine.class);
         registration.registerBlockComponent(
                 (IComponentProvider<BlockAccessor>) MeAeStatusComponentProvider.INSTANCE, MeMekanismMachineBlock.class);
     }

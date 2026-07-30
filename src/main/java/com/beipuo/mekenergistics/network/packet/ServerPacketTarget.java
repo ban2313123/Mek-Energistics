@@ -1,5 +1,6 @@
 package com.beipuo.mekenergistics.network.packet;
 
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +21,9 @@ final class ServerPacketTarget {
         }
         BlockEntity blockEntity = player.level().getBlockEntity(pos);
         if (!type.isInstance(blockEntity) || !isOpenTarget(player, blockEntity)) {
+            return Optional.empty();
+        }
+        if (blockEntity instanceof MeUpgradeableMachine machine && !machine.isMeUpgradeActive()) {
             return Optional.empty();
         }
         return Optional.of(type.cast(blockEntity));

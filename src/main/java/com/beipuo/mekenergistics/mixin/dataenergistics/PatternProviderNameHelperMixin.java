@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.mixin.dataenergistics;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,6 +32,7 @@ public abstract class PatternProviderNameHelperMixin {
     }
 
     private static boolean mekenergistics$isMePatternProvider(Object target) {
-        return target instanceof MeAeSupportOwner;
+        return target instanceof MeAeSupportOwner owner
+                && (!(owner instanceof MeUpgradeableMachine upgradeable) || upgradeable.isMeUpgradeTarget());
     }
 }

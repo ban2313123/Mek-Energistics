@@ -48,6 +48,9 @@ base {
 def debugRuns = providers.gradleProperty('mekenergistics.debugRuns')
         .map { it.toBoolean() }
         .orElse(false)
+def empoweredRuntime = providers.gradleProperty('mekenergistics.enableEmpoweredRuntime')
+        .map { it.toBoolean() }
+        .orElse(true)
 
 // Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -154,11 +157,14 @@ dependencies {
     // "ex-pattern-provider" is ExtendedAE under its former project name. This is what lets
     // mixin/extendedae/ContainerRenamerMixin compile; nothing else here advertises the connection.
     compileOnly "curse.maven:ex-pattern-provider-892005:8025439"        // extendedae 1.21-2.2.32-neoforge
+    compileOnly "curse.maven:mekanism-empowered-core-1256399:8064667"  // mekanism_empowered_core 21.1-1.2.2 API
 
     localRuntime "org.appliedenergistics:guideme:2.5.1"
     localRuntime "curse.maven:kotlin-for-forge-351264:8335665"          // Kotlin for Forge, bundles Kotlin 2.4.0
-    localRuntime "curse.maven:mekanism-empowered-1256390:8064666"       // mekanism_empowered 21.1-1.2.2
-    localRuntime "curse.maven:mekanism-empowered-core-1256399:8064667"  // mekanism_empowered_core 21.1-1.2.2
+    if (empoweredRuntime.get()) {
+        localRuntime "curse.maven:mekanism-empowered-1256390:8064666"       // mekanism_empowered 21.1-1.2.2
+        localRuntime "curse.maven:mekanism-empowered-core-1256399:8064667"  // mekanism_empowered_core 21.1-1.2.2
+    }
     localRuntime "curse.maven:mekanism-generators-268566:7904061"       // mekanismgenerators 10.7.19
     localRuntime "curse.maven:jei-238222:7420587"                       // jei 19.27.0.340
     localRuntime "curse.maven:ae2-jei-integration-1074338:7727898"      // ae2jeiintegration 1.2.1

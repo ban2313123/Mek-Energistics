@@ -6,6 +6,7 @@ import appeng.api.networking.IGridNode;
 import appeng.api.util.AECableType;
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
@@ -19,6 +20,8 @@ import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.tile.TileEntityBoundingBlock;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.neoforged.bus.api.IEventBus;
@@ -74,6 +77,20 @@ public final class ModBlockEntities {
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        Block[] upgradeTargets = CompatMachineCatalog.available()
+                .filter(spec -> !spec.machine().isFactory()
+                        || spec.machine().family()
+                                == com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily.MEKANISM_FACTORY)
+                .map(spec -> BuiltInRegistries.BLOCK.get(spec.sourceBlockId()))
+                .filter(block -> block != null && block != net.minecraft.world.level.block.Blocks.AIR)
+                .toArray(Block[]::new);
+        if (upgradeTargets.length > 0) {
+            event.registerBlock(AECapabilities.IN_WORLD_GRID_NODE_HOST,
+                    (level, pos, state, blockEntity, context) ->
+                            blockEntity instanceof MeUpgradeableMachine machine
+                                    && machine.isMeUpgradeActive() ? machine : null,
+                    upgradeTargets);
+        }
         CompatMachineCatalog.available().forEach(spec -> CompatMachineProviders.get(spec.provider())
                 .registerGridNodeHost(spec, event, MACHINES.get(spec.machine())));
         if (CompatMachineCatalog.available().anyMatch(spec -> spec.machine().isMekmmLargeMachine())) {

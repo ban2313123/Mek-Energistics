@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.mixin.dataenergistics;
 
 import appeng.helpers.patternprovider.PatternContainer;
 import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,7 +23,9 @@ public abstract class PatternProviderSyncHelperMixin {
     }
 
     private static void mekenergistics$skipMekanismTileReflectionIfNeeded(PatternContainer provider, CallbackInfoReturnable<Boolean> cir) {
-        if (provider instanceof MeAeSupportOwner) {
+        if (provider instanceof MeUpgradeableMachine upgradeable && !upgradeable.isMeUpgradeActive()) {
+            cir.setReturnValue(false);
+        } else if (provider instanceof MeAeSupportOwner) {
             cir.setReturnValue(false);
         }
     }

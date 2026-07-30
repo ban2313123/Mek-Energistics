@@ -13,10 +13,10 @@
   "gui.mekenergistics.me_patterns.ae_output.on": "开",
   "gui.mekenergistics.me_patterns.ae_output.off": "关",
   "config.jade.plugin_mekenergistics.ae_status": "AE 网络状态",
-  "tooltip.mekenergistics.ae_status.online": "AE 网络：在线",
-  "tooltip.mekenergistics.ae_status.offline": "AE 网络：离线",
-  "tooltip.mekenergistics.ae_status.booting": "AE 网络：启动中",
-  "tooltip.mekenergistics.ae_status.missing_channel": "AE 网络：缺少通道",
+  "tooltip.mekenergistics.ae_status.online": "设备在线",
+  "tooltip.mekenergistics.ae_status.offline": "设备离线",
+  "tooltip.mekenergistics.ae_status.booting": "网络加载中",
+  "tooltip.mekenergistics.ae_status.missing_channel": "设备缺少频道",
   "tooltip.mekenergistics.ae_output.button": "输出到 AE",
   "tooltip.mekenergistics.ae_output.enabled": "AE：开",
   "tooltip.mekenergistics.ae_output.disabled": "AE：关",
@@ -799,5 +799,8 @@
   "block.mekenergistics.me_infinite_multiversal_centrifuging_factory": "ME 无限多元宇宙离心工厂",
   "container.mekenergistics.me_infinite_multiversal_centrifuging_factory": "ME 无限多元宇宙离心工厂",
   "block.mekenergistics.me_infinite_multiversal_liquifying_factory": "ME 无限多元宇宙液化工厂",
-  "container.mekenergistics.me_infinite_multiversal_liquifying_factory": "ME 无限多元宇宙液化工厂"
+  "container.mekenergistics.me_infinite_multiversal_liquifying_factory": "ME 无限多元宇宙液化工厂",
+  "item.mekenergistics.upgrade_me_pattern_provider": "ME 样板供应升级",
+  "upgrade.mekenergistics.me_pattern_provider": "ME 样板供应",
+  "upgrade.mekenergistics.me_pattern_provider.description": "为支持的通用机械机器添加 ME 样板供应功能。"
 }

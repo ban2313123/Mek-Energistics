@@ -13,10 +13,10 @@
   "gui.mekenergistics.me_patterns.ae_output.on": "On",
   "gui.mekenergistics.me_patterns.ae_output.off": "Off",
   "config.jade.plugin_mekenergistics.ae_status": "AE Network Status",
-  "tooltip.mekenergistics.ae_status.online": "AE Network: Online",
-  "tooltip.mekenergistics.ae_status.offline": "AE Network: Offline",
-  "tooltip.mekenergistics.ae_status.booting": "AE Network: Booting",
-  "tooltip.mekenergistics.ae_status.missing_channel": "AE Network: Missing Channel",
+  "tooltip.mekenergistics.ae_status.online": "Device Online",
+  "tooltip.mekenergistics.ae_status.offline": "Device Offline",
+  "tooltip.mekenergistics.ae_status.booting": "Network Booting",
+  "tooltip.mekenergistics.ae_status.missing_channel": "Device Missing Channel",
   "tooltip.mekenergistics.ae_output.button": "Output to AE",
   "tooltip.mekenergistics.ae_output.enabled": "AE: On",
   "tooltip.mekenergistics.ae_output.disabled": "AE: Off",
@@ -799,5 +799,8 @@
   "block.mekenergistics.me_infinite_multiversal_centrifuging_factory": "ME Infinite Multiversal Centrifuging Factory",
   "container.mekenergistics.me_infinite_multiversal_centrifuging_factory": "ME Infinite Multiversal Centrifuging Factory",
   "block.mekenergistics.me_infinite_multiversal_liquifying_factory": "ME Infinite Multiversal Liquifying Factory",
-  "container.mekenergistics.me_infinite_multiversal_liquifying_factory": "ME Infinite Multiversal Liquifying Factory"
+  "container.mekenergistics.me_infinite_multiversal_liquifying_factory": "ME Infinite Multiversal Liquifying Factory",
+  "item.mekenergistics.upgrade_me_pattern_provider": "ME Pattern Provider Upgrade",
+  "upgrade.mekenergistics.me_pattern_provider": "ME Pattern Provider",
+  "upgrade.mekenergistics.me_pattern_provider.description": "Adds ME pattern provider functionality to a supported Mekanism machine."
 }

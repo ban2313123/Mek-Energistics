@@ -18,8 +18,13 @@ import mekanism.common.lib.transmitter.TransmissionType;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
-public interface MeFactoryAeMachine extends MePatternIoOwner, IGridConnectedBlockEntity, MeSmartCableConnection, appeng.helpers.patternprovider.PatternContainer {
+public interface MeFactoryAeMachine extends MeAeMachine {
     MeFactoryAeSupport getAeSupport();
+
+    @Override
+    default com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport<?> getRecipeAeSupport() {
+        return getAeSupport();
+    }
 
     MeMekanismMachine getMachine();
 

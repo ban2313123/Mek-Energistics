@@ -16,8 +16,12 @@ public class MePatternInventorySlot extends BasicInventorySlot {
     }
 
     private MePatternInventorySlot(Predicate<@NotNull ItemStack> validator, @Nullable IContentsListener listener) {
-        super(1, (stack, automationType) -> automationType == AutomationType.MANUAL,
+        super(1, (stack, automationType) -> allowsInsertion(automationType),
                 (stack, automationType) -> true, validator, listener, 0, 0);
+    }
+
+    static boolean allowsInsertion(AutomationType automationType) {
+        return automationType == AutomationType.MANUAL;
     }
 
     @NotNull

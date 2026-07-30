@@ -4,6 +4,7 @@ import appeng.api.networking.IGridNode;
 import appeng.api.networking.security.IActionHost;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -22,6 +23,9 @@ public class MeAeStatusDataProvider implements IServerDataProvider<BlockAccessor
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         BlockEntity blockEntity = accessor.getBlockEntity();
+        if (blockEntity instanceof MeUpgradeableMachine upgradeable && !upgradeable.isMeUpgradeActive()) {
+            return;
+        }
         if (blockEntity instanceof MeAeMachine || blockEntity instanceof MeFactoryAeMachine) {
             data.putByte(TAG_AE_STATE, (byte) getAeState(blockEntity).ordinal());
         }

@@ -8,10 +8,10 @@
   "gui.mekenergistics.me_patterns.terminal_visibility.shown": "Отображается в терминале доступа к шаблонам",
   "gui.mekenergistics.me_patterns.terminal_visibility.hidden": "Скрыто из терминала доступа к шаблонам",
   "config.jade.plugin_mekenergistics.ae_status": "Статус МЭ-сети",
-  "tooltip.mekenergistics.ae_status.online": "МЭ-сеть: В сети",
-  "tooltip.mekenergistics.ae_status.offline": "МЭ-сеть: Не в сети",
-  "tooltip.mekenergistics.ae_status.booting": "МЭ-сеть: Загрузка",
-  "tooltip.mekenergistics.ae_status.missing_channel": "МЭ-сеть: Нет канала",
+  "tooltip.mekenergistics.ae_status.online": "Устройство онлайн",
+  "tooltip.mekenergistics.ae_status.offline": "Устройство оффлайн",
+  "tooltip.mekenergistics.ae_status.booting": "Загрузка сети",
+  "tooltip.mekenergistics.ae_status.missing_channel": "Для устройства отсутствует канал",
   "tooltip.mekenergistics.ae_output.button": "Вывод в AE",
   "tooltip.mekenergistics.ae_output.enabled": "AE: Вкл",
   "tooltip.mekenergistics.ae_output.disabled": "AE: Выкл",
@@ -690,5 +690,8 @@
   "block.mekenergistics.me_thermalizer": "ME Thermalizer",
   "container.mekenergistics.me_thermalizer": "ME Thermalizer",
   "block.mekenergistics.me_chemixer": "ME Chemical Mixer",
-  "container.mekenergistics.me_chemixer": "ME Chemical Mixer"
+  "container.mekenergistics.me_chemixer": "ME Chemical Mixer",
+  "item.mekenergistics.upgrade_me_pattern_provider": "ME Pattern Provider Upgrade",
+  "upgrade.mekenergistics.me_pattern_provider": "ME Pattern Provider",
+  "upgrade.mekenergistics.me_pattern_provider.description": "Adds ME pattern provider functionality to a supported Mekanism machine."
 }

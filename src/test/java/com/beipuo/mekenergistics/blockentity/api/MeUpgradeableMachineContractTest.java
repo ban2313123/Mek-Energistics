@@ -1,0 +1,93 @@
+package com.beipuo.mekenergistics.blockentity.api;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
+
+class MeUpgradeableMachineContractTest {
+    private static final Path ELECTRIC_MIXIN = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/mixin/TileEntityElectricMachineMeUpgradeMixin.java");
+    private static final Path MACHINE_PROFILE = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeMachineProfiles.java");
+    private static final Path CAPABILITIES = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/registry/ModBlockEntities.java");
+    private static final Path PACKET_TARGET = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/network/packet/ServerPacketTarget.java");
+
+    @Test
+    void attachmentTargetsOnlyTheVanillaEnrichmentChamber() throws IOException {
+        String source = Files.readString(MACHINE_PROFILE);
+
+        assertTrue(source.contains("getBlockState().is(MekanismBlocks.ENRICHMENT_CHAMBER.value())"));
+        assertFalse(source.contains("MekanismBlocks.CRUSHER"));
+        assertFalse(source.contains("MekanismBlocks.ENERGIZED_SMELTER"));
+    }
+
+    @Test
+    void attachmentRoutesPatternsThroughTheVanillaInputAndOutputSlots() throws IOException {
+        String source = Files.readString(MACHINE_PROFILE);
+
+        assertTrue(source.contains("MeMachineIoAdapter.itemInput("));
+        assertTrue(source.contains("mekenergistics$getInputSlot()"));
+        assertTrue(source.contains("MeMachineIoAdapter.itemOutput("));
+        assertTrue(source.contains("mekenergistics$getOutputSlot()"));
+    }
+
+    @Test
+    void inactiveAttachmentsExposeNeitherCapabilityNorPacketTarget() throws IOException {
+        String capabilities = Files.readString(CAPABILITIES);
+        String packets = Files.readString(PACKET_TARGET);
+
+        assertTrue(capabilities.contains("machine.isMeUpgradeActive() ? machine : null"));
+        assertTrue(packets.contains("!machine.isMeUpgradeActive()"));
+        assertTrue(packets.contains("return Optional.empty();"));
+    }
+
+    @Test
+    void mainContainerSynchronizesInstalledUpgradeStateToTheClient() throws IOException {
+        String source = Files.readString(ELECTRIC_MIXIN);
+
+        assertTrue(source.contains("SyncableBoolean.create("));
+        assertTrue(source.contains("MeUpgradeRuntimeState"));
+        assertTrue(source.contains("acceptClientActive(active)"));
+        assertTrue(source.contains("this::mekenergistics$isMeUpgradeInstalledInComponent"));
+        assertTrue(source.contains("tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get())"));
+    }
+
+    @Test
+    void upgradedVanillaRecipeUsesNetworkEnergyAndRefreshesOnTransition() throws IOException {
+        String source = Files.readString(ELECTRIC_MIXIN);
+
+        assertTrue(source.contains("createNewCachedRecipe(Lmekanism/api/recipes/ItemStackToItemStackRecipe;I)"));
+        assertTrue(source.contains("isMeUpgradeTarget() && isMeUpgradeActive()"));
+        assertTrue(source.contains("wrapRecipeEnergy("));
+        assertTrue(source.contains("tile.getEnergyContainer()"));
+        assertTrue(source.contains("setRecipeCacheListener(recipeCacheListener)"));
+        assertTrue(source.contains("refreshRecipeCache()"));
+        assertTrue(Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeRuntimeState.java"))
+                .contains("recipeCacheListener.onContentsChanged()"));
+    }
+
+    @Test
+    void machineSpecificSurfaceIsDelegatedToAReusableProfile() throws IOException {
+        String mixin = Files.readString(ELECTRIC_MIXIN);
+        String contract = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/blockentity/api/MeUpgradeableMachine.java"));
+        String profile = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeMachineProfile.java"));
+
+        assertTrue(mixin.contains("MeUpgradeMachineProfiles.forTile"));
+        assertTrue(mixin.contains("getMeUpgradeProfile()"));
+        assertTrue(mixin.contains("mekenergistics$profile().inputLayoutFor"));
+        assertTrue(mixin.contains("mekenergistics$profile().outputPortsFor"));
+        assertTrue(contract.contains("MeUpgradeMachineProfile<?> getMeUpgradeProfile()"));
+        assertTrue(profile.contains("Predicate<TILE> target"));
+        assertTrue(profile.contains("Function<TILE, MeInputLayout> inputLayout"));
+        assertTrue(profile.contains("Function<TILE, List<? extends MeOutputPort>> outputPorts"));
+    }
+}

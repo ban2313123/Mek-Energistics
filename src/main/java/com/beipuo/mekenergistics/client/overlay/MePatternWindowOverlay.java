@@ -8,6 +8,7 @@ import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.blockentity.support.MePatternDecodeHelper;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputTypePacket;
@@ -95,6 +96,9 @@ public final class MePatternWindowOverlay {
     public static void render(ScreenEvent.Render.Post event) {
         Target target = findTarget(event.getScreen());
         if (target == null) {
+            if (event.getScreen() instanceof GuiMekanism<?> gui) {
+                closeOpenPatternWindows(gui);
+            }
             return;
         }
         ButtonBounds bounds = buttonBounds(target.gui());
@@ -144,6 +148,9 @@ public final class MePatternWindowOverlay {
             return null;
         }
         if (container.getTileEntity() instanceof MeAeMachine machine) {
+            if (machine instanceof MeUpgradeableMachine upgradeable && !upgradeable.isMeUpgradeActive()) {
+                return null;
+            }
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
                     new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
                     new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode),
@@ -186,6 +193,14 @@ public final class MePatternWindowOverlay {
         for (GuiWindow window : gui.getWindows()) {
             if (window instanceof MePatternWindow patternWindow) {
                 patternWindow.saveNameIfDirty();
+            }
+        }
+    }
+
+    private static void closeOpenPatternWindows(GuiMekanism<?> gui) {
+        for (GuiWindow window : new ArrayList<>(gui.getWindows())) {
+            if (window instanceof MePatternWindow patternWindow) {
+                patternWindow.close();
             }
         }
     }

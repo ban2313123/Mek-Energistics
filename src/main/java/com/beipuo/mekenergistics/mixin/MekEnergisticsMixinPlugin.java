@@ -37,12 +37,20 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
     private static final String MEKLM_MACHINE = "com.jerry.meklm.common.tile.machine.";
     private static final String EMEXTRAS_MEKAF_FACTORY =
             "io.github.masyumero.emextras.common.integration.mekaf.tile.factory.";
+    private static final Set<String> EMPOWERED_CORE_REPLACED_MIXINS = Set.of(
+            ".upgrade.UpgradeMixin",
+            ".upgrade.UpgradeUtilsMixin");
 
     private static final Map<String, Gate> OPTIONAL_MIXINS = Map.ofEntries(
             Map.entry(".TileEntityAlloyerAccessor", Gate.mod("evolvedmekanism")),
             Map.entry(".TileEntitySolidifierAccessor", Gate.mod("evolvedmekanism")),
             Map.entry(".TileEntityMelterAccessor", Gate.mod("evolvedmekanism")),
             Map.entry(".TileEntityChemixerAccessor", Gate.mod("evolvedmekanism")),
+            Map.entry(".EvolvedRecipeMachineMeUpgradeMixin", Gate.mod("evolvedmekanism")),
+            Map.entry(".MekmmSimpleRecipeMachineMeUpgradeMixin", Gate.mod("mekmm")),
+            Map.entry(".MekmmComplexRecipeMachineMeUpgradeMixin", Gate.mod("mekmm")),
+            Map.entry(".MeklmLargeRecipeMachineMeUpgradeMixin",
+                    Gate.target("mekmm", MEKLM_MACHINE + "TileEntityLargeRotaryCondensentrator")),
             Map.entry(".TileEntityEMExtraDissolvingFactoryAccessor",
                     Gate.target("emextras", EMEXTRAS_MEKAF_FACTORY + "TileEntityEMExtraDissolvingFactory")),
             Map.entry(".TileEntityChemicalReplicatorAccessor", Gate.mod("mekmm")),
@@ -68,6 +76,15 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        for (String suffix : EMPOWERED_CORE_REPLACED_MIXINS) {
+            if (mixinClassName.endsWith(suffix) && isModLoaded("mekanism_empowered_core")) {
+                return false;
+            }
+        }
+        if (mixinClassName.endsWith(".upgrade.UpgradeEmpoweredCompatibilityMixin")
+                && !isModLoaded("mekanism_empowered_core")) {
+            return false;
+        }
         for (var entry : OPTIONAL_MIXINS.entrySet()) {
             if (mixinClassName.endsWith(entry.getKey())) {
                 Gate gate = entry.getValue();
