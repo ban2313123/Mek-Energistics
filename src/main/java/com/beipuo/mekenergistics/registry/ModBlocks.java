@@ -4,8 +4,8 @@ import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.item.MeMachineBlockItem;
-import java.util.EnumMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.IEventBus;
@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class ModBlocks {
     private static final MeBlockDeferredRegister BLOCKS = new MeBlockDeferredRegister();
-    private static final Map<MeMekanismMachine, MeBlockRegistryObject<MeMekanismMachineBlock, MeMachineBlockItem>> MACHINES = new EnumMap<>(MeMekanismMachine.class);
+    private static final Map<MeMekanismMachine, MeBlockRegistryObject<MeMekanismMachineBlock, MeMachineBlockItem>> MACHINES = new LinkedHashMap<>();
 
     static {
         CompatMachineCatalog.available().forEach(spec ->

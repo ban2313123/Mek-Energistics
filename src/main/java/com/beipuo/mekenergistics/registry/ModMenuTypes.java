@@ -32,7 +32,7 @@ import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
 import com.beipuo.mekenergistics.menu.factory.MePatternFactoryContainer;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
-import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import mekanism.common.inventory.container.tile.MekanismTileContainer;
 import mekanism.common.inventory.container.type.MekanismContainerType;
@@ -196,7 +196,7 @@ public final class ModMenuTypes {
     }
 
     private static Map<MeMekanismMachine, ContainerTypeRegistryObject<?>> createExplicitMachineContainers() {
-        Map<MeMekanismMachine, ContainerTypeRegistryObject<?>> containers = new EnumMap<>(MeMekanismMachine.class);
+        Map<MeMekanismMachine, ContainerTypeRegistryObject<?>> containers = new LinkedHashMap<>();
         containers.put(MeMekanismMachine.METALLURGIC_INFUSER, ME_METALLURGIC_INFUSER);
         containers.put(MeMekanismMachine.COMBINER, ME_COMBINER);
         containers.put(MeMekanismMachine.PRECISION_SAWMILL, ME_PRECISION_SAWMILL);

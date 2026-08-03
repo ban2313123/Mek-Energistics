@@ -55,26 +55,26 @@ class CompatMachineCatalogTest {
     void optionalFeatureMachinesCarryTheirExactRequirements() {
         assertTrue(CompatMachineCatalog.get(MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER)
                 .requirements().contains(CompatRequirement.MEKMM_LARGE_MACHINES));
-        assertTrue(CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY)
+        assertTrue(CompatMachineCatalog.get(MeMekanismMachine.valueOf("ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY"))
                 .requirements().contains(CompatRequirement.EMEKE_ADVANCED_FACTORIES));
-        assertTrue(CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_OVERCLOCKED_CENTRIFUGING_FACTORY)
+        assertTrue(CompatMachineCatalog.get(MeMekanismMachine.valueOf("ABSOLUTE_OVERCLOCKED_CENTRIFUGING_FACTORY"))
                 .requirements().contains(CompatRequirement.EMEKE_ADVANCED_FACTORIES));
-        assertTrue(CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_OVERCLOCKED_PLANTING_FACTORY)
+        assertTrue(CompatMachineCatalog.get(MeMekanismMachine.valueOf("ABSOLUTE_OVERCLOCKED_PLANTING_FACTORY"))
                 .requirements().contains(CompatRequirement.EMEKE_MEKMM_FACTORIES));
         assertEquals(CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY,
-                CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY).family());
+                CompatMachineCatalog.get(MeMekanismMachine.valueOf("ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY")).family());
         assertEquals(CompatMachineFamily.EMEKE_MEKMM_FACTORY,
-                CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_OVERCLOCKED_PLANTING_FACTORY).family());
-        var alloyingRequirements = CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_ALLOYING_FACTORY).requirements();
+                CompatMachineCatalog.get(MeMekanismMachine.valueOf("ABSOLUTE_OVERCLOCKED_PLANTING_FACTORY")).family());
+        var alloyingRequirements = CompatMachineCatalog.get(MeMekanismMachine.valueOf("ABSOLUTE_ALLOYING_FACTORY")).requirements();
         assertEquals(Set.of(CompatRequirement.EMEKE), alloyingRequirements);
         assertEquals(ResourceLocation.fromNamespaceAndPath("emextras", "absolute_alloying_factory"),
-                CompatMachineCatalog.get(MeMekanismMachine.ABSOLUTE_ALLOYING_FACTORY).sourceBlockId());
+                CompatMachineCatalog.get(MeMekanismMachine.valueOf("ABSOLUTE_ALLOYING_FACTORY")).sourceBlockId());
         assertEquals(ResourceLocation.fromNamespaceAndPath("emextras", "supreme_alloying_factory"),
-                CompatMachineCatalog.get(MeMekanismMachine.SUPREME_ALLOYING_FACTORY).sourceBlockId());
+                CompatMachineCatalog.get(MeMekanismMachine.valueOf("SUPREME_ALLOYING_FACTORY")).sourceBlockId());
         assertEquals(ResourceLocation.fromNamespaceAndPath("emextras", "cosmic_alloying_factory"),
-                CompatMachineCatalog.get(MeMekanismMachine.COSMIC_ALLOYING_FACTORY).sourceBlockId());
+                CompatMachineCatalog.get(MeMekanismMachine.valueOf("COSMIC_ALLOYING_FACTORY")).sourceBlockId());
         assertEquals(ResourceLocation.fromNamespaceAndPath("emextras", "infinite_alloying_factory"),
-                CompatMachineCatalog.get(MeMekanismMachine.INFINITE_ALLOYING_FACTORY).sourceBlockId());
+                CompatMachineCatalog.get(MeMekanismMachine.valueOf("INFINITE_ALLOYING_FACTORY")).sourceBlockId());
     }
 
     @Test
@@ -87,7 +87,7 @@ class CompatMachineCatalogTest {
         assertRoutes(CompatMod.MEKMM, CompatRegistrationRoute.MEKMM_MACHINE, CompatRegistrationRoute.MEKMM_FACTORY,
                 CompatRegistrationRoute.MEKMM_ADVANCED_FACTORY);
         assertRoutes(CompatMod.EMEKE, CompatRegistrationRoute.EMEKE_FACTORY,
-                CompatRegistrationRoute.EMEKE_ADVANCED_FACTORY);
+                CompatRegistrationRoute.EMEKE_ADVANCED_FACTORY, CompatRegistrationRoute.EMEKE_MEKMM_FACTORY);
         assertEquals(Set.of(CompatRegistrationRoute.values()), CompatMachineCatalog.all()
                 .map(CompatMachineSpec::route)
                 .collect(Collectors.toSet()));

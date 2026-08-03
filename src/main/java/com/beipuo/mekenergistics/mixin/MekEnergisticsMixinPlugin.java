@@ -24,17 +24,31 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
      * for at registration time for exactly this reason; gating them on the mod id alone left the
      * mixin enabled against a class that need not be present.
      */
-    private record Gate(String modId, String targetClass) {
+    private record Gate(List<String> modIds, String targetClass) {
         static Gate mod(String modId) {
-            return new Gate(modId, null);
+            return new Gate(List.of(modId), null);
         }
 
         static Gate target(String modId, String targetClass) {
-            return new Gate(modId, targetClass);
+            return new Gate(List.of(modId), targetClass);
+        }
+
+        static Gate target(String modId, String targetClass, String additionalModId) {
+            return new Gate(List.of(modId, additionalModId), targetClass);
         }
     }
 
     private static final String MEKLM_MACHINE = "com.jerry.meklm.common.tile.machine.";
+    private static final String MEKEX_FACTORY = "com.jerry.mekextras.common.tile.factory.";
+    private static final String MEKMM_FACTORY = "com.jerry.mekmm.common.tile.factory.";
+    private static final String MEKEX_MEKMM_FACTORY =
+            "com.jerry.mekextras.common.integration.mekmm.tile.factory.";
+    private static final String EMEX_FACTORY = "io.github.masyumero.emextras.common.tile.factory.";
+    private static final String EMEX_MEKMM_FACTORY =
+            "io.github.masyumero.emextras.common.integration.mekmm.tile.factory.";
+    private static final String MEKAF_FACTORY = "com.jerry.mekaf.common.tile.factory.";
+    private static final String MEKEX_MEKAF_FACTORY =
+            "com.jerry.mekextras.common.integration.mekaf.tile.factory.";
     private static final String EMEXTRAS_MEKAF_FACTORY =
             "io.github.masyumero.emextras.common.integration.mekaf.tile.factory.";
     private static final Set<String> EMPOWERED_CORE_REPLACED_MIXINS = Set.of(
@@ -47,12 +61,73 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             Map.entry(".TileEntityMelterAccessor", Gate.mod("evolvedmekanism")),
             Map.entry(".TileEntityChemixerAccessor", Gate.mod("evolvedmekanism")),
             Map.entry(".EvolvedRecipeMachineMeUpgradeMixin", Gate.mod("evolvedmekanism")),
+            Map.entry(".EvolvedAlloyingFactoryMeUpgradeMixin", Gate.mod("evolvedmekanism")),
+            Map.entry(".MekExtrasAlloyingFactoryAccessor",
+                    Gate.target("mekanism_extras", MEKEX_FACTORY + "TileEntityExtraAlloyingFactory",
+                            "evolvedmekanism")),
+            Map.entry(".MekExtrasAlloyingFactoryMeUpgradeEnergyMixin",
+                    Gate.target("mekanism_extras", MEKEX_FACTORY + "TileEntityExtraAlloyingFactory",
+                            "evolvedmekanism")),
+            Map.entry(".MekExtrasFactoryMeUpgradeMixin",
+                    Gate.target("mekanism_extras", MEKEX_FACTORY + "TileEntityExtraFactory")),
+            Map.entry(".MekExtrasFactoryMeUpgradeEnergyMixin",
+                    Gate.target("mekanism_extras", MEKEX_FACTORY + "TileEntityExtraFactory")),
+            Map.entry(".MekmmFactoryMeUpgradeMixin",
+                    Gate.target("mekmm", MEKMM_FACTORY + "TileEntityMoreMachineFactory")),
+            Map.entry(".MekmmFactoryMeUpgradeEnergyMixin",
+                    Gate.target("mekmm", MEKMM_FACTORY + "TileEntityMoreMachineFactory")),
+            Map.entry(".MekExtrasMoreMachineFactoryMeUpgradeMixin",
+                    Gate.target("mekanism_extras", MEKEX_MEKMM_FACTORY + "TileEntityExtraMoreMachineFactory")),
+            Map.entry(".MekExtrasMoreMachineFactoryMeUpgradeEnergyMixin",
+                    Gate.target("mekanism_extras", MEKEX_MEKMM_FACTORY + "TileEntityExtraMoreMachineFactory")),
+            Map.entry(".EmExtrasAlloyingFactoryAccessor",
+                    Gate.target("emextras", EMEX_FACTORY + "TileEntityEMExtraAlloyingFactory")),
+            Map.entry(".EmExtrasFactoryMeUpgradeMixin",
+                    Gate.target("emextras", EMEX_FACTORY + "TileEntityEMExtraFactory")),
+            Map.entry(".EmExtrasFactoryMeUpgradeEnergyMixin",
+                    Gate.target("emextras", EMEX_FACTORY + "TileEntityEMExtraFactory")),
+            Map.entry(".EmExtrasMoreMachineFactoryMeUpgradeMixin",
+                    Gate.target("emextras", EMEX_MEKMM_FACTORY + "TileEntityEMExtraMoreMachineFactory")),
+            Map.entry(".EmExtrasMoreMachineFactoryMeUpgradeEnergyMixin",
+                    Gate.target("emextras", EMEX_MEKMM_FACTORY + "TileEntityEMExtraMoreMachineFactory")),
+            Map.entry(".AdvancedFactoryMeUpgradeMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".MekExtrasAdvancedFactoryMeUpgradeMixin",
+                    Gate.target("mekanism_extras", MEKEX_MEKAF_FACTORY + "base.TileEntityExtraAdvancedFactoryBase")),
+            Map.entry(".EMExtrasAdvancedFactoryMeUpgradeMixin",
+                    Gate.target("emextras", EMEXTRAS_MEKAF_FACTORY + "base.TileEntityEMExtraAdvancedFactoryBase")),
+            Map.entry(".EMExtrasAdvancedFactoryDissolvingPortMixin",
+                    Gate.target("emextras", EMEXTRAS_MEKAF_FACTORY + "TileEntityEMExtraDissolvingFactory")),
+            Map.entry(".MekExtrasAdvancedFactoryDissolvingPortMixin",
+                    Gate.target("mekanism_extras", MEKEX_MEKAF_FACTORY + "TileEntityExtraDissolvingFactory")),
+            Map.entry(".AdvancedFactoryChemicalToChemicalPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".AdvancedFactoryChemicalToItemPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".AdvancedFactoryItemToChemicalPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".AdvancedFactoryItemToItemPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".AdvancedFactoryDissolvingPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "TileEntityDissolvingFactory")),
+            Map.entry(".AdvancedFactoryLiquifyingPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".AdvancedFactoryPaintingPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".AdvancedFactoryPressurizedReactingPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".AdvancedFactoryWashingPortMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
+            Map.entry(".AdvancedFactoryMeUpgradeEnergyMixin",
+                    Gate.target("mekmm", MEKAF_FACTORY + "base.TileEntityAdvancedFactoryBase")),
             Map.entry(".MekmmSimpleRecipeMachineMeUpgradeMixin", Gate.mod("mekmm")),
             Map.entry(".MekmmComplexRecipeMachineMeUpgradeMixin", Gate.mod("mekmm")),
             Map.entry(".MeklmLargeRecipeMachineMeUpgradeMixin",
                     Gate.target("mekmm", MEKLM_MACHINE + "TileEntityLargeRotaryCondensentrator")),
             Map.entry(".TileEntityEMExtraDissolvingFactoryAccessor",
                     Gate.target("emextras", EMEXTRAS_MEKAF_FACTORY + "TileEntityEMExtraDissolvingFactory")),
+            Map.entry(".TileEntityExtraDissolvingFactoryAccessor",
+                    Gate.target("mekanism_extras", MEKEX_MEKAF_FACTORY + "TileEntityExtraDissolvingFactory")),
             Map.entry(".TileEntityChemicalReplicatorAccessor", Gate.mod("mekmm")),
             Map.entry(".TileEntityFluidReplicatorAccessor", Gate.mod("mekmm")),
             Map.entry(".TileEntityLargeRotaryCondensentratorAccessor",
@@ -88,7 +163,7 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
         for (var entry : OPTIONAL_MIXINS.entrySet()) {
             if (mixinClassName.endsWith(entry.getKey())) {
                 Gate gate = entry.getValue();
-                if (!isModLoaded(gate.modId())) {
+                if (!gate.modIds().stream().allMatch(MekEnergisticsMixinPlugin::isModLoaded)) {
                     return false;
                 }
                 return gate.targetClass() == null || isClassPresent(gate.targetClass());

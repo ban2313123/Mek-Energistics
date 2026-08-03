@@ -56,7 +56,7 @@ public abstract class MeklmLargeRecipeMachineMeUpgradeMixin implements MeUpgrade
     @Unique
     private MeMekanismMachine mekenergistics$machine() {
         var id = BuiltInRegistries.BLOCK.getKey(mekenergistics$tile().getBlockState().getBlock());
-        return CompatMachineCatalog.findBySourceBlockId(id).map(spec -> switch (spec.machine()) {
+        return CompatMachineCatalog.findBySourceBlockId(id).map(spec -> switch (spec.machine().identity()) {
             case LARGE_ROTARY_CONDENSENTRATOR, LARGE_SOLAR_NEUTRON_ACTIVATOR,
                     LARGE_ELECTROLYTIC_SEPARATOR, LARGE_CHEMICAL_INFUSER,
                     LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER -> spec.machine();
@@ -76,7 +76,7 @@ public abstract class MeklmLargeRecipeMachineMeUpgradeMixin implements MeUpgrade
 
     @Unique
     private MeInputLayout mekenergistics$inputs(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case LARGE_ROTARY_CONDENSENTRATOR -> {
                 TileEntityLargeRotaryCondensentrator tile = (TileEntityLargeRotaryCondensentrator) (Object) this;
                 yield MeInputLayout.unordered(List.of(tile.getMode()
@@ -108,7 +108,7 @@ public abstract class MeklmLargeRecipeMachineMeUpgradeMixin implements MeUpgrade
 
     @Unique
     private List<? extends MeOutputPort> mekenergistics$outputs(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case LARGE_ROTARY_CONDENSENTRATOR -> {
                 TileEntityLargeRotaryCondensentrator tile = (TileEntityLargeRotaryCondensentrator) (Object) this;
                 yield List.of(tile.getMode() ? MeMachineIoAdapter.chemicalOutput(tile.chemicalTank)

@@ -3,6 +3,9 @@ package com.beipuo.mekenergistics.upgrade;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
+import java.util.List;
 import mekanism.api.IContentsListener;
 import mekanism.api.recipes.MekanismRecipe;
 import mekanism.api.recipes.cache.CachedRecipe;
@@ -35,6 +38,25 @@ public final class MeUpgradeRecipeMachineRuntime {
 
     public MeRecipeMachineAeSupport<?> support() {
         return this.support;
+    }
+
+    public boolean matches(MeUpgradeMachineProfile<?> profile) {
+        return profile != null && matchesProfile(profile);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean matchesProfile(MeUpgradeMachineProfile profile) {
+        return profile.matches(this.tile);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public MeInputLayout inputLayout(MeUpgradeMachineProfile<?> profile) {
+        return ((MeUpgradeMachineProfile) profile).inputLayoutFor(this.tile);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public List<? extends MeOutputPort> outputPorts(MeUpgradeMachineProfile<?> profile) {
+        return ((MeUpgradeMachineProfile) profile).outputPortsFor(this.tile);
     }
 
     public boolean active(boolean target) {
@@ -94,6 +116,7 @@ public final class MeUpgradeRecipeMachineRuntime {
 
     public void cycleOutputMode() {
         this.outputMode = outputMode().next();
+        this.support.invalidatePatternIoCache();
         this.tile.setChanged();
     }
 

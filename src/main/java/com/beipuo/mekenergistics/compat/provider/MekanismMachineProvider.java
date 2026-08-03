@@ -99,7 +99,7 @@ public final class MekanismMachineProvider extends AbstractCompatMachineProvider
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerMachine(
             MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case METALLURGIC_INFUSER -> registrar.register(machine, MeMetallurgicInfuserBlockEntity::new);
             case COMBINER -> registrar.register(machine, MeCombinerBlockEntity::new);
             case PRECISION_SAWMILL -> registrar.register(machine, MePrecisionSawmillBlockEntity::new);
@@ -204,7 +204,7 @@ public final class MekanismMachineProvider extends AbstractCompatMachineProvider
         if (machine.factoryType() != null && machine.factoryTier() != null) {
             return BlockShapes.getShape(machine.factoryTier(), machine.factoryType());
         }
-        return switch (machine) {
+        return switch (machine.identity()) {
             case METALLURGIC_INFUSER -> BlockShapes.METALLURGIC_INFUSER;
             case PRESSURIZED_REACTION_CHAMBER -> BlockShapes.PRESSURIZED_REACTION_CHAMBER;
             case CHEMICAL_CRYSTALLIZER -> BlockShapes.CHEMICAL_CRYSTALLIZER;
@@ -230,7 +230,7 @@ public final class MekanismMachineProvider extends AbstractCompatMachineProvider
     }
 
     private static TransmissionType[] sideConfigFor(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case PRESSURIZED_REACTION_CHAMBER -> new TransmissionType[] {
                     TransmissionType.ITEM, TransmissionType.CHEMICAL, TransmissionType.FLUID, TransmissionType.ENERGY};
             case CHEMICAL_INFUSER, ISOTOPIC_CENTRIFUGE, PIGMENT_MIXER -> new TransmissionType[] {
@@ -263,7 +263,7 @@ public final class MekanismMachineProvider extends AbstractCompatMachineProvider
 
     @Nullable
     private static Class<? extends IInWorldGridNodeHost> machineGridHost(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case METALLURGIC_INFUSER -> MeMetallurgicInfuserBlockEntity.class;
             case COMBINER -> MeCombinerBlockEntity.class;
             case PRECISION_SAWMILL -> MePrecisionSawmillBlockEntity.class;

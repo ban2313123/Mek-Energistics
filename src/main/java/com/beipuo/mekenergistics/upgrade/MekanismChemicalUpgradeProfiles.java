@@ -45,7 +45,7 @@ public final class MekanismChemicalUpgradeProfiles {
     }
 
     private static boolean supported(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case ANTIPROTONIC_NUCLEOSYNTHESIZER, CHEMICAL_CRYSTALLIZER,
                     CHEMICAL_DISSOLUTION_CHAMBER, CHEMICAL_INFUSER, CHEMICAL_OXIDIZER,
                     CHEMICAL_WASHER, ELECTROLYTIC_SEPARATOR, ISOTOPIC_CENTRIFUGE,
@@ -57,7 +57,7 @@ public final class MekanismChemicalUpgradeProfiles {
     }
 
     private static MeInputLayout inputs(TileEntityMekanism tile, MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case ANTIPROTONIC_NUCLEOSYNTHESIZER -> {
                 TileEntityAntiprotonicNucleosynthesizer value = (TileEntityAntiprotonicNucleosynthesizer) tile;
                 TileEntityAntiprotonicNucleosynthesizerAccessor accessor =
@@ -129,7 +129,7 @@ public final class MekanismChemicalUpgradeProfiles {
     }
 
     private static List<? extends MeOutputPort> outputs(TileEntityMekanism tile, MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case ANTIPROTONIC_NUCLEOSYNTHESIZER -> List.of(MeMachineIoAdapter.itemOutput(
                     ((TileEntityAntiprotonicNucleosynthesizerAccessor) tile).mekenergistics$getOutputSlot()));
             case CHEMICAL_CRYSTALLIZER -> List.of(MeMachineIoAdapter.itemOutput(

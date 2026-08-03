@@ -9,7 +9,7 @@
 | 章节 | 主题 |
 | --- | --- |
 | [01 - 先判断机器类型](01-判断机器类型.md) | 新增机器前的分型判断 |
-| [02 - 机器事实来源: MeMekanismMachine](02-机器事实来源.md) | enum 元数据、catalog spec、升级链 |
+| [02 - 机器事实来源: MeMekanismMachine](02-机器事实来源.md) | 稳定身份、工厂生成矩阵、catalog spec、升级链 |
 | [03 - 选择 BlockEntity 模板](03-选择BlockEntity模板.md) | 模板分派与选择 |
 | [04 - 普通机器接入 AE 的必做项](04-普通机器接入AE.md) | MeRecipeMachineAeSupport 接入要点 |
 | [05 - 工厂机器接入 AE 的必做项](05-工厂机器接入AE.md) | MeFactoryAeMachine + MeFactoryAeSupport |

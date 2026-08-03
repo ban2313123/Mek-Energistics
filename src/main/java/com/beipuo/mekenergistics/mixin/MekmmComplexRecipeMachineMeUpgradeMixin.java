@@ -70,7 +70,7 @@ public abstract class MekmmComplexRecipeMachineMeUpgradeMixin implements MeUpgra
     @Unique
     private MeMekanismMachine mekenergistics$machine() {
         var id = BuiltInRegistries.BLOCK.getKey(mekenergistics$tile().getBlockState().getBlock());
-        return CompatMachineCatalog.findBySourceBlockId(id).map(spec -> switch (spec.machine()) {
+        return CompatMachineCatalog.findBySourceBlockId(id).map(spec -> switch (spec.machine().identity()) {
             case PLANTING_STATION, REPLICATOR, CHEMICAL_REPLICATOR, FLUID_REPLICATOR -> spec.machine();
             default -> null;
         }).orElse(null);

@@ -4,14 +4,13 @@ import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineSpec;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
-import java.util.EnumSet;
 import java.util.Set;
 
 /** Resource-only exceptions that do not belong to machine behavior metadata. */
 final class CompatMachineResourceProfile {
     private static final Set<String> HANDWRITTEN_FACTORY_MODEL_TIERS = Set.of(
             "basic", "advanced", "elite", "ultimate", "absolute", "supreme", "cosmic", "infinite");
-    private static final EnumSet<MeMekanismMachine> CUSTOM_ITEM_MODELS = EnumSet.of(
+    private static final Set<MeMekanismMachine> CUSTOM_ITEM_MODELS = Set.of(
             MeMekanismMachine.ELECTROLYTIC_SEPARATOR,
             MeMekanismMachine.ISOTOPIC_CENTRIFUGE,
             MeMekanismMachine.LARGE_ROTARY_CONDENSENTRATOR,
@@ -20,7 +19,7 @@ final class CompatMachineResourceProfile {
             MeMekanismMachine.LARGE_CHEMICAL_INFUSER,
             MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER,
             MeMekanismMachine.PLANTING_STATION);
-    private static final EnumSet<MeMekanismMachine> DEDICATED_ACTIVE_MACHINE_MODELS = EnumSet.of(
+    private static final Set<MeMekanismMachine> DEDICATED_ACTIVE_MACHINE_MODELS = Set.of(
             MeMekanismMachine.ALLOYER,
             MeMekanismMachine.CHEMIXER,
             MeMekanismMachine.CNC_LATHE,
@@ -69,7 +68,7 @@ final class CompatMachineResourceProfile {
         if (usesLegacyExternalFactoryLoot(spec)) {
             return true;
         }
-        return switch (spec.machine()) {
+        return switch (spec.machine().identity()) {
             case CHEMIXER, SOLIDIFICATION_CHAMBER, THERMALIZER -> true;
             default -> false;
         };

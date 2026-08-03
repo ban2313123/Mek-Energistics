@@ -3,18 +3,39 @@ package com.beipuo.mekenergistics.upgrade;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import java.util.List;
+import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.factory.TileEntityFactory;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public final class MekanismFactoryUpgradeProfiles {
     public static MeUpgradeMachineProfile<TileEntityFactory<?>> forTile(TileEntityFactory<?> tile) {
-        MeMekanismMachine machine = MeMekanismMachine.getFactory(tile.tier, tile.getFactoryType());
+        return forTile(tile, (FactoryIoAccess) tile);
+    }
+
+    public static MeUpgradeMachineProfile<TileEntityFactory<?>> forTile(
+            TileEntityFactory<?> tile, FactoryIoAccess ioAccess) {
+        return profile(tile, ioAccess);
+    }
+
+    public static MeUpgradeMachineProfile<TileEntityMekanism> forTile(
+            TileEntityMekanism tile, FactoryIoAccess ioAccess) {
+        return profile(tile, ioAccess);
+    }
+
+    private static <TILE extends TileEntityMekanism> MeUpgradeMachineProfile<TILE> profile(
+            TILE tile, FactoryIoAccess ioAccess) {
+        var sourceBlockId = BuiltInRegistries.BLOCK.getKey(tile.getBlockState().getBlock());
+        MeMekanismMachine machine = CompatMachineCatalog.findBySourceBlockId(sourceBlockId)
+                .map(spec -> spec.machine().isFactory() ? spec.machine() : null)
+                .orElse(null);
         if (machine == null) {
             return null;
         }
         return new MeUpgradeMachineProfile<>(candidate -> candidate == tile,
-                candidate -> ((FactoryIoAccess) candidate).mekenergistics$getFactoryInputLayout(),
-                candidate -> ((FactoryIoAccess) candidate).mekenergistics$getFactoryOutputPorts(),
+                candidate -> ioAccess.mekenergistics$getFactoryInputLayout(),
+                candidate -> ioAccess.mekenergistics$getFactoryOutputPorts(),
                 machine,
                 candidate -> new net.minecraft.world.item.ItemStack(candidate.getBlockState().getBlock()),
                 candidate -> candidate.getBlockState().getBlock().getName());

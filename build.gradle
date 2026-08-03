@@ -29,6 +29,13 @@ sourceSets.main.resources {
 sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
 
+sourceSets {
+    gameTest {
+        compileClasspath += main.output + main.compileClasspath
+        runtimeClasspath += output + compileClasspath + main.runtimeClasspath
+    }
+}
+
 repositories {
     maven {
         name = "Modmaven"
@@ -66,6 +73,7 @@ neoForge {
 
     // This line is optional. Access Transformers are automatically detected
     accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+    addModdingDependenciesTo(sourceSets.gameTest)
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
@@ -88,6 +96,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
+            sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -119,6 +128,7 @@ neoForge {
         // multi mod projects should define one per mod
         "${mod_id}" {
             sourceSet(sourceSets.main)
+            sourceSet(sourceSets.gameTest)
         }
     }
 }
@@ -129,6 +139,7 @@ neoForge {
 // "optional", meaning it will not be pulled by dependents of this mod.
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    gameTestRuntimeClasspath.extendsFrom localRuntime
 }
 
 // CurseMaven coordinates are "<slug>-<projectId>:<fileId>" and carry no version, so each is

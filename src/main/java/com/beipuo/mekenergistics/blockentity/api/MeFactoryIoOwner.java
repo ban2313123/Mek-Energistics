@@ -72,26 +72,34 @@ public interface MeFactoryIoOwner extends MeFactoryAeMachine {
 
     @Override
     default MeInputLayout getPatternInputLayout() {
-        List<IInventorySlot> inputs = Objects.requireNonNull(meInputSlots(), "meInputSlots");
+        return factoryPatternInputLayout(this);
+    }
+
+    static MeInputLayout factoryPatternInputLayout(MeFactoryIoOwner owner) {
+        List<IInventorySlot> inputs = Objects.requireNonNull(owner.meInputSlots(), "meInputSlots");
         List<com.beipuo.mekenergistics.blockentity.support.io.MeInputPort> ports = new ArrayList<>();
         if (!inputs.isEmpty()) {
             ports.add(MeMachineIoAdapter.autoSortedFactoryItemInput(inputs));
         }
-        Objects.requireNonNull(meChemicalInputTanks(), "meChemicalInputTanks").stream()
+        Objects.requireNonNull(owner.meChemicalInputTanks(), "meChemicalInputTanks").stream()
                 .map(MeMachineIoAdapter::chemicalInput).forEach(ports::add);
-        Objects.requireNonNull(meFluidInputTanks(), "meFluidInputTanks").stream()
+        Objects.requireNonNull(owner.meFluidInputTanks(), "meFluidInputTanks").stream()
                 .map(MeMachineIoAdapter::fluidInput).forEach(ports::add);
         return MeInputLayout.unordered(ports);
     }
 
     @Override
     default List<? extends MeOutputPort> getPatternOutputPorts() {
-        List<IInventorySlot> outputs = Objects.requireNonNull(meOutputSlots(), "meOutputSlots");
+        return factoryPatternOutputPorts(this);
+    }
+
+    static List<? extends MeOutputPort> factoryPatternOutputPorts(MeFactoryIoOwner owner) {
+        List<IInventorySlot> outputs = Objects.requireNonNull(owner.meOutputSlots(), "meOutputSlots");
         List<MeOutputPort> ports = new ArrayList<>();
         outputs.stream().map(MeMachineIoAdapter::itemOutput).forEach(ports::add);
-        Objects.requireNonNull(meChemicalOutputTanks(), "meChemicalOutputTanks").stream()
+        Objects.requireNonNull(owner.meChemicalOutputTanks(), "meChemicalOutputTanks").stream()
                 .map(MeMachineIoAdapter::chemicalOutput).forEach(ports::add);
-        Objects.requireNonNull(meFluidOutputTanks(), "meFluidOutputTanks").stream()
+        Objects.requireNonNull(owner.meFluidOutputTanks(), "meFluidOutputTanks").stream()
                 .map(MeMachineIoAdapter::fluidOutput).forEach(ports::add);
         return List.copyOf(ports);
     }

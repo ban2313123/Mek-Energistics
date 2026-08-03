@@ -78,7 +78,7 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
 
     private static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerMachine(
             MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case ALLOYER -> registrar.register(machine, MeAlloyerBlockEntity::new);
             case SOLIDIFICATION_CHAMBER -> registrar.register(machine, MeSolidifierBlockEntity::new);
             case THERMALIZER -> registrar.register(machine, MeThermalizerBlockEntity::new);
@@ -151,14 +151,14 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
         if ("alloying".equals(machine.machineTypeId()) && machine.factoryTier() != null) {
             return EvolvedMekanismCompat.alloyingFactoryShape(machine.factoryTier());
         }
-        return switch (machine) {
+        return switch (machine.identity()) {
             case SOLIDIFICATION_CHAMBER, THERMALIZER, CHEMIXER -> EvolvedMekanismCompat.shapeFor(machine);
             default -> null;
         };
     }
 
     private static TransmissionType[] sideConfigFor(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case SOLIDIFICATION_CHAMBER ->
                     new TransmissionType[] {TransmissionType.FLUID, TransmissionType.ITEM, TransmissionType.ENERGY};
             case THERMALIZER ->
@@ -173,7 +173,7 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
 
     private static void registerMachineGridNodeHost(CompatMachineSpec spec, RegisterCapabilitiesEvent event,
             TileEntityTypeRegistryObject<? extends TileEntityMekanism> holder) {
-        Class<? extends IInWorldGridNodeHost> host = switch (spec.machine()) {
+        Class<? extends IInWorldGridNodeHost> host = switch (spec.machine().identity()) {
             case ALLOYER -> MeAlloyerBlockEntity.class;
             case SOLIDIFICATION_CHAMBER -> MeSolidifierBlockEntity.class;
             case THERMALIZER -> MeThermalizerBlockEntity.class;

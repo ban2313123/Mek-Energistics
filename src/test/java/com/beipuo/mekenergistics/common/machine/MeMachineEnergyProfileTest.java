@@ -49,11 +49,11 @@ class MeMachineEnergyProfileTest {
      */
     @Test
     void mekanismFactoriesResolveToTheMachineTheyParallelise() {
-        assertSame(MeMekanismMachine.ENERGIZED_SMELTER, baseOf(MeMekanismMachine.BASIC_SMELTING_FACTORY));
-        assertSame(MeMekanismMachine.ENRICHMENT_CHAMBER, baseOf(MeMekanismMachine.ULTIMATE_ENRICHING_FACTORY));
-        assertSame(MeMekanismMachine.PURIFICATION_CHAMBER, baseOf(MeMekanismMachine.BASIC_PURIFYING_FACTORY));
-        assertSame(MeMekanismMachine.PRECISION_SAWMILL, baseOf(MeMekanismMachine.BASIC_SAWING_FACTORY));
-        assertSame(MeMekanismMachine.COMBINER, baseOf(MeMekanismMachine.BASIC_COMBINING_FACTORY));
+        assertSame(MeMekanismMachine.ENERGIZED_SMELTER, baseOf(MeMekanismMachine.valueOf("BASIC_SMELTING_FACTORY")));
+        assertSame(MeMekanismMachine.ENRICHMENT_CHAMBER, baseOf(MeMekanismMachine.valueOf("ULTIMATE_ENRICHING_FACTORY")));
+        assertSame(MeMekanismMachine.PURIFICATION_CHAMBER, baseOf(MeMekanismMachine.valueOf("BASIC_PURIFYING_FACTORY")));
+        assertSame(MeMekanismMachine.PRECISION_SAWMILL, baseOf(MeMekanismMachine.valueOf("BASIC_SAWING_FACTORY")));
+        assertSame(MeMekanismMachine.COMBINER, baseOf(MeMekanismMachine.valueOf("BASIC_COMBINING_FACTORY")));
     }
 
     /**
@@ -65,7 +65,7 @@ class MeMachineEnergyProfileTest {
     @Test
     void evolvedMekanismFactoriesShareTheBaseMachineJoinKey() {
         assertEquals(MeMekanismMachine.ALLOYER.machineTypeId(),
-                MeMekanismMachine.BASIC_ALLOYING_FACTORY.machineTypeId());
+                MeMekanismMachine.valueOf("BASIC_ALLOYING_FACTORY").machineTypeId());
         assertEquals("chemixing", MeMekanismMachine.CHEMIXER.machineTypeId());
         assertEquals("melting", MeMekanismMachine.THERMALIZER.machineTypeId());
         assertEquals("solidifying", MeMekanismMachine.SOLIDIFICATION_CHAMBER.machineTypeId());
@@ -74,8 +74,8 @@ class MeMachineEnergyProfileTest {
     /** Building a supplier must not read config -- that would need a running game. */
     @Test
     void suppliersAreBuiltLazily() {
-        assertNotNull(MeMachineEnergyProfile.usage(MeMekanismMachine.BASIC_SMELTING_FACTORY));
-        assertNotNull(MeMachineEnergyProfile.storage(MeMekanismMachine.BASIC_SMELTING_FACTORY));
+        assertNotNull(MeMachineEnergyProfile.usage(MeMekanismMachine.valueOf("BASIC_SMELTING_FACTORY")));
+        assertNotNull(MeMachineEnergyProfile.storage(MeMekanismMachine.valueOf("BASIC_SMELTING_FACTORY")));
         assertNotNull(MeMachineEnergyProfile.usage(MeMekanismMachine.ENRICHMENT_CHAMBER));
         assertNotNull(MeMachineEnergyProfile.storage(MeMekanismMachine.ENRICHMENT_CHAMBER));
     }

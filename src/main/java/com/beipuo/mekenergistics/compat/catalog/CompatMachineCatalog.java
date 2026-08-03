@@ -3,9 +3,9 @@ package com.beipuo.mekenergistics.compat.catalog;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Optional;
@@ -63,7 +63,7 @@ public final class CompatMachineCatalog {
     }
 
     private static Map<MeMekanismMachine, CompatMachineSpec> buildCatalog() {
-        EnumMap<MeMekanismMachine, CompatMachineSpec> catalog = new EnumMap<>(MeMekanismMachine.class);
+        Map<MeMekanismMachine, CompatMachineSpec> catalog = new LinkedHashMap<>();
         for (MeMekanismMachine machine : MeMekanismMachine.values()) {
             CompatMachineSpec previous = catalog.put(machine, describe(machine));
             if (previous != null) {
@@ -117,7 +117,8 @@ public final class CompatMachineCatalog {
             };
         }
         if (route == CompatRegistrationRoute.MEKMM_FACTORY
-                || route == CompatRegistrationRoute.MEKE_MEKMM_FACTORY) {
+                || route == CompatRegistrationRoute.MEKE_MEKMM_FACTORY
+                || route == CompatRegistrationRoute.EMEKE_MEKMM_FACTORY) {
             return switch (machine.machineTypeId()) {
                 case "stamping", "pressing" -> CompatSideConfigProfile.EXTRA;
                 case "planting", "replicating" -> CompatSideConfigProfile.ADVANCED_INPUT_ONLY;
@@ -138,7 +139,7 @@ public final class CompatMachineCatalog {
                 default -> CompatSideConfigProfile.ELECTRIC;
             };
         }
-        return switch (machine) {
+        return switch (machine.identity()) {
             case PLANTING_STATION, REPLICATOR -> CompatSideConfigProfile.ADVANCED_INPUT_ONLY;
             case ENRICHMENT_CHAMBER, CRUSHER, ENERGIZED_SMELTER, PRECISION_SAWMILL ->
                     CompatSideConfigProfile.ELECTRIC;

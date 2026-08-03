@@ -96,7 +96,7 @@ final class MeMachineEnergyProfile {
     }
 
     private static boolean hasMekanismConfig(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case ENRICHMENT_CHAMBER, CRUSHER, ENERGIZED_SMELTER, PRECISION_SAWMILL, OSMIUM_COMPRESSOR,
                     COMBINER, METALLURGIC_INFUSER, PURIFICATION_CHAMBER, CHEMICAL_INJECTION_CHAMBER,
                     ALLOYER, CHEMIXER, THERMALIZER, SOLIDIFICATION_CHAMBER -> true;
@@ -105,7 +105,7 @@ final class MeMachineEnergyProfile {
     }
 
     private static long readUsage(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case ENRICHMENT_CHAMBER -> MekanismConfig.usage.enrichmentChamber.getAsLong();
             case CRUSHER -> MekanismConfig.usage.crusher.getAsLong();
             case ENERGIZED_SMELTER -> MekanismConfig.usage.energizedSmelter.getAsLong();
@@ -125,7 +125,7 @@ final class MeMachineEnergyProfile {
     }
 
     private static long readStorage(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case ENRICHMENT_CHAMBER -> MekanismConfig.storage.enrichmentChamber.getAsLong();
             case CRUSHER -> MekanismConfig.storage.crusher.getAsLong();
             case ENERGIZED_SMELTER -> MekanismConfig.storage.energizedSmelter.getAsLong();

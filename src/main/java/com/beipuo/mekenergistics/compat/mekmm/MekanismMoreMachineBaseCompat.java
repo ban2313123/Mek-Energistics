@@ -79,7 +79,7 @@ public final class MekanismMoreMachineBaseCompat {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static TileEntityTypeRegistryObject<? extends TileEntityMekanism> registerBaseMachine(
             MeMekanismMachine machine, MachineFactoryRegistrar registrar) {
-        TileEntityTypeRegistryObject<?> registered = switch (machine) {
+        TileEntityTypeRegistryObject<?> registered = switch (machine.identity()) {
             case RECYCLER -> registrar.register(machine, MeRecyclerBlockEntity::new);
             case PLANTING_STATION -> registrar.register(machine, MePlantingStationBlockEntity::new);
             case CNC_STAMPER -> registrar.register(machine, MeStamperBlockEntity::new);
@@ -132,7 +132,7 @@ public final class MekanismMoreMachineBaseCompat {
      * wiring below.
      */
     private static LongSupplier moreMachineUsage(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case RECYCLER -> MoreMachineConfig.usage.recycler;
             case PLANTING_STATION -> MoreMachineConfig.usage.plantingStation;
             case CNC_STAMPER -> MoreMachineConfig.usage.cnc_stamper;
@@ -146,7 +146,7 @@ public final class MekanismMoreMachineBaseCompat {
     }
 
     private static LongSupplier moreMachineStorage(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case RECYCLER -> MoreMachineConfig.storage.recycler;
             case PLANTING_STATION -> MoreMachineConfig.storage.plantingStation;
             case CNC_STAMPER -> MoreMachineConfig.storage.cnc_stamper;
@@ -178,7 +178,7 @@ public final class MekanismMoreMachineBaseCompat {
         if (machine != MeMekanismMachine.CHEMICAL_REPLICATOR && machine != MeMekanismMachine.FLUID_REPLICATOR) {
             builder.with(new MoreMachineAttributeFactoryType(moreMachineFactoryType(machine)));
         }
-        switch (machine) {
+        switch (machine.identity()) {
             case PLANTING_STATION -> builder
                     .withCustomShape(MoreMachineBlockShapes.PLANTING_STATION)
                     .with(AttributeHasBounding.ABOVE_ONLY);
@@ -197,7 +197,7 @@ public final class MekanismMoreMachineBaseCompat {
     private static <TILE extends TileEntityMekanism> BlockTypeTile<TILE> createLargeMachineBlockType(
             MeMekanismMachine machine, TileEntityTypeRegistryObject<TILE> tileType) {
         var description = com.beipuo.mekenergistics.common.MeLangEntry.of(machine.translationKey());
-        Machine<?> built = switch (machine) {
+        Machine<?> built = switch (machine.identity()) {
             case LARGE_ROTARY_CONDENSENTRATOR -> MachineBuilder
                     .createMachine(() -> tileType, description)
                     .withGui(() -> ModMenuTypes.ME_LARGE_ROTARY_CONDENSENTRATOR)
@@ -304,7 +304,7 @@ public final class MekanismMoreMachineBaseCompat {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> meBaseContainer(
             MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case LARGE_ROTARY_CONDENSENTRATOR -> ModMenuTypes.ME_LARGE_ROTARY_CONDENSENTRATOR;
             case LARGE_SOLAR_NEUTRON_ACTIVATOR -> ModMenuTypes.ME_LARGE_SOLAR_NEUTRON_ACTIVATOR;
             case LARGE_ELECTROLYTIC_SEPARATOR -> ModMenuTypes.ME_LARGE_ELECTROLYTIC_SEPARATOR;
@@ -316,7 +316,7 @@ public final class MekanismMoreMachineBaseCompat {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static ContainerTypeRegistryObject<? extends MekanismTileContainer<?>> baseContainer(MeMekanismMachine machine) {
-        return switch (machine) {
+        return switch (machine.identity()) {
             case RECYCLER -> MoreMachineContainerTypes.RECYCLER;
             case PLANTING_STATION -> MoreMachineContainerTypes.PLANTING_STATION;
             case CNC_STAMPER -> MoreMachineContainerTypes.CNC_STAMPER;
@@ -377,7 +377,7 @@ public final class MekanismMoreMachineBaseCompat {
             RegisterCapabilitiesEvent event,
             MeMekanismMachine machine,
             TileEntityTypeRegistryObject<? extends TileEntityMekanism> holder) {
-        switch (machine) {
+        switch (machine.identity()) {
             case RECYCLER -> ModBlockEntities.registerGridNodeHost(event, holder, MeRecyclerBlockEntity.class);
             case PLANTING_STATION -> ModBlockEntities.registerGridNodeHost(event, holder, MePlantingStationBlockEntity.class);
             case CNC_STAMPER -> ModBlockEntities.registerGridNodeHost(event, holder, MeStamperBlockEntity.class);

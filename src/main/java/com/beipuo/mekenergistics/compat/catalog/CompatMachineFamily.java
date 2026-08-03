@@ -16,8 +16,8 @@ public enum CompatMachineFamily {
     EMEKE_FACTORY(CompatMod.EMEKE, CompatRegistrationRoute.EMEKE_FACTORY, CompatMachineKind.FACTORY),
     EMEKE_MEKAF_ADVANCED_FACTORY(CompatMod.EMEKE, CompatRegistrationRoute.EMEKE_ADVANCED_FACTORY,
             CompatMachineKind.ADVANCED_FACTORY),
-    EMEKE_MEKMM_FACTORY(CompatMod.EMEKE, CompatRegistrationRoute.EMEKE_ADVANCED_FACTORY,
-            CompatMachineKind.ADVANCED_FACTORY);
+    EMEKE_MEKMM_FACTORY(CompatMod.EMEKE, CompatRegistrationRoute.EMEKE_MEKMM_FACTORY,
+            CompatMachineKind.FACTORY);
 
     private final CompatMod provider;
     private final CompatRegistrationRoute route;

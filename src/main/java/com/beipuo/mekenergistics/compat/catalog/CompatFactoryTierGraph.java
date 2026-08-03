@@ -2,7 +2,7 @@ package com.beipuo.mekenergistics.compat.catalog;
 
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import java.util.HashMap;
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
@@ -24,8 +24,9 @@ public final class CompatFactoryTierGraph {
     private static final List<String> COMBINED_TIERS = List.of(
             ABSOLUTE_OVERCLOCKED, "supreme_quantum", "cosmic_dense", "infinite_multiversal");
 
-    private static final Map<FactoryCoordinate, MeMekanismMachine> FACTORIES_BY_ROUTE = buildFactoriesByRoute();
-    private static final Map<ProviderCoordinate, MeMekanismMachine> FACTORIES_BY_PROVIDER = buildFactoriesByProvider();
+    private static final Map<FactoryCoordinate, MeMekanismMachine> FACTORIES = buildFactories();
+    private static final Map<ProviderCoordinate, FactoryTypeKey> FACTORY_KEYS_BY_PROVIDER =
+            buildFactoryKeysByProvider();
     private static final Map<MachineCoordinate, MeMekanismMachine> BASE_MACHINES = buildBaseMachines();
     private static final Map<String, MeMekanismMachine> MACHINES_BY_REGISTRY_NAME = buildMachinesByRegistryName();
 
@@ -165,7 +166,7 @@ public final class CompatFactoryTierGraph {
         if (target == null || target == current) {
             return null;
         }
-        EnumSet<MeMekanismMachine> visited = EnumSet.noneOf(MeMekanismMachine.class);
+        java.util.Set<MeMekanismMachine> visited = new HashSet<>();
         MeMekanismMachine next = CompatMachineCatalog.get(current).kind() == CompatMachineKind.MACHINE
                 ? basicFactory(current, requireAvailable)
                 : nextFactory(current, requireAvailable);
@@ -181,24 +182,48 @@ public final class CompatFactoryTierGraph {
     @Nullable
     public static MeMekanismMachine findFactory(
             CompatRegistrationRoute route, String tierId, String machineTypeId) {
-        return findFactory(route, tierId, machineTypeId, true);
+        if (route == null || machineTypeId == null) {
+            return null;
+        }
+        return findFactory(new FactoryTypeKey(route, machineTypeId), tierId);
     }
 
     @Nullable
     static MeMekanismMachine findDeclaredFactory(
             CompatRegistrationRoute route, String tierId, String machineTypeId) {
-        return findFactory(route, tierId, machineTypeId, false);
+        if (route == null || machineTypeId == null) {
+            return null;
+        }
+        return findFactory(new FactoryTypeKey(route, machineTypeId), tierId, false);
+    }
+
+    @Nullable
+    public static MeMekanismMachine findFactory(FactoryTypeKey key, String tierId) {
+        return findFactory(key, tierId, true);
+    }
+
+    @Nullable
+    static MeMekanismMachine findDeclaredFactory(FactoryTypeKey key, String tierId) {
+        return findFactory(key, tierId, false);
+    }
+
+    @Nullable
+    private static MeMekanismMachine findFactory(
+            FactoryTypeKey key, String tierId, boolean requireAvailable) {
+        if (key == null || tierId == null) {
+            return null;
+        }
+        return resolve(FACTORIES.get(new FactoryCoordinate(key, tierId)), requireAvailable);
     }
 
     @Nullable
     private static MeMekanismMachine findFactory(
             CompatRegistrationRoute route, String tierId, String machineTypeId,
             boolean requireAvailable) {
-        if (route == null || tierId == null || machineTypeId == null) {
+        if (route == null || machineTypeId == null) {
             return null;
         }
-        return resolve(FACTORIES_BY_ROUTE.get(
-                new FactoryCoordinate(route, tierId, machineTypeId)), requireAvailable);
+        return findFactory(new FactoryTypeKey(route, machineTypeId), tierId, requireAvailable);
     }
 
     @Nullable
@@ -218,8 +243,9 @@ public final class CompatFactoryTierGraph {
         if (provider == null || tierId == null || machineTypeId == null) {
             return null;
         }
-        return resolve(FACTORIES_BY_PROVIDER.get(
-                new ProviderCoordinate(provider, tierId, machineTypeId)), requireAvailable);
+        FactoryTypeKey key = FACTORY_KEYS_BY_PROVIDER.get(
+                new ProviderCoordinate(provider, tierId, machineTypeId));
+        return key == null ? null : findFactory(key, tierId, requireAvailable);
     }
 
     @Nullable
@@ -240,24 +266,29 @@ public final class CompatFactoryTierGraph {
         return registryName == null ? null : MACHINES_BY_REGISTRY_NAME.get(registryName);
     }
 
-    private static Map<FactoryCoordinate, MeMekanismMachine> buildFactoriesByRoute() {
+    private static Map<FactoryCoordinate, MeMekanismMachine> buildFactories() {
         Map<FactoryCoordinate, MeMekanismMachine> factories = new HashMap<>();
         CompatMachineCatalog.all().filter(spec -> spec.kind() != CompatMachineKind.MACHINE).forEach(spec -> putUnique(
                 factories,
-                new FactoryCoordinate(spec.route(), spec.tierId(), spec.machineTypeId()),
+                new FactoryCoordinate(FactoryTypeKey.of(spec), spec.tierId()),
                 spec.machine(),
                 "factory route coordinate"));
         return Map.copyOf(factories);
     }
 
-    private static Map<ProviderCoordinate, MeMekanismMachine> buildFactoriesByProvider() {
-        Map<ProviderCoordinate, MeMekanismMachine> factories = new HashMap<>();
-        CompatMachineCatalog.all().filter(spec -> spec.kind() != CompatMachineKind.MACHINE).forEach(spec -> putUnique(
-                factories,
-                new ProviderCoordinate(spec.provider(), spec.tierId(), spec.machineTypeId()),
-                spec.machine(),
-                "factory provider coordinate"));
-        return Map.copyOf(factories);
+    private static Map<ProviderCoordinate, FactoryTypeKey> buildFactoryKeysByProvider() {
+        Map<ProviderCoordinate, FactoryTypeKey> keys = new HashMap<>();
+        CompatMachineCatalog.all().filter(spec -> spec.kind() != CompatMachineKind.MACHINE).forEach(spec -> {
+            ProviderCoordinate coordinate =
+                    new ProviderCoordinate(spec.provider(), spec.tierId(), spec.machineTypeId());
+            FactoryTypeKey previous = keys.put(coordinate, FactoryTypeKey.of(spec));
+            if (previous != null) {
+                throw new IllegalStateException(
+                        "Duplicate factory provider coordinate " + coordinate
+                                + " for " + previous + " and " + FactoryTypeKey.of(spec));
+            }
+        });
+        return Map.copyOf(keys);
     }
 
     private static Map<MachineCoordinate, MeMekanismMachine> buildBaseMachines() {
@@ -303,7 +334,7 @@ public final class CompatFactoryTierGraph {
         return index >= 0 && index + 1 < tiers.size() ? tiers.get(index + 1) : null;
     }
 
-    private record FactoryCoordinate(CompatRegistrationRoute route, String tierId, String machineTypeId) {
+    private record FactoryCoordinate(FactoryTypeKey key, String tierId) {
     }
 
     private record ProviderCoordinate(CompatMod provider, String tierId, String machineTypeId) {

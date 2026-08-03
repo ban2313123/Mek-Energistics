@@ -4,9 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 class MeMekanismMachineDefinitionTest {
@@ -21,14 +28,14 @@ class MeMekanismMachineDefinitionTest {
                 "me_enrichment_chamber",
                 "ME Enrichment Chamber");
         assertDefinition(
-                MeMekanismMachine.BASIC_SMELTING_FACTORY,
+                MeMekanismMachine.valueOf("BASIC_SMELTING_FACTORY"),
                 CompatMachineFamily.MEKANISM_FACTORY,
                 "basic",
                 "smelting",
                 "me_basic_smelting_factory",
                 "ME Basic Smelting Factory");
         assertDefinition(
-                MeMekanismMachine.ABSOLUTE_OVERCLOCKED_SMELTING_FACTORY,
+                MeMekanismMachine.valueOf("ABSOLUTE_OVERCLOCKED_SMELTING_FACTORY"),
                 CompatMachineFamily.EMEKE_FACTORY,
                 "absolute_overclocked",
                 "smelting",
@@ -49,28 +56,28 @@ class MeMekanismMachineDefinitionTest {
                 "me_alloyer",
                 "ME Alloyer");
         assertDefinition(
-                MeMekanismMachine.ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY,
+                MeMekanismMachine.valueOf("ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY"),
                 CompatMachineFamily.EMEKE_MEKAF_ADVANCED_FACTORY,
                 "absolute_overclocked",
                 "dissolving",
                 "me_absolute_overclocked_dissolving_factory",
                 "ME Absolute Overclocked Dissolving Factory");
         assertDefinition(
-                MeMekanismMachine.BASIC_ALLOYING_FACTORY,
+                MeMekanismMachine.valueOf("BASIC_ALLOYING_FACTORY"),
                 CompatMachineFamily.EMEK_FACTORY,
                 "basic",
                 "alloying",
                 "me_basic_alloying_factory",
                 "ME Basic Alloying Factory");
         assertDefinition(
-                MeMekanismMachine.ABSOLUTE_SMELTING_FACTORY,
+                MeMekanismMachine.valueOf("ABSOLUTE_SMELTING_FACTORY"),
                 CompatMachineFamily.MEKE_FACTORY,
                 "absolute",
                 "smelting",
                 "me_absolute_smelting_factory",
                 "ME Absolute Smelting Factory");
         assertDefinition(
-                MeMekanismMachine.BASIC_RECYCLING_FACTORY,
+                MeMekanismMachine.valueOf("BASIC_RECYCLING_FACTORY"),
                 CompatMachineFamily.MEKMM_FACTORY,
                 "basic",
                 "recycling",
@@ -80,7 +87,14 @@ class MeMekanismMachineDefinitionTest {
 
     @Test
     void everyDeclarationHasCompleteIntrinsicMetadata() {
-        for (MeMekanismMachine machine : MeMekanismMachine.values()) {
+        MeMekanismMachine[] machines = MeMekanismMachine.values();
+        assertEquals(402, machines.length);
+        for (int ordinal = 0; ordinal < machines.length; ordinal++) {
+            MeMekanismMachine machine = machines[ordinal];
+            assertSame(machine, MeMekanismMachine.valueOf(machine.name()), machine.name());
+            assertEquals(ordinal, machine.ordinal(), machine.name());
+            assertEquals(machine.name().toLowerCase(java.util.Locale.ROOT),
+                    machine.serializedName(), machine.name());
             assertNotNull(machine.family(), machine.name());
             assertNotNull(machine.provider(), machine.name());
             assertNotNull(machine.registrationRoute(), machine.name());
@@ -89,6 +103,35 @@ class MeMekanismMachineDefinitionTest {
             assertFalse(machine.englishName().isBlank(), machine.name());
             assertEquals(machine.isFactory(), machine.tierId() != null, machine.name());
         }
+    }
+
+    @Test
+    void generatedFactoryGroupsPreserveLegacyDeclarationOrder() {
+        assertDeclaration(52, "BASIC_SMELTING_FACTORY");
+        assertDeclaration(88, "BASIC_ALLOYING_FACTORY");
+        assertDeclaration(92, "OVERCLOCKED_SMELTING_FACTORY");
+        assertDeclaration(137, "OVERCLOCKED_ALLOYING_FACTORY");
+        assertDeclaration(142, "ABSOLUTE_SMELTING_FACTORY");
+        assertDeclaration(178, "ABSOLUTE_ALLOYING_FACTORY");
+        assertDeclaration(182, "ABSOLUTE_OVERCLOCKED_SMELTING_FACTORY");
+        assertDeclaration(218, "ABSOLUTE_OVERCLOCKED_ALLOYING_FACTORY");
+        assertDeclaration(226, "ABSOLUTE_OVERCLOCKED_DISSOLVING_FACTORY");
+        assertDeclaration(282, "BASIC_RECYCLING_FACTORY");
+        assertDeclaration(306, "ABSOLUTE_RECYCLING_FACTORY");
+        assertDeclaration(330, "BASIC_OXIDIZING_FACTORY");
+        assertDeclaration(366, "ABSOLUTE_OXIDIZING_FACTORY");
+        assertDeclaration(401, "INFINITE_PAINTING_FACTORY");
+    }
+
+    @Test
+    void completeIdentitySequenceMatchesLegacyEnum() throws NoSuchAlgorithmException {
+        String names = Arrays.stream(MeMekanismMachine.values())
+                .map(MeMekanismMachine::name)
+                .collect(Collectors.joining("\n"));
+        String digest = HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(names.getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals("a5dea193a64d357b8fe24ec0d4b9794ed900270edb8c39595220c034a31ce854", digest);
     }
 
     @Test
@@ -108,7 +151,7 @@ class MeMekanismMachineDefinitionTest {
         assertEquals(MeMekanismMachine.SlotLayout.SINGLE_ITEM,
                 MeMekanismMachine.ENRICHMENT_CHAMBER.slotLayout());
 
-        assertTrue(MeMekanismMachine.BASIC_RECYCLING_FACTORY.hasRecipeLogic());
+        assertTrue(MeMekanismMachine.valueOf("BASIC_RECYCLING_FACTORY").hasRecipeLogic());
         assertFalse(MeMekanismMachine.DIGITAL_MINER.hasRecipeLogic());
     }
 
@@ -122,8 +165,8 @@ class MeMekanismMachineDefinitionTest {
     @Test
     void energyProfileIsBuiltWithoutReadingConfig() {
         for (MeMekanismMachine machine : new MeMekanismMachine[] {
-                MeMekanismMachine.BASIC_SMELTING_FACTORY,
-                MeMekanismMachine.ULTIMATE_PURIFYING_FACTORY,
+                MeMekanismMachine.valueOf("BASIC_SMELTING_FACTORY"),
+                MeMekanismMachine.valueOf("ULTIMATE_PURIFYING_FACTORY"),
                 MeMekanismMachine.ENRICHMENT_CHAMBER}) {
             assertNotNull(machine.energyUsage(), machine.name());
             assertNotNull(machine.energyStorage(), machine.name());
@@ -146,5 +189,11 @@ class MeMekanismMachineDefinitionTest {
         } else {
             assertEquals(expectedTier, machine.tierId(), machine::name);
         }
+    }
+
+    private static void assertDeclaration(int ordinal, String name) {
+        MeMekanismMachine machine = MeMekanismMachine.values()[ordinal];
+        assertEquals(name, machine.name());
+        assertSame(machine, MeMekanismMachine.valueOf(name));
     }
 }

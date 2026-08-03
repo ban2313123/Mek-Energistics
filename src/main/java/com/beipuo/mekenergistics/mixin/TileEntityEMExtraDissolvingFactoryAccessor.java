@@ -7,6 +7,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(value = TileEntityEMExtraDissolvingFactory.class, remap = false)
 public interface TileEntityEMExtraDissolvingFactoryAccessor {
-    @Accessor("chemicalInputSlot")
+    @Accessor(value = "chemicalInputSlot", remap = false)
     ChemicalInventorySlot mekenergistics$getChemicalInputSlot();
 }

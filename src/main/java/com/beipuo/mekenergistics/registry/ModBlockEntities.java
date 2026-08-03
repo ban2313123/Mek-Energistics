@@ -11,7 +11,7 @@ import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
 import com.beipuo.mekenergistics.registry.machine.MachineFactory;
-import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.registration.impl.TileEntityTypeDeferredRegister;
@@ -31,7 +31,7 @@ public final class ModBlockEntities {
     private static final TileEntityTypeDeferredRegister BLOCK_ENTITIES =
             new TileEntityTypeDeferredRegister(MekEnergistics.MODID);
     private static final Map<MeMekanismMachine, TileEntityTypeRegistryObject<? extends TileEntityMekanism>> MACHINES =
-            new EnumMap<>(MeMekanismMachine.class);
+            new LinkedHashMap<>();
 
     static {
         CompatMachineCatalog.available().forEach(spec -> MACHINES.put(

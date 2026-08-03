@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "mekenergistics:me_cosmic_dense_stamping_factory"
+        }
+      ],
+      "rolls": 1
+    }
+  ]
+}

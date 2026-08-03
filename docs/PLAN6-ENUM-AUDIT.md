@@ -1,5 +1,15 @@
 # PLAN6 Registry and Enum Audit
 
+> **Status: SUPERSEDED.** `MeMekanismMachine` is now a stable value class. Named standalone
+> machines remain explicit, while factory identities are generated from tier/type matrices and
+> resolved through `FactoryTypeKey × tierId`. Legacy `name`, ordinal, registry ID, and lookup
+> behavior are covered by characterization tests.
+>
+> This is an intentional Java API break: `MeMekanismMachine` is no longer an enum and generated
+> factories no longer expose `TIER_TYPE_FACTORY` fields. Downstream code must use `valueOf(name)`
+> for a specific legacy identity or `FactoryTypeKey × tierId` for classified lookup. Registry and
+> save identities remain stable; enum type semantics and binary linkage do not.
+
 ## Summary
 
 This audit covers `MeMekanismMachine`, installer upgrade routing, and registry-facing lookup paths after the final hardening cleanup. No code rewrite is recommended in this refactor pass: the current enum is hard to read, but it is also the registry/name compatibility boundary for normal machines, factories, and optional compat machines.
