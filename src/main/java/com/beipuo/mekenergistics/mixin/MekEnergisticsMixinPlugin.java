@@ -39,6 +39,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             "com.jerry.mekextras.common.integration.mekaf.tile.factory.";
     private static final String EMEXTRAS_MEKAF_FACTORY =
             "io.github.masyumero.emextras.common.integration.mekaf.tile.factory.";
+    private static final String DATA_COUNTED_PROVIDER =
+            "com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingProvider";
 
     private static final Map<String, Gate> OPTIONAL_MIXINS = Map.ofEntries(
             Map.entry(".TileEntityAlloyerAccessor", Gate.mod("evolvedmekanism")),
@@ -59,7 +61,11 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
                     Gate.target("mekmm", MEKLM_MACHINE + "TileEntityLargeAntiprotonicNucleosynthesizer")),
             Map.entry(".extendedae.ContainerRenamerMixin", Gate.mod("extendedae")),
             Map.entry(".dataenergistics.PatternProviderSyncHelperMixin", Gate.mod("data_energistics")),
-            Map.entry(".dataenergistics.PatternProviderNameHelperMixin", Gate.mod("data_energistics")));
+            Map.entry(".dataenergistics.PatternProviderNameHelperMixin", Gate.mod("data_energistics")),
+            Map.entry(".dataenergistics.DataCountedCraftingProviderMixin",
+                    Gate.target("data_energistics", DATA_COUNTED_PROVIDER)),
+            Map.entry(".dataenergistics.DataCountedFactoryCraftingProviderMixin",
+                    Gate.target("data_energistics", DATA_COUNTED_PROVIDER)));
 
     @Override
     public void onLoad(String mixinPackage) {

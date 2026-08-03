@@ -43,7 +43,9 @@
     "ae2.ElapsedTimeTrackerAccessor",
     "dataenergistics.PatternProviderNameHelperMixin",
     "dataenergistics.PatternProviderSyncHelperMixin",
-    "extendedae.ContainerRenamerMixin"
+    "extendedae.ContainerRenamerMixin",
+    "dataenergistics.DataCountedCraftingProviderMixin",
+    "dataenergistics.DataCountedFactoryCraftingProviderMixin"
   ],
   "injectors": {
     "defaultRequire": 1
