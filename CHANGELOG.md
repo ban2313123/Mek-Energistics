@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.1
+
+### English
+
+#### Fix
+
+- Fixed a game crash when ME autocrafting sent recipes such as nutritional liquid to the Mekanism Extras ME Infinite Dissolving Factory by routing conversion items to the factory's real chemical input slot instead of its nullable inherited extra slot.
+- Made shared item, chemical, and fluid input adapters reject unavailable optional-machine ports safely, preventing equivalent null-slot crashes when addon machine layouts are missing or change.
+
+### 中文
+
+#### 修复
+
+- 修复 ME 自动合成向 Mekanism Extras 的 ME 悖论无限溶解工厂下单营养液等配方时发生的游戏崩溃；转换物品现在会送入工厂真实的化学品输入槽，而非继承得到的可空附加槽。
+- 共用物品、化学品与流体输入适配器现在会安全拒绝不可用的可选机器端口，避免附属模组机器布局缺失或变化时发生同类空槽崩溃。
+
 ## 2.0.0
 
 ### English
