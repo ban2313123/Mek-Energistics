@@ -5,6 +5,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.mixin.TileEntityExtraDissolvingFactoryAccessor;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import com.jerry.mekextras.common.integration.mekaf.tile.factory.TileEntityExtraDissolvingFactory;
 import java.util.List;
@@ -37,7 +38,8 @@ public class MeExtraAdvancedDissolvingFactoryBlockEntity extends TileEntityExtra
         return MeInputLayout.unordered(List.of(
                 MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputItemSlots),
                 MeMachineIoAdapter.chemicalInput(this.chemicalTank),
-                MeMachineIoAdapter.itemInput(getExtraSlot())));
+                MeMachineIoAdapter.itemInput(
+                        ((TileEntityExtraDissolvingFactoryAccessor) this).mekenergistics$getChemicalInputSlot())));
     }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }
     @Override public MeFactoryAeSupport getAeSupport() { if (this.aeSupport == null) this.aeSupport = new MeFactoryAeSupport(this); return this.aeSupport; }

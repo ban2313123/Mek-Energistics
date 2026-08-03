@@ -14,21 +14,32 @@ import mekanism.api.fluid.IExtendedFluidTank;
 import mekanism.api.inventory.IInventorySlot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
 
 public final class MeMachineIoAdapter {
+    private static final MeInputPort UNAVAILABLE_INPUT = new MeInputPort() {
+        @Override public boolean supports(AEKey key) { return false; }
+        @Override public long insert(AEKey key, long amount, Action action) { return 0; }
+        @Override public Object snapshot() { return null; }
+        @Override public void restore(Object snapshot) { }
+    };
+
     private MeMachineIoAdapter() {
     }
 
-    public static MeInputPort itemInput(IInventorySlot slot) {
+    public static MeInputPort itemInput(@Nullable IInventorySlot slot) {
         return itemInput(slot, AutomationType.INTERNAL);
     }
 
     /** Mirrors a player's insertion into a dedicated conversion/extra slot. */
-    public static MeInputPort manualItemInput(IInventorySlot slot) {
+    public static MeInputPort manualItemInput(@Nullable IInventorySlot slot) {
         return itemInput(slot, AutomationType.MANUAL);
     }
 
-    private static MeInputPort itemInput(IInventorySlot slot, AutomationType automationType) {
+    private static MeInputPort itemInput(@Nullable IInventorySlot slot, AutomationType automationType) {
+        if (slot == null) {
+            return UNAVAILABLE_INPUT;
+        }
         return new MeInputPort() {
             @Override
             public boolean supports(AEKey key) {
@@ -127,7 +138,10 @@ public final class MeMachineIoAdapter {
         };
     }
 
-    public static MeInputPort chemicalInput(IChemicalTank tank) {
+    public static MeInputPort chemicalInput(@Nullable IChemicalTank tank) {
+        if (tank == null) {
+            return UNAVAILABLE_INPUT;
+        }
         return new MeInputPort() {
             @Override
             public boolean supports(AEKey key) {
@@ -156,7 +170,10 @@ public final class MeMachineIoAdapter {
         };
     }
 
-    public static MeInputPort fluidInput(IExtendedFluidTank tank) {
+    public static MeInputPort fluidInput(@Nullable IExtendedFluidTank tank) {
+        if (tank == null) {
+            return UNAVAILABLE_INPUT;
+        }
         return new MeInputPort() {
             @Override
             public boolean supports(AEKey key) {

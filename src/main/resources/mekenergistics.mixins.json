@@ -16,6 +16,7 @@
     "TileEntityLargeAntiprotonicNucleosynthesizerAccessor",
     "TileEntityMetallurgicInfuserAccessor",
     "TileEntityItemStackChemicalToItemStackFactoryAccessor",
+    "TileEntityExtraDissolvingFactoryAccessor",
     "TileEntityEMExtraDissolvingFactoryAccessor",
     "TileEntityAlloyerAccessor",
     "TileEntitySolidifierAccessor",

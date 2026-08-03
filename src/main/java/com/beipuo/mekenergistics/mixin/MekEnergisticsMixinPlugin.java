@@ -35,6 +35,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
     }
 
     private static final String MEKLM_MACHINE = "com.jerry.meklm.common.tile.machine.";
+    private static final String MEKEXTRAS_MEKAF_FACTORY =
+            "com.jerry.mekextras.common.integration.mekaf.tile.factory.";
     private static final String EMEXTRAS_MEKAF_FACTORY =
             "io.github.masyumero.emextras.common.integration.mekaf.tile.factory.";
 
@@ -43,6 +45,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             Map.entry(".TileEntitySolidifierAccessor", Gate.mod("evolvedmekanism")),
             Map.entry(".TileEntityMelterAccessor", Gate.mod("evolvedmekanism")),
             Map.entry(".TileEntityChemixerAccessor", Gate.mod("evolvedmekanism")),
+            Map.entry(".TileEntityExtraDissolvingFactoryAccessor",
+                    Gate.target("mekanism_extras", MEKEXTRAS_MEKAF_FACTORY + "TileEntityExtraDissolvingFactory")),
             Map.entry(".TileEntityEMExtraDissolvingFactoryAccessor",
                     Gate.target("emextras", EMEXTRAS_MEKAF_FACTORY + "TileEntityEMExtraDissolvingFactory")),
             Map.entry(".TileEntityChemicalReplicatorAccessor", Gate.mod("mekmm")),
