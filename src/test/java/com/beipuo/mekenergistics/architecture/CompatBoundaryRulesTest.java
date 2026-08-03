@@ -53,10 +53,10 @@ class CompatBoundaryRulesTest {
             "com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog");
 
     private static final String[] OPTIONAL_ADAPTER_PACKAGES = {
-            "..compat.mekmm..", "..compat.meke..", "..compat.eme..",
+            "..compat.mekmm..", "..compat.meke..", "..compat.eme..", "..compat.omnisequence..",
     };
     private static final String[] OPTIONAL_MOD_PACKAGES = {
-            "com.jerry..", "fr.iglee42..", "io.github.masyumero..",
+            "com.jerry..", "fr.iglee42..", "io.github.masyumero..", "com.atir.molecularmanipulator..",
     };
 
     /**

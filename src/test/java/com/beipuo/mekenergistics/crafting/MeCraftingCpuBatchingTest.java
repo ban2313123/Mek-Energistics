@@ -27,6 +27,13 @@ class MeCraftingCpuBatchingTest {
     }
 
     @Test
+    void doesNotClampSafeBatchesToOneMillionCopies() {
+        TestPattern pattern = new TestPattern(1, 1);
+
+        assertEquals(1_999_999, MeCraftingCpuBatching.maxAdditionalCopies(pattern, 2_000_000));
+    }
+
+    @Test
     void scalesInputMultipliersAndOutputsWithoutChangingPatternIdentity() {
         TestPattern pattern = new TestPattern(2, 3);
         MeCraftingCpuBatching.ScaledPatternDetails scaled =

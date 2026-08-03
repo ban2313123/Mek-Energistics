@@ -99,6 +99,11 @@ public interface MeFactoryAeMachine extends MePatternIoOwner, IGridConnectedBloc
     }
 
     @Override
+    default long maxAcceptedPatternCopies(appeng.api.stacks.KeyCounter[] oneCraftInputs) {
+        return getAeSupport().maxAcceptedCopies(oneCraftInputs);
+    }
+
+    @Override
     default boolean isBusy() {
         return getAeSupport().isPatternBusy();
     }

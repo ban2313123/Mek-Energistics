@@ -41,6 +41,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             "io.github.masyumero.emextras.common.integration.mekaf.tile.factory.";
     private static final String DATA_COUNTED_PROVIDER =
             "com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingProvider";
+    private static final String OMNI_BATCH_PROVIDER =
+            "com.atir.molecularmanipulator.api.crafting.OmniBatchCraftingProvider";
 
     private static final Map<String, Gate> OPTIONAL_MIXINS = Map.ofEntries(
             Map.entry(".TileEntityAlloyerAccessor", Gate.mod("evolvedmekanism")),
@@ -65,7 +67,13 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             Map.entry(".dataenergistics.DataCountedCraftingProviderMixin",
                     Gate.target("data_energistics", DATA_COUNTED_PROVIDER)),
             Map.entry(".dataenergistics.DataCountedFactoryCraftingProviderMixin",
-                    Gate.target("data_energistics", DATA_COUNTED_PROVIDER)));
+                    Gate.target("data_energistics", DATA_COUNTED_PROVIDER)),
+            Map.entry(".omnisequence.OmniBatchCraftingProviderMixin",
+                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+            Map.entry(".omnisequence.OmniBatchFactoryCraftingProviderMixin",
+                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+            Map.entry(".omnisequence.OmniManagedCraftingCpuMixin",
+                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)));
 
     @Override
     public void onLoad(String mixinPackage) {

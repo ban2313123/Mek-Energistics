@@ -113,6 +113,11 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
     }
 
     @Override
+    default long maxAcceptedPatternCopies(KeyCounter[] oneCraftInputs) {
+        return getRecipeAeSupport().maxAcceptedCopies(oneCraftInputs);
+    }
+
+    @Override
     default boolean isBusy() {
         return getRecipeAeSupport().isPatternBusy();
     }

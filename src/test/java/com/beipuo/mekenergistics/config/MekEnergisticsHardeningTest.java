@@ -119,7 +119,7 @@ class MekEnergisticsHardeningTest {
     @Test
     void injectionsIntoOptionalModsTolerateAMissingTarget() throws IOException {
         List<String> mandatory = new ArrayList<>();
-        for (String subPackage : new String[] {"extendedae", "dataenergistics"}) {
+        for (String subPackage : new String[] {"extendedae", "dataenergistics", "omnisequence"}) {
             Path dir = MIXIN_DIR.resolve(subPackage);
             if (!Files.isDirectory(dir)) {
                 continue;

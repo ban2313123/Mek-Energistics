@@ -138,6 +138,9 @@ dependencies {
     // Compile against the optional DataEnergistics batch contract when the local test mod is present.
     // The generated Mek-Energistics jar does not package or require this dependency at runtime.
     compileOnly files("run/mods/data_energistics-1.21.1-2.4.0.jar")
+    // OmniSequence: Transfinite 1.3.9 publishes the optional Omni Batch Provider API in its jar.
+    compileOnly files("run/mods/omnisequence-transfinite-1.3.9.jar")
+    testRuntimeOnly files("run/mods/omnisequence-transfinite-1.3.9.jar")
     testImplementation platform("org.junit:junit-bom:5.10.3")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"

@@ -9,6 +9,9 @@ import appeng.crafting.execution.ExecutingCraftingJob;
 import appeng.crafting.inv.ListCraftingInventory;
 import appeng.me.service.CraftingService;
 import com.beipuo.mekenergistics.crafting.MeCraftingCpuBatching;
+import com.beipuo.mekenergistics.crafting.OmniManagedCpuGuard;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,7 +19,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = CraftingCpuLogic.class, remap = false)
@@ -48,19 +50,23 @@ public abstract class CraftingCpuLogicMixin {
         this.mekenergistics$batchLevel = null;
     }
 
-    @Redirect(
+    @WrapOperation(
             method = "executeCrafting",
             at = @At(
                     value = "INVOKE",
                     target = "Lappeng/api/networking/crafting/ICraftingProvider;pushPattern(Lappeng/api/crafting/IPatternDetails;[Lappeng/api/stacks/KeyCounter;)Z"))
     private boolean mekenergistics$batchMeMachineTasks(ICraftingProvider provider,
-            IPatternDetails details, KeyCounter[] inputs) {
+            IPatternDetails details, KeyCounter[] inputs, Operation<Boolean> original) {
+        if (this instanceof OmniManagedCpuGuard guard && guard.mekenergistics$isOmniManagedCpu()) {
+            return original.call(provider, details, inputs);
+        }
         IEnergyService energyService = this.mekenergistics$batchEnergyService;
         Level level = this.mekenergistics$batchLevel;
         if (energyService == null || level == null) {
-            return provider.pushPattern(details, inputs);
+            return original.call(provider, details, inputs);
         }
         return MeCraftingCpuBatching.pushPattern(
-                provider, details, inputs, this.inventory, this.job, energyService, level);
+                provider, details, inputs, this.inventory, this.job, energyService, level,
+                (target, pattern, batch) -> original.call(target, pattern, batch));
     }
 }

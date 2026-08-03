@@ -26,27 +26,27 @@ import org.jetbrains.annotations.Nullable;
 
 /** Batches already-planned AE2 tasks without changing pattern planning granularity. */
 public final class MeCraftingCpuBatching {
-    static final long MAX_COPIES_PER_PUSH = 1_048_576L;
 
     private MeCraftingCpuBatching() {
     }
 
     public static boolean pushPattern(ICraftingProvider provider, IPatternDetails details,
             KeyCounter[] baseInputs, ListCraftingInventory inventory, ExecutingCraftingJob job,
-            IEnergyService energyService, Level level) {
+            IEnergyService energyService, Level level, PatternPusher pusher) {
         if (!(provider instanceof MeAeSupportOwner owner)
                 || !owner.isSmartPatternMultiplicationEnabled()) {
-            return provider.pushPattern(details, baseInputs);
+            return pusher.push(provider, details, baseInputs);
         }
 
-        Batch batch = prepareBatch(details, baseInputs, inventory, job, energyService, level);
+        long acceptedCopies = owner.maxAcceptedPatternCopies(baseInputs);
+        Batch batch = prepareBatch(details, baseInputs, inventory, job, energyService, level, acceptedCopies);
         if (batch == null) {
-            return provider.pushPattern(details, baseInputs);
+            return pusher.push(provider, details, baseInputs);
         }
 
         boolean accepted = false;
         try {
-            accepted = provider.pushPattern(details, baseInputs);
+            accepted = pusher.push(provider, details, baseInputs);
             if (accepted) {
                 commitBatch(batch, job, energyService);
             }
@@ -61,7 +61,7 @@ public final class MeCraftingCpuBatching {
     @Nullable
     private static Batch prepareBatch(IPatternDetails details, KeyCounter[] baseInputs,
             ListCraftingInventory inventory, ExecutingCraftingJob job,
-            IEnergyService energyService, Level level) {
+            IEnergyService energyService, Level level, long acceptedCopies) {
         if (details == null || baseInputs == null || baseInputs.length == 0 || job == null) {
             return null;
         }
@@ -71,7 +71,8 @@ public final class MeCraftingCpuBatching {
             return null;
         }
         long remainingTasks = taskProgress.mekenergistics$getValue();
-        long maxExtraCopies = maxAdditionalCopies(details, remainingTasks);
+        long maxExtraCopies = Math.min(maxAdditionalCopies(details, remainingTasks),
+                Math.max(0, acceptedCopies - 1));
         if (maxExtraCopies <= 0) {
             return null;
         }
@@ -170,7 +171,7 @@ public final class MeCraftingCpuBatching {
         if (details == null || remainingTasks <= 1) {
             return 0;
         }
-        long totalLimit = Math.min(remainingTasks, MAX_COPIES_PER_PUSH);
+        long totalLimit = remainingTasks;
         for (IPatternDetails.IInput input : details.getInputs()) {
             long multiplier = input.getMultiplier();
             if (multiplier <= 0) {
@@ -213,6 +214,11 @@ public final class MeCraftingCpuBatching {
     private record Batch(long extraCopies, KeyCounter[] extraInputs,
             KeyCounter outputs, KeyCounter containerItems, double power,
             CraftingTaskProgressAccessor taskProgress) {
+    }
+
+    @FunctionalInterface
+    public interface PatternPusher {
+        boolean push(ICraftingProvider provider, IPatternDetails details, KeyCounter[] inputs);
     }
 
     static final class ScaledPatternDetails implements IPatternDetails {

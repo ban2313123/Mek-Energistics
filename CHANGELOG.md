@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.2
+
+### English
+
+#### Change
+
+- Added counted batch-provider integration for Data Energistics, allowing its crafting CPU to negotiate the number of complete crafts that an ME machine or factory can currently accept and transfer the batch atomically.
+- Added Omni Batch Provider API v1 integration for OmniSequence: Transfinite 1.3.9, including ordinary ME machines and factory tiers, while preventing duplicate multiplication when an Omni-managed crafting CPU controls the batch.
+- Replaced the fixed 1,048,576-copy smart-pattern ceiling with capacity-aware `long` sizing, so large machines can use their actual available input capacity while remaining bounded by the crafting job, input amounts, energy, and atomic routing checks.
+
+#### Fix
+
+- Preserved pattern input-slot identities and substituted keys during Omni batch admission and used the authoritative delivered totals at commit time, avoiding incorrect assumptions when AE2 substitutions change keys or ratios.
+- Kept returned-container, reusable-input, malformed, incomplete, or capacity-changed batches on safe rejection or normal one-craft dispatch paths without partially consuming inputs.
+
+### 中文
+
+#### 变更
+
+- 新增 Data Energistics 计数批处理供应器适配，使其合成 CPU 能按 ME 机器或工厂当前可接收的完整配方数量进行协商，并原子地移交整批材料。
+- 新增 OmniSequence: Transfinite 1.3.9 的 Omni Batch Provider API v1 适配，覆盖普通 ME 机器与各等级 ME 工厂；当批处理由 Omni 管理的合成 CPU 执行时，会避免与本模组的倍增逻辑重复计算。
+- 移除智能样板固定 1,048,576 份的上限，改为基于机器真实输入容量的 `long` 范围计算，同时仍受合成任务余量、单份输入数量、AE 能量与原子路由检查约束。
+
+#### 修复
+
+- Omni 批处理准入现在会保留样板输入槽位及替代材料键，并在提交时使用 API 交付的权威材料总量，避免 AE2 替代材料改变键或比例时产生错误推算。
+- 对带返还容器或可复用输入的配方，以及畸形、不完整或容量已变化的批次，保持安全拒绝或回退到普通单份派发，不会部分吞入材料。
+
 ## 2.0.1
 
 ### English

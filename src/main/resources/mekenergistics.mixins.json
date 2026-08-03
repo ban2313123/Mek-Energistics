@@ -45,7 +45,10 @@
     "dataenergistics.PatternProviderSyncHelperMixin",
     "extendedae.ContainerRenamerMixin",
     "dataenergistics.DataCountedCraftingProviderMixin",
-    "dataenergistics.DataCountedFactoryCraftingProviderMixin"
+    "dataenergistics.DataCountedFactoryCraftingProviderMixin",
+    "omnisequence.OmniBatchCraftingProviderMixin",
+    "omnisequence.OmniBatchFactoryCraftingProviderMixin",
+    "omnisequence.OmniManagedCraftingCpuMixin"
   ],
   "injectors": {
     "defaultRequire": 1
