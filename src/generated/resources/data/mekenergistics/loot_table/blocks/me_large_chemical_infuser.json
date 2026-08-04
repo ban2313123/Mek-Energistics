@@ -10,7 +10,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "mekenergistics:me_large_chemical_infuser"
+          "name": "mekenergistics:me_large_chemical_infuser",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ]
         }
       ],
       "rolls": 1

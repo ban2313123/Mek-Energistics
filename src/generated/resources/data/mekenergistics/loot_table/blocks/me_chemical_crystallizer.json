@@ -10,7 +10,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "mekenergistics:me_chemical_crystallizer"
+          "name": "mekenergistics:me_chemical_crystallizer",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ]
         }
       ],
       "rolls": 1

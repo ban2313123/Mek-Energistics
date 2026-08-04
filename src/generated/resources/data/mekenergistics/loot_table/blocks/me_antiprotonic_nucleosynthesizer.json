@@ -10,7 +10,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "mekenergistics:me_antiprotonic_nucleosynthesizer"
+          "name": "mekenergistics:me_antiprotonic_nucleosynthesizer",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ]
         }
       ],
       "rolls": 1

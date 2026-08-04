@@ -10,7 +10,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "mekenergistics:me_cnc_rolling_mill"
+          "name": "mekenergistics:me_cnc_rolling_mill",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ]
         }
       ],
       "rolls": 1

@@ -52,6 +52,20 @@ class CompatMachineGeneratedResourcesTest {
     }
 
     @Test
+    void machineDropsCopyBlockEntityComponents() {
+        for (CompatMachineSpec spec : meVariants()) {
+            JsonObject entry = CompatMachineDataJson.selfDropLootTable(spec)
+                    .getAsJsonArray("pools").get(0).getAsJsonObject()
+                    .getAsJsonArray("entries").get(0).getAsJsonObject();
+            JsonObject function = entry.getAsJsonArray("functions").get(0).getAsJsonObject();
+            assertEquals("minecraft:copy_components", function.get("function").getAsString(),
+                    spec.meBlockId().toString());
+            assertEquals("block_entity", function.get("source").getAsString(),
+                    spec.meBlockId().toString());
+        }
+    }
+
+    @Test
     void generatedTreeContainsOnlyCurrentCatalogResources() throws IOException {
         Set<Path> expected = new TreeSet<>();
         for (CompatMachineSpec spec : meVariants()) {

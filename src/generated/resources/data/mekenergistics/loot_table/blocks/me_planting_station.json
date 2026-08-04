@@ -10,7 +10,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "mekenergistics:me_planting_station"
+          "name": "mekenergistics:me_planting_station",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ]
         }
       ],
       "rolls": 1

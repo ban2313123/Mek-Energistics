@@ -6,7 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "mekenergistics:me_infinite_infusing_factory"
+          "name": "mekenergistics:me_infinite_infusing_factory",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ]
         }
       ],
       "rolls": 1.0

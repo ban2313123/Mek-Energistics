@@ -11,7 +11,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "mekenergistics:me_chemixer"
+          "name": "mekenergistics:me_chemixer",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ]
         }
       ],
       "rolls": 1.0
