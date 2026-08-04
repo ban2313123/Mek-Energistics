@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.3
+
+### English
+
+#### Change
+
+- Expanded AE2 memory card support to copy patterns together with item, chemical, and fluid output-to-AE settings, the pattern assembly name, and Pattern Access Terminal visibility.
+- Preserved stored block-entity components and machine configuration when dismantling ME machines and factories.
+- Made the optional OmniSequence and Data Energistics API contracts self-contained for reproducible builds, and updated the GitHub Actions upload/download steps to v5.
+- Set the Minecraft 1.21.1 NeoForge development and build baseline to 21.1.220.
+
+#### Fix
+
+- Refreshed AE nodes, published patterns, and neighboring capabilities immediately after an installer converts a machine, so the converted ME machine can accept autocrafting jobs without first being broken and placed again.
+
+### 中文
+
+#### 变更
+
+- 扩展 AE2 内存卡支持：除样板外，现在还会复制物品、化学品和流体的输出至 AE 设置、样板装配名称，以及是否在样板访问终端中显示。
+- 拆除 ME 机器与工厂时保留其方块实体组件和机器配置。
+- 将 OmniSequence 与 Data Energistics 的可选 API 契约改为项目内自包含，使构建可复现，并将 GitHub Actions 的上传与下载步骤更新至 v5。
+- 将 Minecraft 1.21.1 的 NeoForge 开发与构建基线设为 21.1.220。
+
+#### 修复
+
+- 安装器转换机器后会立即刷新 AE 节点、已发布样板和相邻能力，使转换后的 ME 机器无需先拆除重放即可正常接收自动合成订单。
+
 ## 2.0.2
 
 ### English
