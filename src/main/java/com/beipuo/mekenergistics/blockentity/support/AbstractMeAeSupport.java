@@ -317,11 +317,29 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             return;
         }
         this.visibleInPatternAccessTerminal = visible;
+        requestCraftingUpdate();
         this.owner.saveChanges();
     }
 
     public final void createOnFirstTick() {
         GridHelper.onFirstTick(this.ownerTile, tile -> create());
+    }
+
+    public final void refreshAfterWorldMutation() {
+        GridHelper.onFirstTick(this.ownerTile, tile -> {
+            create();
+            rebuildPatternCache(false);
+            net.minecraft.world.level.Level level = this.ownerTile.getLevel();
+            if (level == null || level.isClientSide()) {
+                return;
+            }
+            BlockPos pos = this.ownerTile.getBlockPos();
+            level.invalidateCapabilities(pos);
+            for (Direction direction : Direction.values()) {
+                level.invalidateCapabilities(pos.relative(direction));
+            }
+            level.updateNeighborsAt(pos, this.ownerTile.getBlockState().getBlock());
+        });
     }
 
     private void create() {

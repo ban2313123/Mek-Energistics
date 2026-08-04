@@ -60,6 +60,11 @@ public interface MeFactoryAeMachine extends MePatternIoOwner, IGridConnectedBloc
         return getAeSupport().getAeOutputMode();
     }
 
+    default void setAeOutputMode(AeOutputMode mode) {
+        getAeSupport().setAeOutputMode(mode);
+        saveChanges();
+    }
+
     default String getCustomPatternTerminalName() {
         return getAeSupport().getPatternTerminalName();
     }

@@ -137,6 +137,7 @@ public final class MeInstallerUpgradeHandler {
             MePatternSlotTransfer.copyMekanismComponents(oldTile, upgradedTile, targetBlock);
         }
         MePatternSlotTransfer.load(upgradedTile, level.registryAccess(), mePatternSlots);
+        refreshMeLifecycle(upgradedTile);
         if (player instanceof ServerPlayer serverPlayer) {
             if (upgradedTile instanceof MeAeMachine machine) {
                 machine.setOwner(serverPlayer);
@@ -155,6 +156,14 @@ public final class MeInstallerUpgradeHandler {
         }
         MekEnergistics.LOGGER.debug("ME installer upgraded machine to {} at {}", target.registryName(), pos);
         return InteractionResult.CONSUME;
+    }
+
+    private static void refreshMeLifecycle(TileEntityMekanism upgradedTile) {
+        if (upgradedTile instanceof MeAeMachine machine) {
+            machine.getRecipeAeSupport().refreshAfterWorldMutation();
+        } else if (upgradedTile instanceof MeFactoryAeMachine machine) {
+            machine.getAeSupport().refreshAfterWorldMutation();
+        }
     }
 
     private static boolean canPlaceBoundingBlocks(Level level, BlockPos pos, BlockState upgradeState, AttributeHasBounding upgradeBounding) {

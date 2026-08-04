@@ -36,6 +36,15 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
 
     void cycleAeOutputMode();
 
+    default void setAeOutputMode(AeOutputMode mode) {
+        if (mode == null) {
+            return;
+        }
+        for (int i = 0; i < AeOutputMode.values().length && getAeOutputMode() != mode; i++) {
+            cycleAeOutputMode();
+        }
+    }
+
     default void cycleAeOutputMode(TransmissionType type) {
         AeOutputMode target = getAeOutputMode().toggle(type);
         for (int i = 0; i < AeOutputMode.values().length && getAeOutputMode() != target; i++) {

@@ -11,10 +11,13 @@ import appeng.items.tools.MemoryCardItem;
 import appeng.util.InteractionUtil;
 import appeng.util.inv.AppEngInternalInventory;
 import appeng.util.inv.PlayerInternalInventory;
+import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.ItemInteractionResult;
@@ -25,6 +28,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class MeMemoryCardSettings {
+    static final String OUTPUT_MODE = "mekenergistics.output_mode";
+    static final String TERMINAL_NAME = "mekenergistics.pattern_terminal_name";
+    static final String TERMINAL_VISIBLE = "mekenergistics.pattern_terminal_visible";
+
     private MeMemoryCardSettings() {
     }
 
@@ -60,14 +67,91 @@ public final class MeMemoryCardSettings {
         DataComponentMap.Builder builder = DataComponentMap.builder();
         builder.set(AEComponents.EXPORTED_SETTINGS_SOURCE, sourceName(patternContainer));
         builder.set(AEComponents.EXPORTED_PATTERNS, toPatternContents(patternContainer.getTerminalPatternInventory()));
+        builder.set(AEComponents.EXPORTED_SETTINGS, exportMeSettings(patternContainer));
         return builder.build();
     }
 
     private static void importSettings(PatternContainer patternContainer, DataComponentMap input, Player player) {
         importPatterns(patternContainer, input, player);
+        importMeSettings(patternContainer, input.get(AEComponents.EXPORTED_SETTINGS));
         if (patternContainer instanceof BlockEntity blockEntity) {
             blockEntity.setChanged();
         }
+    }
+
+    static Map<String, String> exportMeSettings(PatternContainer patternContainer) {
+        Map<String, String> settings = new HashMap<>();
+        if (patternContainer instanceof MeAeMachine machine) {
+            putMeSettings(settings, machine.getAeOutputMode(), machine.getCustomPatternTerminalName(),
+                    machine.isVisibleInTerminal());
+        } else if (patternContainer instanceof MeFactoryAeMachine machine) {
+            putMeSettings(settings, machine.getAeOutputMode(), machine.getCustomPatternTerminalName(),
+                    machine.isVisibleInTerminal());
+        }
+        return Map.copyOf(settings);
+    }
+
+    private static void putMeSettings(Map<String, String> settings, AeOutputMode outputMode, String terminalName,
+            boolean terminalVisible) {
+        settings.put(OUTPUT_MODE, outputMode.name());
+        settings.put(TERMINAL_NAME, terminalName);
+        settings.put(TERMINAL_VISIBLE, Boolean.toString(terminalVisible));
+    }
+
+    static void importMeSettings(PatternContainer patternContainer, Map<String, String> settings) {
+        if (settings == null) {
+            return;
+        }
+        AeOutputMode outputMode = parseOutputMode(settings.get(OUTPUT_MODE));
+        String terminalName = settings.get(TERMINAL_NAME);
+        Boolean terminalVisible = parseBoolean(settings.get(TERMINAL_VISIBLE));
+        if (patternContainer instanceof MeAeMachine machine) {
+            applyMeSettings(machine, outputMode, terminalName, terminalVisible);
+        } else if (patternContainer instanceof MeFactoryAeMachine machine) {
+            applyMeSettings(machine, outputMode, terminalName, terminalVisible);
+        }
+    }
+
+    private static void applyMeSettings(MeAeMachine machine, AeOutputMode outputMode, String terminalName,
+            Boolean terminalVisible) {
+        if (outputMode != null) {
+            machine.setAeOutputMode(outputMode);
+        }
+        if (terminalName != null) {
+            machine.setCustomPatternTerminalName(terminalName);
+        }
+        if (terminalVisible != null) {
+            machine.setVisibleInPatternAccessTerminal(terminalVisible);
+        }
+    }
+
+    private static void applyMeSettings(MeFactoryAeMachine machine, AeOutputMode outputMode, String terminalName,
+            Boolean terminalVisible) {
+        if (outputMode != null) {
+            machine.setAeOutputMode(outputMode);
+        }
+        if (terminalName != null) {
+            machine.setCustomPatternTerminalName(terminalName);
+        }
+        if (terminalVisible != null) {
+            machine.setVisibleInPatternAccessTerminal(terminalVisible);
+        }
+    }
+
+    static AeOutputMode parseOutputMode(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return AeOutputMode.valueOf(value);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    static Boolean parseBoolean(String value) {
+        return "true".equalsIgnoreCase(value) ? Boolean.TRUE
+                : "false".equalsIgnoreCase(value) ? Boolean.FALSE : null;
     }
 
     private static ItemContainerContents toPatternContents(InternalInventory inventory) {
