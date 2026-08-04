@@ -9,6 +9,7 @@
 - Added counted batch-provider integration for Data Energistics, allowing its crafting CPU to negotiate the number of complete crafts that an ME machine or factory can currently accept and transfer the batch atomically.
 - Added Omni Batch Provider API v1 integration for OmniSequence: Transfinite 1.3.9, including ordinary ME machines and factory tiers, while preventing duplicate multiplication when an Omni-managed crafting CPU controls the batch.
 - Replaced the fixed 1,048,576-copy smart-pattern ceiling with capacity-aware `long` sizing, so large machines can use their actual available input capacity while remaining bounded by the crafting job, input amounts, energy, and atomic routing checks.
+- Updated the NeoForge development and build baseline from 21.1.220 to 21.1.238 for Minecraft 1.21.1.
 
 #### Fix
 
@@ -22,6 +23,7 @@
 - 新增 Data Energistics 计数批处理供应器适配，使其合成 CPU 能按 ME 机器或工厂当前可接收的完整配方数量进行协商，并原子地移交整批材料。
 - 新增 OmniSequence: Transfinite 1.3.9 的 Omni Batch Provider API v1 适配，覆盖普通 ME 机器与各等级 ME 工厂；当批处理由 Omni 管理的合成 CPU 执行时，会避免与本模组的倍增逻辑重复计算。
 - 移除智能样板固定 1,048,576 份的上限，改为基于机器真实输入容量的 `long` 范围计算，同时仍受合成任务余量、单份输入数量、AE 能量与原子路由检查约束。
+- 将 Minecraft 1.21.1 的 NeoForge 开发与构建基线从 21.1.220 更新至 21.1.238。
 
 #### 修复
 
