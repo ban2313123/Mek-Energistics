@@ -8,6 +8,7 @@ import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.testfixture.FakeKey;
+import com.moakiee.thunderbolt.ae2.api.crafting.BatchDispatchMode;
 import org.junit.jupiter.api.Test;
 
 class ThunderboltBatchCompatTest {
@@ -20,8 +21,12 @@ class ThunderboltBatchCompatTest {
 
         assertEquals(Long.MAX_VALUE,
                 ThunderboltBatchCompat.getBatchCapacity(target, true, PATTERN));
+        assertEquals(BatchDispatchMode.UNBOUNDED,
+                ThunderboltBatchCompat.getBatchDispatchMode(true));
         assertEquals(1L,
                 ThunderboltBatchCompat.getBatchCapacity(target, false, PATTERN));
+        assertEquals(BatchDispatchMode.NORMAL,
+                ThunderboltBatchCompat.getBatchDispatchMode(false));
     }
 
     @Test

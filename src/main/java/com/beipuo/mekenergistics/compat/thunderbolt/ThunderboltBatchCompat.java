@@ -3,6 +3,7 @@ package com.beipuo.mekenergistics.compat.thunderbolt;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
+import com.moakiee.thunderbolt.ae2.api.crafting.BatchDispatchMode;
 import org.jetbrains.annotations.Nullable;
 
 /** Bridges Thunderbolt's counted batch dispatch to ME machine input transactions. */
@@ -20,6 +21,10 @@ public final class ThunderboltBatchCompat {
             KeyCounter[] oneCopyTemplate, long maxCraft) {
         return pushBatch(target(support), smartMultiplicationEnabled,
                 details, oneCopyTemplate, maxCraft);
+    }
+
+    public static BatchDispatchMode getBatchDispatchMode(boolean smartMultiplicationEnabled) {
+        return smartMultiplicationEnabled ? BatchDispatchMode.UNBOUNDED : BatchDispatchMode.NORMAL;
     }
 
     static long getBatchCapacity(@Nullable BatchTarget target,

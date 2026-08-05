@@ -7,6 +7,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.compat.thunderbolt.ThunderboltBatchCompat;
+import com.moakiee.thunderbolt.ae2.api.crafting.BatchDispatchMode;
 import com.moakiee.thunderbolt.ae2.api.crafting.IBatchCraftingProvider;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -23,6 +24,11 @@ public interface ThunderboltBatchCraftingProviderMixin extends IBatchCraftingPro
     default long getBatchCapacity(IPatternDetails details) {
         return ThunderboltBatchCompat.getBatchCapacity(getRecipeAeSupport(),
                 isSmartPatternMultiplicationEnabled(), details);
+    }
+
+    @Override
+    default BatchDispatchMode getBatchDispatchMode(IPatternDetails details) {
+        return ThunderboltBatchCompat.getBatchDispatchMode(isSmartPatternMultiplicationEnabled());
     }
 
     @Override
@@ -44,6 +50,11 @@ interface ThunderboltBatchFactoryCraftingProviderMixin extends IBatchCraftingPro
     default long getBatchCapacity(IPatternDetails details) {
         return ThunderboltBatchCompat.getBatchCapacity(getAeSupport(),
                 isSmartPatternMultiplicationEnabled(), details);
+    }
+
+    @Override
+    default BatchDispatchMode getBatchDispatchMode(IPatternDetails details) {
+        return ThunderboltBatchCompat.getBatchDispatchMode(isSmartPatternMultiplicationEnabled());
     }
 
     @Override
