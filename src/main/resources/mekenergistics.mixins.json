@@ -49,7 +49,9 @@
     "omnisequence.OmniBatchCraftingProviderMixin",
     "omnisequence.OmniBatchFactoryCraftingProviderMixin",
     "omnisequence.OmniManagedCraftingCpuMixin",
-    "neoecoae.NeoEcoBatchCraftingBridgeMixin"
+    "neoecoae.NeoEcoBatchCraftingBridgeMixin",
+    "thunderbolt.ThunderboltBatchCraftingProviderMixin",
+    "thunderbolt.ThunderboltBatchFactoryCraftingProviderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

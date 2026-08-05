@@ -169,6 +169,7 @@ dependencies {
     // "ex-pattern-provider" is ExtendedAE under its former project name. This is what lets
     // mixin/extendedae/ContainerRenamerMixin compile; nothing else here advertises the connection.
     compileOnly "curse.maven:ex-pattern-provider-892005:8025439"        // extendedae 1.21-2.2.32-neoforge
+    compileOnly "curse.maven:thunderbolt-core-1631756:8580186"          // Thunderbolt Core, batch-provider API
 
     localRuntime "curse.maven:guideme-1173950:8420861"                  // GuideME 21.1.x, local test runtime
     localRuntime "curse.maven:kotlin-for-forge-351264:8335665"          // Kotlin for Forge, bundles Kotlin 2.4.0
@@ -194,6 +195,8 @@ dependencies {
     localRuntime "curse.maven:applied-flux-965012:7429565"              // appflux 1.21-2.1.4-neoforge
     localRuntime "curse.maven:ex-pattern-provider-892005:8025439"       // extendedae 1.21-2.2.32-neoforge
     localRuntime "curse.maven:extendedae-plus-1337639:8141724"          // extendedae_plus 1.21.1-1.5.4.1
+    localRuntime "curse.maven:ae2-lightning-tech-1527395:8575479"       // AE2 Lightning Tech, local compatibility runtime
+    localRuntime "curse.maven:thunderbolt-core-1631756:8580186"         // Thunderbolt Core, local compatibility runtime
     localRuntime "curse.maven:ldlib-626676:8394241"                      // ldlib, local test runtime for DataEnergistics/NeoECOAE
     localRuntime "curse.maven:data-energistics-1565514:8299879"          // published DataEnergistics 2.0.0 baseline
 }
