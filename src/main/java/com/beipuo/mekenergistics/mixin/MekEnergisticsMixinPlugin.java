@@ -43,6 +43,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             "com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingProvider";
     private static final String OMNI_BATCH_PROVIDER =
             "com.atir.molecularmanipulator.api.crafting.OmniBatchCraftingProvider";
+    private static final String NEOECO_BATCH_BRIDGE =
+            "cn.dancingsnow.neoecoae.integration.ae2lt.AE2LTBatchCraftingBridge";
 
     private static final Map<String, Gate> OPTIONAL_MIXINS = Map.ofEntries(
             Map.entry(".TileEntityAlloyerAccessor", Gate.mod("evolvedmekanism")),
@@ -73,7 +75,9 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             Map.entry(".omnisequence.OmniBatchFactoryCraftingProviderMixin",
                     Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
             Map.entry(".omnisequence.OmniManagedCraftingCpuMixin",
-                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)));
+                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+            Map.entry(".neoecoae.NeoEcoBatchCraftingBridgeMixin",
+                    Gate.target("neoecoae", NEOECO_BATCH_BRIDGE)));
 
     @Override
     public void onLoad(String mixinPackage) {

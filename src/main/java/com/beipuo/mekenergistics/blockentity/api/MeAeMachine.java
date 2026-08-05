@@ -108,6 +108,11 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
 
     AbstractMeAeSupport<?> getRecipeAeSupport();
 
+    @Override
+    default AbstractMeAeSupport<?> getPatternAeSupport() {
+        return getRecipeAeSupport();
+    }
+
     default List<IPatternDetails> getAvailablePatterns() {
         return getRecipeAeSupport().getAvailablePatterns();
     }

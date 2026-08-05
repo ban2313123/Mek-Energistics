@@ -7,6 +7,7 @@ import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
 import appeng.me.helpers.IGridConnectedBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
+import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -96,6 +97,11 @@ public interface MeFactoryAeMachine extends MePatternIoOwner, IGridConnectedBloc
 
     default void setSmartPatternMultiplicationEnabled(boolean enabled) {
         getAeSupport().setSmartPatternMultiplicationEnabled(enabled);
+    }
+
+    @Override
+    default AbstractMeAeSupport<?> getPatternAeSupport() {
+        return getAeSupport();
     }
 
     @Override

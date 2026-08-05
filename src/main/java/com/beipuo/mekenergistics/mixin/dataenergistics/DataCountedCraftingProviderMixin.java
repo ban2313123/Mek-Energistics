@@ -17,8 +17,8 @@ import org.spongepowered.asm.mixin.Shadow;
 /**
  * Opt-in bridge for DataEnergistics' counted CPU dispatch.
  *
- * <p>The mixin is gated by the DataEnergistics mod id. Neo ECO has a separate CPU fast path and
- * does not implement this interface, so its normal provider fallback remains unchanged.</p>
+ * <p>The mixin is gated by the DataEnergistics mod id. NeoECO does not implement this interface;
+ * its CPU uses the separate NeoECO batch-bridge mixin.</p>
  */
 @Mixin(MeAeMachine.class)
 public interface DataCountedCraftingProviderMixin extends CountedCraftingProvider {

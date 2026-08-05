@@ -163,7 +163,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
                 || hasMatchingPatternDefinition(this.patterns, patternDetails));
     }
 
-    /** Returns the physical input capacity available for a counted DataEnergistics submission. */
+    /** Returns the physical input capacity available for a counted CPU submission. */
     public final long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
         if (oneCraftInputs == null || !this.mainNode.isActive() || isPatternBusy()) {
             return 0;
@@ -171,7 +171,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return patternInputLayout().maxAcceptedCopies(oneCraftInputs);
     }
 
-    /** Routes a pre-scaled DataEnergistics batch without invoking Mek-Energistics smart multiplication. */
+    /** Routes pre-scaled counted inputs without invoking Mek-Energistics smart multiplication. */
     public final boolean routeDataPatternInputs(KeyCounter[] scaledInputs) {
         if (scaledInputs == null || !this.mainNode.isActive() || isPatternBusy()) {
             return false;
@@ -205,7 +205,8 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
      * Compatibility fallback for CPU paths without the DataEnergistics counted-provider contract:
      * some addon CPUs pre-batch pattern inputs, but their multiplier cannot be coordinated with our
      * smart queue. If their input shape cannot be represented, disable this machine's multiplier
-     * and accept the CPU-provided batch directly. Neo ECO remains on this ordinary path for now.
+     * and accept the CPU-provided batch directly. Counted CPU integrations use their dedicated
+     * admission contracts instead of this fallback.
      */
     static boolean dispatchWithSmartPatternFallback(boolean exactPattern, boolean registeredPattern,
             MeSmartPatternMultiplication multiplication, IPatternDetails patternDetails, KeyCounter[] inputs,

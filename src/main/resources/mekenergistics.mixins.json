@@ -48,7 +48,8 @@
     "dataenergistics.DataCountedFactoryCraftingProviderMixin",
     "omnisequence.OmniBatchCraftingProviderMixin",
     "omnisequence.OmniBatchFactoryCraftingProviderMixin",
-    "omnisequence.OmniManagedCraftingCpuMixin"
+    "omnisequence.OmniManagedCraftingCpuMixin",
+    "neoecoae.NeoEcoBatchCraftingBridgeMixin"
   ],
   "injectors": {
     "defaultRequire": 1
