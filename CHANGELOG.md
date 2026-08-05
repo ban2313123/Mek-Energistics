@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.0.6-beta
+
+### English
+
+#### Change
+
+- Added counted batch-dispatch compatibility for Neo ECO AE Extension 21.2.0. Its crafting CPU can now send ME machines and factories as many complete crafts as their physical inputs, CPU inventory, available AE power, and remaining task count permit, while preserving atomic rollback and preventing duplicate multiplication even when a batch is reduced to one craft.
+- Raised the minimum supported dependency versions, without upper bounds, to Applied Energistics 2 19.2.17, Mekanism 10.7.19, and Applied Mekanistics 1.6.3. Updated the NeoForge development baseline to 21.1.228 and the OmniSequence: Transfinite test runtime to the current 1.3.9 build.
+
+#### Fix
+
+- Fixed existing ME Large Chemical Infusers, ME Large Rotary Condensentrators, and ME Large Antiprotonic Nucleosynthesizers converted with the ME Factory Installer not exposing their physical back-face energy capability until broken and placed again. Their fixed Mekanism: MoreMachine energy port is now registered directly, including for already placed converted machines.
+
+### 中文
+
+#### 变更
+
+- 新增对 Neo ECO AE Extension 21.2.0 的计数批量派发兼容。其合成 CPU 现在可根据 ME 机器或工厂的物理输入容量、CPU 库存、可用 AE 能量与任务剩余数量派发多份完整配方；失败时保持原子回滚，并且即使批量缩减为单份也不会与 Mek-E 自身倍增逻辑重复计算。
+- 在不设置上限的前提下，将最低支持版本提高至 Applied Energistics 2 19.2.17、Mekanism 10.7.19 与 Applied Mekanistics 1.6.3；同时将 NeoForge 开发基线更新至 21.1.228，并将 OmniSequence: Transfinite 测试运行环境更新到当前 1.3.9 构建。
+
+#### 修复
+
+- 修复使用 ME 工厂安装器转换后，已经放置的 ME 大型化学灌注机、ME 大型旋转式冷凝机与 ME 大型反质子核合成机无法暴露物理背面能源能力，必须拆除重放才能接入能源的问题。现在会直接注册 Mekanism: MoreMachine 的固定能源端口，已放置并完成转换的机器同样生效。
+
 ## 2.0.5
 
 ### English
