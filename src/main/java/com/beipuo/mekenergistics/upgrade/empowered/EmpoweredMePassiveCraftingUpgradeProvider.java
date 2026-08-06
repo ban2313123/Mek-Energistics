@@ -8,6 +8,7 @@ import dev.lapis256.mekanism_empowered.core.api.upgrade.IAdditionalUpgrades;
 import dev.lapis256.mekanism_empowered.core.common.upgrade.UpgradeItemRegistry;
 import dev.lapis256.mekanism_empowered.core.common.util.AdditionalUpgradeUtil;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import java.lang.reflect.Proxy;
 import java.util.Set;
 import mekanism.api.text.EnumColor;
@@ -38,7 +39,9 @@ public final class EmpoweredMePassiveCraftingUpgradeProvider implements IAdditio
                     (proxy, method, args) -> {
                         if (method.getName().equals("invoke") && args != null && args.length == 1) {
                             Object tile = args[0];
-                            return tile instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()
+                            return tile instanceof MeAeMachine machine
+                                    && (!(machine instanceof MeUpgradeableMachine upgradeable)
+                                            || upgradeable.isMeUpgradeTarget())
                                     ? Set.of(upgrade) : Set.of();
                         }
                         return switch (method.getName()) {

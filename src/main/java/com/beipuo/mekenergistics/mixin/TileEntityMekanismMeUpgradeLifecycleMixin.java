@@ -1,5 +1,6 @@
 package com.beipuo.mekenergistics.mixin;
 
+import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
@@ -41,6 +42,11 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
             return;
         }
         if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()) {
+            Set<Upgrade> upgrades = new HashSet<>(cir.getReturnValue());
+            upgrades.add(MePatternProviderUpgrade.get());
+            upgrades.add(MePassiveCraftingUpgrade.get());
+            cir.setReturnValue(upgrades);
+        } else if ((Object) this instanceof MeAeMachine) {
             Set<Upgrade> upgrades = new HashSet<>(cir.getReturnValue());
             upgrades.add(MePatternProviderUpgrade.get());
             upgrades.add(MePassiveCraftingUpgrade.get());
