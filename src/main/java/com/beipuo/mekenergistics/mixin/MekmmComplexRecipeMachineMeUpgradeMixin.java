@@ -117,11 +117,23 @@ public abstract class MekmmComplexRecipeMachineMeUpgradeMixin implements MeUpgra
     @Unique
     private List<? extends MeOutputPort> mekenergistics$outputPorts(MeMekanismMachine machine) {
         if (machine == MeMekanismMachine.CHEMICAL_REPLICATOR) {
-            return this.mekenergistics$chemicalTanks.size() > 2
-                    ? List.of(MeMachineIoAdapter.chemicalOutput(this.mekenergistics$chemicalTanks.get(2))) : List.of();
+            if ((Object) this instanceof TileEntityChemicalReplicator replicator && replicator.outputTank != null) {
+                return List.of(MeMachineIoAdapter.chemicalOutput(replicator.outputTank));
+            }
+            return List.of();
         }
         if (machine == MeMekanismMachine.FLUID_REPLICATOR && (Object) this instanceof TileEntityFluidReplicator tile) {
             return tile.outputTank == null ? List.of() : List.of(MeMachineIoAdapter.fluidOutput(tile.outputTank));
+        }
+        if (machine == MeMekanismMachine.PLANTING_STATION
+                && (Object) this instanceof TileEntityPlantingStation planting) {
+            TileEntityPlantingStationAccessor accessor = (TileEntityPlantingStationAccessor) planting;
+            return List.of(MeMachineIoAdapter.itemOutput(accessor.mekenergistics$getMainOutputSlot()),
+                    MeMachineIoAdapter.itemOutput(accessor.mekenergistics$getSecondaryOutputSlot()));
+        }
+        if (machine == MeMekanismMachine.REPLICATOR && (Object) this instanceof TileEntityReplicator replicator) {
+            return List.of(MeMachineIoAdapter.itemOutput(
+                    ((TileEntityReplicatorAccessor) replicator).mekenergistics$getOutputSlot()));
         }
         return this.mekenergistics$itemOutputs.stream().map(MeMachineIoAdapter::itemOutput).toList();
     }

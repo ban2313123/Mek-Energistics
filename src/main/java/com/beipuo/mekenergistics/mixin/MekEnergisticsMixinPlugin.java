@@ -137,6 +137,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             Map.entry(".TileEntityExtraDissolvingFactoryAccessor",
                     Gate.target("mekanism_extras", MEKEX_MEKAF_FACTORY + "TileEntityExtraDissolvingFactory")),
             Map.entry(".TileEntityChemicalReplicatorAccessor", Gate.mod("mekmm")),
+            Map.entry(".TileEntityPlantingStationAccessor", Gate.mod("mekmm")),
+            Map.entry(".TileEntityReplicatorAccessor", Gate.mod("mekmm")),
             Map.entry(".TileEntityFluidReplicatorAccessor", Gate.mod("mekmm")),
             Map.entry(".TileEntityLargeRotaryCondensentratorAccessor",
                     Gate.target("mekmm", MEKLM_MACHINE + "TileEntityLargeRotaryCondensentrator")),

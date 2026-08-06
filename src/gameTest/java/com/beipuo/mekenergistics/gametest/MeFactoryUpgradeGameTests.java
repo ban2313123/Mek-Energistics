@@ -123,7 +123,7 @@ public final class MeFactoryUpgradeGameTests {
 
     private static void runMachineUpgradePage(GameTestHelper helper, int page) {
         List<String> roots = CompatMachineCatalog.available()
-                .filter(spec -> !spec.machine().isFactory())
+                .filter(spec -> !spec.machine().isFactory() && spec.machine().hasRecipeLogic())
                 .map(spec -> spec.sourceBlockId().toString())
                 .toList();
         int start = page * 9;
