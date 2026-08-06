@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.mixin.upgrade;
 
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
+import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.upgrade.MePatternUpgradeLang;
 import com.beipuo.mekenergistics.upgrade.StandaloneUpgradePersistence;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -39,17 +40,19 @@ public abstract class UpgradeMixin {
     @Inject(method = "<clinit>", at = @At(value = "INVOKE",
           target = "Lmekanism/api/Upgrade;values()[Lmekanism/api/Upgrade;", ordinal = 0))
     private static void mekenergistics$addPatternProviderUpgrade(CallbackInfo ci) {
-        Upgrade upgrade = mekenergistics$create(
-                MePatternProviderUpgrade.INTERNAL_NAME,
-                $VALUES.length,
-                MePatternProviderUpgrade.SERIALIZED_NAME,
-                MePatternUpgradeLang.NAME,
-                MePatternUpgradeLang.DESCRIPTION,
-                1,
-                EnumColor.AQUA);
-        $VALUES = Arrays.copyOf($VALUES, $VALUES.length + 1);
-        $VALUES[$VALUES.length - 1] = upgrade;
-        MePatternProviderUpgrade.setStandaloneUpgrade(upgrade);
+        Upgrade patternProvider = mekenergistics$create(
+                MePatternProviderUpgrade.INTERNAL_NAME, $VALUES.length,
+                MePatternProviderUpgrade.SERIALIZED_NAME, MePatternUpgradeLang.NAME,
+                MePatternUpgradeLang.DESCRIPTION, 1, EnumColor.AQUA);
+        Upgrade passiveCrafting = mekenergistics$create(
+                MePassiveCraftingUpgrade.INTERNAL_NAME, $VALUES.length + 1,
+                MePassiveCraftingUpgrade.SERIALIZED_NAME, MePatternUpgradeLang.PASSIVE_NAME,
+                MePatternUpgradeLang.PASSIVE_DESCRIPTION, 1, EnumColor.AQUA);
+        $VALUES = Arrays.copyOf($VALUES, $VALUES.length + 2);
+        $VALUES[$VALUES.length - 2] = patternProvider;
+        $VALUES[$VALUES.length - 1] = passiveCrafting;
+        MePatternProviderUpgrade.setStandaloneUpgrade(patternProvider);
+        MePassiveCraftingUpgrade.setStandaloneUpgrade(passiveCrafting);
     }
 
     @ModifyVariable(method = "buildMap", at = @At(value = "STORE", ordinal = 0), name = "upgrades")

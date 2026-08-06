@@ -480,7 +480,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         if (storage == null) {
             return false;
         }
-        boolean changed = MePassiveCraftingDispatcher.submitFirstAvailable(
+        boolean changed = MePassiveCraftingDispatcher.submitAvailable(
                 this.patterns, passiveCraftingSettings.multiplier(), this.ownerTile.getLevel(), storage,
                 this.actionSource, this::routeDataPatternInputs);
         if (changed) {

@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.mixin;
 
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
+import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
 import java.util.HashSet;
 import java.util.Set;
@@ -30,7 +31,7 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
     @Inject(method = "getSupportedUpgrade", at = @At("HEAD"), cancellable = true)
     private void mekenergistics$provideSyntheticUpgradeSet(CallbackInfoReturnable<Set<Upgrade>> cir) {
         if (mekenergistics$isSyntheticUpgradeTarget()) {
-            cir.setReturnValue(Set.of(MePatternProviderUpgrade.get()));
+            cir.setReturnValue(Set.of(MePatternProviderUpgrade.get(), MePassiveCraftingUpgrade.get()));
         }
     }
 
@@ -42,6 +43,7 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
         if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()) {
             Set<Upgrade> upgrades = new HashSet<>(cir.getReturnValue());
             upgrades.add(MePatternProviderUpgrade.get());
+            upgrades.add(MePassiveCraftingUpgrade.get());
             cir.setReturnValue(upgrades);
         }
     }

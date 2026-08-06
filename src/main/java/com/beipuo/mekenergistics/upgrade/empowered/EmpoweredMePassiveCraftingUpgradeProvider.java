@@ -7,6 +7,9 @@ import dev.lapis256.mekanism_empowered.core.api.upgrade.AdditionalUpgradeDelegat
 import dev.lapis256.mekanism_empowered.core.api.upgrade.IAdditionalUpgrades;
 import dev.lapis256.mekanism_empowered.core.common.upgrade.UpgradeItemRegistry;
 import dev.lapis256.mekanism_empowered.core.common.util.AdditionalUpgradeUtil;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
+import java.lang.reflect.Proxy;
+import java.util.Set;
 import mekanism.api.text.EnumColor;
 import mekanism.api.Upgrade;
 import mekanism.common.registries.MekanismBlockTypes;
@@ -23,7 +26,35 @@ public final class EmpoweredMePassiveCraftingUpgradeProvider implements IAdditio
     }
 
     public static void registerSupportedUpgrade() {
-        AdditionalUpgradeUtil.addSupported(MekanismBlockTypes.ENRICHMENT_CHAMBER, findUpgrade());
+        Upgrade upgrade = findUpgrade();
+        AdditionalUpgradeUtil.addSupported(MekanismBlockTypes.ENRICHMENT_CHAMBER, upgrade);
+        registerFallbackProvider(upgrade);
+    }
+
+    private static void registerFallbackProvider(Upgrade upgrade) {
+        try {
+            Class<?> function = Class.forName("kotlin.jvm.functions.Function1");
+            Object provider = Proxy.newProxyInstance(function.getClassLoader(), new Class<?>[]{function},
+                    (proxy, method, args) -> {
+                        if (method.getName().equals("invoke") && args != null && args.length == 1) {
+                            Object tile = args[0];
+                            return tile instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()
+                                    ? Set.of(upgrade) : Set.of();
+                        }
+                        return switch (method.getName()) {
+                            case "hashCode" -> System.identityHashCode(proxy);
+                            case "equals" -> args != null && args.length == 1 && proxy == args[0];
+                            case "toString" -> "MekEnergisticsPassiveCraftingUpgradeFallback";
+                            default -> null;
+                        };
+                    });
+            Class<?> registry = Class.forName(
+                    "dev.lapis256.mekanism_empowered.core.common.util.TileUpgradeSupportFallbackRegistry");
+            Object instance = registry.getField("INSTANCE").get(null);
+            registry.getMethod("registerSupportedUpgradeProvider", function).invoke(instance, provider);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to register Empowered passive crafting fallback support", e);
+        }
     }
 
     private static Upgrade findUpgrade() {

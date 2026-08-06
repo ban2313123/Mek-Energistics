@@ -17,8 +17,9 @@ public final class MePassiveCraftingDispatcher {
     private MePassiveCraftingDispatcher() {
     }
 
-    public static boolean submitFirstAvailable(List<IPatternDetails> patterns, long copies, Level level,
+    public static boolean submitAvailable(List<IPatternDetails> patterns, long copies, Level level,
             MEStorage storage, IActionSource source, Predicate<KeyCounter[]> submitter) {
+        boolean submitted = false;
         for (IPatternDetails pattern : patterns) {
             KeyCounter[] inputs = plan(pattern, copies, level, storage, source);
             if (inputs == null) {
@@ -29,12 +30,12 @@ public final class MePassiveCraftingDispatcher {
                 continue;
             }
             if (submitter.test(inputs)) {
-                return true;
+                submitted = true;
+                continue;
             }
             restore(extracted, storage, source);
-            return false;
         }
-        return false;
+        return submitted;
     }
 
     private static KeyCounter[] plan(IPatternDetails pattern, long copies, Level level,

@@ -365,7 +365,7 @@ public final class MePatternWindowOverlay {
             interval = Math.clamp(interval, 1, 72_000);
             multiplier = Math.max(1, multiplier);
             this.passiveIntervalField.setText(Integer.toString(interval));
-            this.passiveMultiplierField.setText(Long.toString(multiplier));
+            this.passiveMultiplierField.setText(multiplier == 1 ? "" : Long.toString(multiplier));
             this.target.passiveCraftingAccess().set(interval, multiplier);
             PacketDistributor.sendToServer(new SetPassiveCraftingSettingsPacket(
                     this.target.container().getTileEntity().getBlockPos(), interval, multiplier));
@@ -379,7 +379,10 @@ public final class MePatternWindowOverlay {
             this.passiveMultiplierField.setVisible(this.passiveCraftingEnabled);
             if (this.passiveCraftingEnabled) {
                 if (!this.passiveIntervalField.isFocused()) this.passiveIntervalField.setText(Integer.toString(this.target.passiveCraftingAccess().interval()));
-                if (!this.passiveMultiplierField.isFocused()) this.passiveMultiplierField.setText(Long.toString(this.target.passiveCraftingAccess().multiplier()));
+                if (!this.passiveMultiplierField.isFocused()) {
+                    long multiplier = this.target.passiveCraftingAccess().multiplier();
+                    this.passiveMultiplierField.setText(multiplier == 1 ? "" : Long.toString(multiplier));
+                }
             }
             this.smartMultiplicationButton.active = !this.passiveCraftingEnabled;
         }

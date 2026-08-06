@@ -34,9 +34,13 @@ public record SetSmartPatternMultiplicationPacket(BlockPos pos, boolean enabled)
             }
             ServerPacketTarget.find(player, this.pos, MeAeSupportOwner.class).ifPresent(owner -> {
                 if (owner instanceof MeAeMachine machine) {
-                    machine.setSmartPatternMultiplicationEnabled(this.enabled);
+                    if (!this.enabled || !machine.hasPassiveCraftingUpgrade()) {
+                        machine.setSmartPatternMultiplicationEnabled(this.enabled);
+                    }
                 } else if (owner instanceof MeFactoryAeMachine machine) {
-                    machine.setSmartPatternMultiplicationEnabled(this.enabled);
+                    if (!this.enabled || !machine.hasPassiveCraftingUpgrade()) {
+                        machine.setSmartPatternMultiplicationEnabled(this.enabled);
+                    }
                 }
             });
         });

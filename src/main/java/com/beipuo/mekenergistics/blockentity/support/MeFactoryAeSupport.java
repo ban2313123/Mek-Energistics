@@ -53,6 +53,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         boolean changed = drainPatternOutputs(mode) || sendUpdatePacket;
         if (!hasPatternOutputBacklog(mode)) {
             if (this.owner.hasPassiveCraftingUpgrade()) {
+                setSmartPatternMultiplicationEnabled(false);
                 changed |= processSmartPatternViaAdapter();
                 if (!this.smartPatternMultiplication.hasPendingWork()) {
                     changed |= processPassiveCrafting(true);
