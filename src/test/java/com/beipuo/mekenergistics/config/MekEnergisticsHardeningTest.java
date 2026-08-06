@@ -203,10 +203,12 @@ class MekEnergisticsHardeningTest {
                 "src/main/java/com/beipuo/mekenergistics/compat/jade/MeAeStatusDataProvider.java"));
         assertTrue(provider.contains("instanceof MeAeMachine machine"),
                 "the shared Mekanism registration must be filtered to this mod's AE machines");
-        assertTrue(provider.contains("AeState.OFFLINE.ordinal()"),
-                "inactive upgradeable machines should still produce a Jade status instead of disappearing");
         assertTrue(provider.contains("upgradeable.isMeUpgradeTarget() && !upgradeable.isMeUpgradeActive()"),
-                "dedicated ME factories also receive the upgrade mixin and must not be treated as inactive targets");
+                "only inactive Mekanism upgrade targets should be hidden from Jade");
+        assertFalse(provider.substring(provider.indexOf("upgradeable.isMeUpgradeTarget()"),
+                        provider.indexOf("if (blockEntity instanceof MeAeMachine machine)"))
+                        .contains("putByte"),
+                "Mekanism machines without the ME upgrade must not publish an AE status");
         assertTrue(provider.contains("machine.getMainNode().getNode()"),
                 "Jade must inspect the raw managed node so booting and missing-channel states remain observable");
         assertFalse(provider.contains("getActionableNode()"),

@@ -46,8 +46,15 @@ public final class MeAeStatusGameTests {
         helper.setBlock(ME_BASE_MACHINE, requiredBlock("mekenergistics:me_enrichment_chamber"));
 
         helper.startSequence()
-                .thenExecuteAfter(1, () -> requiredTile(helper, UPGRADED_MACHINE).getComponent().getUpgradeSlot()
-                        .setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack()))
+                .thenExecuteAfter(1, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, UPGRADED_MACHINE);
+                    CompoundTag data = new CompoundTag();
+                    MeAeStatusDataProvider.INSTANCE.appendServerData(data, accessor(tile));
+                    helper.assertTrue(!data.contains(MeAeStatusDataProvider.TAG_AE_STATE),
+                            "Mekanism machine reported an AE status before the upgrade was installed");
+                    tile.getComponent().getUpgradeSlot()
+                            .setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+                })
                 .thenExecuteAfter(2 * SharedConstants.TICKS_PER_SECOND, () -> {
                     TileEntityMekanism upgradedTile = requiredTile(helper, UPGRADED_MACHINE);
                     helper.assertTrue(upgradedTile instanceof MeUpgradeableMachine upgradeable

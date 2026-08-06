@@ -23,7 +23,6 @@ public class MeAeStatusDataProvider implements IServerDataProvider<BlockAccessor
         BlockEntity blockEntity = accessor.getBlockEntity();
         if (blockEntity instanceof MeUpgradeableMachine upgradeable
                 && upgradeable.isMeUpgradeTarget() && !upgradeable.isMeUpgradeActive()) {
-            data.putByte(TAG_AE_STATE, (byte) AeState.OFFLINE.ordinal());
             return;
         }
         if (blockEntity instanceof MeAeMachine machine) {
