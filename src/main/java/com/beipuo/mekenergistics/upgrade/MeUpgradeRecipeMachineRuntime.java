@@ -101,6 +101,9 @@ public final class MeUpgradeRecipeMachineRuntime {
         if (active) {
             syncOwner();
             this.support.createOnFirstTick();
+            // A loaded factory may already have paused recipe monitors before the ME upgrade is restored.
+            // Unpause them here so the next server tick rebuilds the cached recipe with AE energy.
+            this.state.refreshRecipeCache();
         }
     }
 
