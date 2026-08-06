@@ -44,7 +44,7 @@ public class MeEMExtraItemStackToItemStackFactoryBlockEntity extends TileEntityE
     @NotNull
     @Override
     protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        return getAeSupport().withPatternSlots(super.getInitialInventory(listener));
+        return withPatternSlots(super.getInitialInventory(listener));
     }
 
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }

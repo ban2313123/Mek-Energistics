@@ -29,7 +29,7 @@ public class MeMoreMachineItemStackToItemStackFactoryBlockEntity extends TileEnt
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     @NotNull @Override protected IEnergyContainerHolder getInitialEnergyContainers(IContentsListener listener) { return MeFactoryAeSupport.energyContainers((com.jerry.mekmm.common.tile.factory.TileEntityMoreMachineFactory<?>) this, listener, this::unpauseRecipeMonitors, container -> this.energyContainer = (mekanism.common.capabilities.energy.MachineEnergyContainer) container); }
-    @NotNull @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
+    @NotNull @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return this.outputSlots; }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }

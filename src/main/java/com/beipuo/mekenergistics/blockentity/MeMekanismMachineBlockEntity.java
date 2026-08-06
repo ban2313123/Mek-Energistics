@@ -10,9 +10,7 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
-import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import appeng.api.crafting.IPatternDetails;
-import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
@@ -199,13 +197,13 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
                 inventorySlots[OUTPUT_SLOT] = builder.addSlot(OutputInventorySlot.at(listener, 116, 35));
                 inventorySlots[energySlot()] = builder.addSlot(EnergyInventorySlot.fillOrConvert(this.energyContainer, this::getLevel, listener, 64, 53));
         }
-        for (int slot = PATTERN_SLOTS_START; slot <= patternSlotsEnd(); slot++) {
-            inventorySlots[slot] = builder.addSlot(MePatternInventorySlot.create(PatternDetailsHelper::isEncodedPattern, () -> {
-                listener.onContentsChanged();
-                updatePatterns();
-            }));
+        // The AE support owns the canonical pattern slots. Append those same slot instances to
+        // Mekanism's holder so menus, sided inventory and AE pattern routing address one list.
+        List<BasicInventorySlot> patternSlots = getAeSupport().getPatternSlots();
+        for (int i = 0; i < patternSlots.size(); i++) {
+            inventorySlots[PATTERN_SLOTS_START + i] = patternSlots.get(i);
         }
-        return builder.build();
+        return withPatternSlots(builder.build());
     }
 
     public MeMekanismMachine getMachine() {

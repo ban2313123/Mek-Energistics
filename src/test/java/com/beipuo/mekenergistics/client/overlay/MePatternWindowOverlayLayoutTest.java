@@ -30,7 +30,8 @@ class MePatternWindowOverlayLayoutTest {
         int upgradeBranch = source.indexOf("MeUpgradeableMachine upgradeable");
         assertTrue(factoryBranch >= 0 && upgradeBranch >= 0 && factoryBranch < upgradeBranch,
                 "factory targets should be resolved before the generic ME upgrade gate");
-        assertTrue(source.contains("MeUpgradeableMachine upgradeable && !upgradeable.isMeUpgradeActive()"));
+        assertTrue(source.contains("upgradeable.isMeUpgradeTarget() && !upgradeable.isMeUpgradeActive()"),
+                "native ME machines receive the upgrade mixin too and must remain visible");
     }
 
     private static int count(String source, String literal) {

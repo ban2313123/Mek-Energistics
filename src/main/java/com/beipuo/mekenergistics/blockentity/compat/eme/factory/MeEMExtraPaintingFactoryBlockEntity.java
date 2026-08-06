@@ -25,7 +25,7 @@ public class MeEMExtraPaintingFactoryBlockEntity extends TileEntityEMExtraPainti
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
     public MeEMExtraPaintingFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) { super(ModBlocks.getMachineBlock(machine), pos, state); this.machine = machine; }
-    @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
+    @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputItemSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return this.outputItemSlots; }
     @Override public void unpauseRecipeMonitors() { for (var monitor : this.recipeCacheLookupMonitors) monitor.unpause(); }

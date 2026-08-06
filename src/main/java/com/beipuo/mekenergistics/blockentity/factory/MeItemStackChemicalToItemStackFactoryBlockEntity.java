@@ -50,7 +50,7 @@ public class MeItemStackChemicalToItemStackFactoryBlockEntity extends TileEntity
     @NotNull
     @Override
     protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        return getAeSupport().withPatternSlots(super.getInitialInventory(listener));
+        return withPatternSlots(super.getInitialInventory(listener));
     }
 
     @Override

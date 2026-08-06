@@ -27,7 +27,7 @@ public class MeEMExtraCrystallizingFactoryBlockEntity extends TileEntityEMExtraC
         this.machine = machine;
     }
 
-    @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
+    @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return Collections.emptyList(); }
     @Override public List<IInventorySlot> meOutputSlots() { return this.outputItemSlots; }
     @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalInputTanks() { return this.inputChemicalTanks; }

@@ -1,9 +1,7 @@
 package com.beipuo.mekenergistics.compat.jade;
 
 import appeng.api.networking.IGridNode;
-import appeng.api.networking.security.IActionHost;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -23,26 +21,26 @@ public class MeAeStatusDataProvider implements IServerDataProvider<BlockAccessor
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         BlockEntity blockEntity = accessor.getBlockEntity();
-        if (blockEntity instanceof MeUpgradeableMachine upgradeable && !upgradeable.isMeUpgradeActive()) {
+        if (blockEntity instanceof MeUpgradeableMachine upgradeable
+                && upgradeable.isMeUpgradeTarget() && !upgradeable.isMeUpgradeActive()) {
+            data.putByte(TAG_AE_STATE, (byte) AeState.OFFLINE.ordinal());
             return;
         }
-        if (blockEntity instanceof MeAeMachine || blockEntity instanceof MeFactoryAeMachine) {
-            data.putByte(TAG_AE_STATE, (byte) getAeState(blockEntity).ordinal());
+        if (blockEntity instanceof MeAeMachine machine) {
+            data.putByte(TAG_AE_STATE, (byte) getAeState(machine).ordinal());
         }
     }
 
-    private static AeState getAeState(BlockEntity blockEntity) {
-        if (blockEntity instanceof IActionHost actionHost) {
-            IGridNode node = actionHost.getActionableNode();
-            if (node != null && node.isPowered()) {
-                if (!node.hasGridBooted()) {
-                    return AeState.NETWORK_BOOTING;
-                }
-                if (!node.meetsChannelRequirements()) {
-                    return AeState.MISSING_CHANNEL;
-                }
-                return AeState.ONLINE;
+    private static AeState getAeState(MeAeMachine machine) {
+        IGridNode node = machine.getMainNode().getNode();
+        if (node != null && node.isPowered()) {
+            if (!node.hasGridBooted()) {
+                return AeState.NETWORK_BOOTING;
             }
+            if (!node.meetsChannelRequirements()) {
+                return AeState.MISSING_CHANNEL;
+            }
+            return AeState.ONLINE;
         }
         return AeState.OFFLINE;
     }

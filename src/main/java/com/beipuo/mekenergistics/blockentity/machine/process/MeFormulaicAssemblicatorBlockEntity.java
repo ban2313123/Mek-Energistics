@@ -58,7 +58,7 @@ public class MeFormulaicAssemblicatorBlockEntity extends TileEntityFormulaicAsse
     @NotNull
     @Override
     protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        return getRecipeAeSupport().withPatternSlots(super.getInitialInventory(listener));
+        return withPatternSlots(super.getInitialInventory(listener));
     }
 
     @Override

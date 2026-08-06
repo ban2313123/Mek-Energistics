@@ -160,7 +160,8 @@ public final class MePatternWindowOverlay {
                     new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
         if (container.getTileEntity() instanceof MeAeMachine machine) {
-            if (machine instanceof MeUpgradeableMachine upgradeable && !upgradeable.isMeUpgradeActive()) {
+            if (machine instanceof MeUpgradeableMachine upgradeable
+                    && upgradeable.isMeUpgradeTarget() && !upgradeable.isMeUpgradeActive()) {
                 return null;
             }
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),

@@ -33,7 +33,7 @@ public class MeEMExtraDissolvingFactoryBlockEntity extends TileEntityEMExtraDiss
     }
 
     @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        return getAeSupport().withPatternSlots(super.getInitialInventory(listener));
+        return withPatternSlots(super.getInitialInventory(listener));
     }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputItemSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return Collections.emptyList(); }

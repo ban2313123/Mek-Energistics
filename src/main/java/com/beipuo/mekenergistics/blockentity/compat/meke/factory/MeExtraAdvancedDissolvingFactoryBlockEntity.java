@@ -29,7 +29,7 @@ public class MeExtraAdvancedDissolvingFactoryBlockEntity extends TileEntityExtra
         this.machine = machine;
     }
 
-    @NotNull @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
+    @NotNull @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputItemSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return java.util.Collections.emptyList(); }
     @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalInputTanks() { return List.of(this.chemicalTank); }

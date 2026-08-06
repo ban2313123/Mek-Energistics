@@ -51,7 +51,7 @@ public class MeAlloyingFactoryBlockEntity extends TileEntityAlloyingFactory impl
     @NotNull
     @Override
     protected IInventorySlotHolder getInitialInventory(IContentsListener listener) {
-        return getAeSupport().withPatternSlots(super.getInitialInventory(listener));
+        return withPatternSlots(super.getInitialInventory(listener));
     }
 
     @Override public MeFactoryAeSupport getAeSupport() {

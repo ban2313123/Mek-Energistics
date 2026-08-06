@@ -18,6 +18,7 @@ import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.List;
+import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -76,6 +77,15 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
 
     default List<BasicInventorySlot> getPatternSlots() {
         return getRecipeAeSupport().getPatternSlots();
+    }
+
+    /**
+     * Adds the canonical AE pattern slots to a Mekanism inventory holder. Both standalone
+     * machines and factories must use this same structural hook so menus and AE routing share
+     * the exact slot instances.
+     */
+    default IInventorySlotHolder withPatternSlots(IInventorySlotHolder original) {
+        return getRecipeAeSupport().withPatternSlots(original);
     }
 
     MeMekanismMachine getMachine();

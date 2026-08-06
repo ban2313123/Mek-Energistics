@@ -32,7 +32,7 @@ public class MeExtraItemStackChemicalToItemStackFactoryBlockEntity extends TileE
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     @NotNull @Override protected IEnergyContainerHolder getInitialEnergyContainers(IContentsListener listener) { return MeFactoryAeSupport.energyContainers((com.jerry.mekextras.common.tile.factory.TileEntityExtraFactory<?>) this, listener, this::unpauseRecipeMonitors, container -> this.energyContainer = (mekanism.common.capabilities.energy.MachineEnergyContainer) container); }
-    @NotNull @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
+    @NotNull @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return this.outputSlots; }
     @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalOutputTanks() { return itemChemicalFactoryOutputTanks(getChemicalTank()); }

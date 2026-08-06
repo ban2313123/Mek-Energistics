@@ -186,4 +186,30 @@ class MekEnergisticsHardeningTest {
         assertFalse(source.contains(", Block.class"),
                 "Jade component provider must not be registered against every block");
     }
+
+    @Test
+    void jadeProvidersFollowConcreteClassHierarchiesAndCoverBothMachineKinds() throws IOException {
+        String plugin = Files.readString(JADE_PLUGIN);
+        assertTrue(plugin.contains("TileEntityMekanism.class"),
+                "Jade server lookup only walks BlockEntity superclasses");
+        assertTrue(plugin.contains("BlockTile.class"),
+                "upgraded Mekanism blocks need a client component registration on their block superclass");
+        assertTrue(plugin.contains("MeMekanismMachineBlock.class"),
+                "dedicated ME machines need their separate client component registration");
+        assertFalse(plugin.contains("registerBlockDataProvider(MeAeStatusDataProvider.INSTANCE, MeAeMachine.class"),
+                "Jade does not discover providers registered on BlockEntity interfaces");
+
+        String provider = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/compat/jade/MeAeStatusDataProvider.java"));
+        assertTrue(provider.contains("instanceof MeAeMachine machine"),
+                "the shared Mekanism registration must be filtered to this mod's AE machines");
+        assertTrue(provider.contains("AeState.OFFLINE.ordinal()"),
+                "inactive upgradeable machines should still produce a Jade status instead of disappearing");
+        assertTrue(provider.contains("upgradeable.isMeUpgradeTarget() && !upgradeable.isMeUpgradeActive()"),
+                "dedicated ME factories also receive the upgrade mixin and must not be treated as inactive targets");
+        assertTrue(provider.contains("machine.getMainNode().getNode()"),
+                "Jade must inspect the raw managed node so booting and missing-channel states remain observable");
+        assertFalse(provider.contains("getActionableNode()"),
+                "the actionable-node view hides non-active AE states that Jade needs to display");
+    }
 }

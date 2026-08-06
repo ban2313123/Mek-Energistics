@@ -25,7 +25,7 @@ public class MeEMExtraItemToChemicalFactoryBlockEntity extends TileEntityEMExtra
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
     public MeEMExtraItemToChemicalFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) { super(ModBlocks.getMachineBlock(machine), pos, state); this.machine = machine; }
-    @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return getAeSupport().withPatternSlots(super.getInitialInventory(listener)); }
+    @Override protected IInventorySlotHolder getInitialInventory(IContentsListener listener) { return withPatternSlots(super.getInitialInventory(listener)); }
     @Override public List<IInventorySlot> meInputSlots() { return this.inputItemSlots; }
     @Override public List<IInventorySlot> meOutputSlots() { return Collections.emptyList(); }
     @Override public List<? extends mekanism.api.chemical.IChemicalTank> meChemicalOutputTanks() { return this.outputChemicalTanks; }
