@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.upgrade;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -250,7 +251,8 @@ class MekanismFactoryUpgradeContractTest {
         String capabilities = Files.readString(Path.of(
                 "src/main/java/com/beipuo/mekenergistics/registry/ModBlockEntities.java"));
         assertTrue(attachment.contains("isSupportedFactoryBlockItem(stack)"));
-        assertTrue(capabilities.contains("CompatMachineFamily.MEKANISM_FACTORY"));
+        assertFalse(capabilities.contains("filter(spec -> !spec.machine().isFactory()"));
+        assertTrue(capabilities.contains("CompatMachineCatalog.available()"));
         assertTrue(capabilities.contains("machine.isMeUpgradeActive() ? machine : null"));
     }
 

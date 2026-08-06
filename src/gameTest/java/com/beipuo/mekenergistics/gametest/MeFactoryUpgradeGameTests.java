@@ -9,10 +9,13 @@ import com.beipuo.mekenergistics.registry.ModItems;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
 import com.beipuo.mekenergistics.upgrade.StandaloneUpgradePersistence;
+import appeng.api.AECapabilities;
+import appeng.api.networking.IInWorldGridNodeHost;
 import java.util.List;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
@@ -116,6 +119,49 @@ public final class MeFactoryUpgradeGameTests {
                             "reloaded block entity lost the ME upgrade");
                     helper.assertTrue(loadedTile.getComponent().isUpgradeInstalled(MePassiveCraftingUpgrade.get()),
                             "reloaded block entity lost the passive crafting upgrade");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty_3x3x3", timeoutTicks = 8 * SharedConstants.TICKS_PER_SECOND)
+    public static void addonFactoryGridCapabilitySurvivesBlockEntityReload(GameTestHelper helper) {
+        String id = "mekanism_extras:infinite_smelting_factory";
+        BlockPos position = new BlockPos(1, 1, 1);
+        helper.setBlock(position, requiredBlock(id));
+
+        helper.startSequence()
+                .thenExecuteAfter(1, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, position);
+                    helper.assertTrue(tile instanceof MeUpgradeableMachine,
+                            id + " is missing its ME upgrade adapter");
+                    tile.getComponent().getUpgradeSlot().setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+                })
+                .thenExecuteAfter(SharedConstants.TICKS_PER_SECOND + 2, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, position);
+                    helper.assertTrue(((MeUpgradeableMachine) tile).isMeUpgradeActive(),
+                            id + " did not activate before the reload check");
+                    helper.assertTrue(tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get()),
+                            id + " did not install the ME upgrade");
+                    CompoundTag saved = tile.saveWithFullMetadata(helper.getLevel().registryAccess());
+                    net.minecraft.world.level.block.state.BlockState state = helper.getBlockState(position);
+                    helper.destroyBlock(position);
+                    helper.setBlock(position, state);
+                    BlockEntity loaded = BlockEntity.loadStatic(helper.absolutePos(position), state, saved,
+                            helper.getLevel().registryAccess());
+                    helper.assertTrue(loaded instanceof TileEntityMekanism,
+                            id + " did not recreate a Mekanism block entity");
+                    helper.getLevel().setBlockEntity(loaded);
+                    loaded.clearRemoved();
+                })
+                .thenExecuteAfter(3, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, position);
+                    helper.assertTrue(((MeUpgradeableMachine) tile).isMeUpgradeActive(),
+                            id + " lost its active ME upgrade after reload");
+                    IInWorldGridNodeHost host = helper.getLevel().getCapability(
+                            AECapabilities.IN_WORLD_GRID_NODE_HOST, helper.absolutePos(position), null);
+                    helper.assertTrue(host != null, id + " did not expose an AE capability after reload");
+                    helper.assertTrue(host.getGridNode(Direction.NORTH) != null,
+                            id + " exposed no AE grid node after reload");
                 })
                 .thenSucceed();
     }

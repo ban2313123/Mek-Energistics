@@ -78,9 +78,6 @@ public final class ModBlockEntities {
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         Block[] upgradeTargets = CompatMachineCatalog.available()
-                .filter(spec -> !spec.machine().isFactory()
-                        || spec.machine().family()
-                                == com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily.MEKANISM_FACTORY)
                 .map(spec -> BuiltInRegistries.BLOCK.get(spec.sourceBlockId()))
                 .filter(block -> block != null && block != net.minecraft.world.level.block.Blocks.AIR)
                 .toArray(Block[]::new);
