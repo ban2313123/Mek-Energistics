@@ -21,6 +21,7 @@ import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
+import mezz.jei.api.registration.IExtraIngredientRegistration;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRuntimeRegistration;
 import net.minecraft.client.renderer.Rect2i;
@@ -41,6 +42,11 @@ public class MekEnergisticsJeiPlugin implements IModPlugin {
     @Override
     public void registerGuiHandlers(@NotNull IGuiHandlerRegistration registration) {
         registration.addGenericGuiContainerHandler(GuiMekanism.class, new PatternButtonExclusionHandler());
+    }
+
+    @Override
+    public void registerExtraIngredients(@NotNull IExtraIngredientRegistration registration) {
+        registration.addExtraItemStacks(List.of(ModItems.ME_PASSIVE_CRAFTING_UPGRADE.get().getDefaultInstance()));
     }
 
     @Override
