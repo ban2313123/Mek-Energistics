@@ -15,6 +15,7 @@ import mekanism.common.capabilities.energy.MachineEnergyContainer;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.container.sync.SyncableBoolean;
 import mekanism.common.inventory.container.sync.SyncableInt;
+import mekanism.common.inventory.container.sync.SyncableLong;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -32,13 +33,22 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
             container.track(SyncableBoolean.create(this.owner::isSmartPatternMultiplicationEnabled, this.owner::setSmartPatternMultiplicationEnabled));
         }
         container.track(SyncableBoolean.create(this::isVisibleInPatternAccessTerminal, this::setVisibleInPatternAccessTerminal));
+        container.track(SyncableInt.create(() -> getPassiveCraftingSettings().intervalTicks(), value -> getPassiveCraftingSettings().set(value, getPassiveCraftingSettings().multiplier())));
+        container.track(SyncableLong.create(() -> getPassiveCraftingSettings().multiplier(), value -> getPassiveCraftingSettings().set(getPassiveCraftingSettings().intervalTicks(), value)));
     }
 
     /** Drains declared outputs before allowing another smart batch into the machine. */
     public boolean processPatternIo(AeOutputMode mode, boolean sendUpdatePacket) {
         boolean changed = drainPatternOutputs(mode) || sendUpdatePacket;
         if (!hasPatternOutputBacklog(mode)) {
-            changed |= processSmartPatternViaAdapter();
+            if (this.owner.hasPassiveCraftingUpgrade()) {
+                changed |= processSmartPatternViaAdapter();
+                if (!this.smartPatternMultiplication.hasPendingWork()) {
+                    changed |= processPassiveCrafting(true);
+                }
+            } else {
+                changed |= processSmartPatternViaAdapter();
+            }
         }
         return changed;
     }

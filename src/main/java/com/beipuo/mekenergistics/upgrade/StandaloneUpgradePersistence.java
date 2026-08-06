@@ -20,56 +20,75 @@ public final class StandaloneUpgradePersistence {
         if (tag == null || !tag.contains(TAG_UPGRADES, Tag.TAG_COMPOUND)) {
             return upgrades;
         }
-        int count = loadCount(tag);
-        if (count == 0) {
-            return upgrades;
-        }
         Map<Upgrade, Integer> result = upgrades == null ? new LinkedHashMap<>() : upgrades;
-        result.put(MePatternProviderUpgrade.get(), Math.min(count, MePatternProviderUpgrade.get().getMax()));
+        load(result, tag, MePatternProviderUpgrade.get());
+        load(result, tag, MePassiveCraftingUpgrade.get());
         return result;
     }
 
     public static Set<Map.Entry<Upgrade, Integer>> saveAndFilter(
           Set<Map.Entry<Upgrade, Integer>> upgrades, CompoundTag tag) {
         Set<Map.Entry<Upgrade, Integer>> vanilla = new LinkedHashSet<>();
-        int count = 0;
-        Upgrade patternUpgrade = MePatternProviderUpgrade.get();
+        CompoundTag custom = new CompoundTag();
         for (Map.Entry<Upgrade, Integer> entry : upgrades) {
-            if (entry.getKey() == patternUpgrade) {
-                count = Math.max(0, Math.min(entry.getValue(), patternUpgrade.getMax()));
+            if (entry.getKey() == MePatternProviderUpgrade.get() || entry.getKey() == MePassiveCraftingUpgrade.get()) {
+                Upgrade upgrade = entry.getKey();
+                custom.putInt(upgrade.getSerializedName(), Math.max(0, Math.min(entry.getValue(), upgrade.getMax())));
             } else {
                 vanilla.add(entry);
             }
         }
-        saveCount(tag, count);
+        if (custom.isEmpty()) {
+            tag.remove(TAG_UPGRADES);
+        } else {
+            tag.put(TAG_UPGRADES, custom);
+        }
         return vanilla;
     }
 
-    public static int loadCount(CompoundTag tag) {
-        if (tag.contains(TAG_UPGRADES, Tag.TAG_COMPOUND)) {
-            return Math.max(0, tag.getCompound(TAG_UPGRADES).getInt(MePatternProviderUpgrade.SERIALIZED_NAME));
+    private static void load(Map<Upgrade, Integer> upgrades, CompoundTag tag, Upgrade upgrade) {
+        int count = loadCount(tag, upgrade);
+        if (count > 0) {
+            upgrades.put(upgrade, Math.min(count, upgrade.getMax()));
         }
-        return loadEmpoweredCount(tag);
+    }
+
+    public static int loadCount(CompoundTag tag) {
+        return loadCount(tag, MePatternProviderUpgrade.get());
+    }
+
+    public static int loadCount(CompoundTag tag, Upgrade upgrade) {
+        if (tag.contains(TAG_UPGRADES, Tag.TAG_COMPOUND)) {
+            return Math.max(0, tag.getCompound(TAG_UPGRADES).getInt(upgrade.getSerializedName()));
+        }
+        return loadEmpoweredCount(tag, upgrade);
     }
 
     public static int loadEmpoweredCount(CompoundTag tag) {
+        return loadEmpoweredCount(tag, MePatternProviderUpgrade.get());
+    }
+
+    public static int loadEmpoweredCount(CompoundTag tag, Upgrade upgrade) {
         for (String key : new String[] {
                 "mekanism_empowered_core:additional_upgrades",
                 "additional_upgrades"}) {
             if (tag.contains(key, Tag.TAG_COMPOUND)) {
-                return Math.max(0, tag.getCompound(key).getInt(MePatternProviderUpgrade.SERIALIZED_NAME));
+                return Math.max(0, tag.getCompound(key).getInt(upgrade.getSerializedName()));
             }
         }
         return 0;
     }
 
     public static void saveCount(CompoundTag tag, int count) {
-        if (count > 0) {
-            CompoundTag custom = new CompoundTag();
-            custom.putInt(MePatternProviderUpgrade.SERIALIZED_NAME, count);
-            tag.put(TAG_UPGRADES, custom);
-        } else {
-            tag.remove(TAG_UPGRADES);
-        }
+        saveCount(tag, MePatternProviderUpgrade.get(), count);
+    }
+
+    public static void saveCount(CompoundTag tag, Upgrade upgrade, int count) {
+        CompoundTag custom = tag.contains(TAG_UPGRADES, Tag.TAG_COMPOUND)
+                ? tag.getCompound(TAG_UPGRADES).copy() : new CompoundTag();
+        if (count > 0) custom.putInt(upgrade.getSerializedName(), count);
+        else custom.remove(upgrade.getSerializedName());
+        if (custom.isEmpty()) tag.remove(TAG_UPGRADES);
+        else tag.put(TAG_UPGRADES, custom);
     }
 }

@@ -13,6 +13,7 @@ import com.beipuo.mekenergistics.blockentity.support.MePatternDecodeHelper;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputTypePacket;
 import com.beipuo.mekenergistics.network.packet.SetPatternTerminalNamePacket;
+import com.beipuo.mekenergistics.network.packet.SetPassiveCraftingSettingsPacket;
 import com.beipuo.mekenergistics.network.packet.SetSmartPatternMultiplicationPacket;
 import com.beipuo.mekenergistics.network.packet.SetTerminalVisibilityPacket;
 import java.util.ArrayList;
@@ -82,7 +83,7 @@ public final class MePatternWindowOverlay {
     private static final ResourceLocation PATTERN_BUTTON_ICON = ResourceLocation.fromNamespaceAndPath(MekEnergistics.MODID, "textures/gui/button/pattern_button.png");
     private static final ResourceLocation EMPTY_PATTERN_ICON = ResourceLocation.fromNamespaceAndPath(MekEnergistics.MODID, "textures/gui/slot/pattern_empty.png");
     private static final int WINDOW_WIDTH = 178;
-    private static final int WINDOW_HEIGHT = 116;
+    private static final int WINDOW_HEIGHT = 136;
     private static final int NAME_FIELD_WIDTH = 24;
     private static final int NAME_FIELD_HEIGHT = 12;
     private static final int SLOT_COLUMNS = MekEnergisticsConfig.PATTERN_SLOT_COLUMNS;
@@ -153,12 +154,18 @@ public final class MePatternWindowOverlay {
             }
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
                     new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
+                    new PassiveCraftingAccess(machine::hasPassiveCraftingUpgrade,
+                            () -> machine.getPassiveCraftingSettings().intervalTicks(),
+                            () -> machine.getPassiveCraftingSettings().multiplier(), machine::setPassiveCraftingSettings),
                     new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode),
                     new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
         if (container.getTileEntity() instanceof MeFactoryAeMachine machine) {
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
                     new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
+                    new PassiveCraftingAccess(machine::hasPassiveCraftingUpgrade,
+                            () -> machine.getPassiveCraftingSettings().intervalTicks(),
+                            () -> machine.getPassiveCraftingSettings().multiplier(), machine::setPassiveCraftingSettings),
                     new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode),
                     new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
@@ -207,7 +214,7 @@ public final class MePatternWindowOverlay {
 
     private record Target(GuiMekanism<?> gui, MekanismTileContainer<?> container,
                           List<BasicInventorySlot> patternSlots, NameAccess nameAccess,
-                          SmartMultiplicationAccess smartMultiplicationAccess, OutputAccess outputAccess,
+                          SmartMultiplicationAccess smartMultiplicationAccess, PassiveCraftingAccess passiveCraftingAccess, OutputAccess outputAccess,
                           TerminalVisibilityAccess terminalVisibilityAccess) {
     }
 
@@ -239,6 +246,19 @@ public final class MePatternWindowOverlay {
         private void set(boolean enabled) {
             this.setter.accept(enabled);
         }
+    }
+
+    private record PassiveCraftingAccess(Supplier<Boolean> enabled, Supplier<Integer> intervalSupplier,
+                                        Supplier<Long> multiplierSupplier, PassiveCraftingSetter setter) {
+        private boolean isEnabled() { return Boolean.TRUE.equals(enabled.get()); }
+        private int interval() { return intervalSupplier.get(); }
+        private long multiplier() { return multiplierSupplier.get(); }
+        private void set(int intervalTicks, long value) { setter.set(intervalTicks, value); }
+    }
+
+    @FunctionalInterface
+    private interface PassiveCraftingSetter {
+        void set(int intervalTicks, long multiplier);
     }
 
     private record OutputAccess(Supplier<AeOutputMode> getter, Consumer<TransmissionType> toggler) {
@@ -277,6 +297,8 @@ public final class MePatternWindowOverlay {
         private final Target target;
         private final List<PatternGuiVirtualSlot> slots = new ArrayList<>(SLOTS_PER_PAGE);
         private final GuiTextField nameField;
+        private final GuiTextField passiveIntervalField;
+        private final GuiTextField passiveMultiplierField;
         private final MekanismImageButton smartMultiplicationButton;
         private final MekanismImageButton terminalVisibilityButton;
         private int currentPage;
@@ -284,6 +306,7 @@ public final class MePatternWindowOverlay {
         private String lastSavedName;
         private boolean smartMultiplicationEnabled;
         private boolean visibleInTerminal;
+        private boolean passiveCraftingEnabled;
 
         private MePatternWindow(IGuiWrapper gui, int x, int y, Target target) {
             super(gui, x, y, WINDOW_WIDTH, WINDOW_HEIGHT, SelectedWindowData.UNSPECIFIED);
@@ -300,6 +323,7 @@ public final class MePatternWindowOverlay {
             this.smartMultiplicationButton = addChild(new MekanismImageButton(gui, relativeX + 18, relativeY + 4, 12, CHECK_BUTTON,
                     (element, mouseX, mouseY) -> toggleSmartPatternMultiplication()));
             updateSmartMultiplicationTooltip();
+            this.passiveCraftingEnabled = this.target.passiveCraftingAccess().isEnabled();
             this.visibleInTerminal = this.target.terminalVisibilityAccess().get();
             this.terminalVisibilityButton = addChild(new MekanismImageButton(gui, relativeX + 32, relativeY + 4, 12, PUBLIC_BUTTON,
                     (element, mouseX, mouseY) -> toggleTerminalVisibility()) {
@@ -317,14 +341,55 @@ public final class MePatternWindowOverlay {
             this.nameField.setEnterHandler(this::saveName);
             this.nameField.setText(this.lastSavedName);
             setNameFieldVisible(false);
-            addChild(new MekanismImageButton(gui, relativeX + 8, relativeY + 94, 12, LEFT_BUTTON, (element, mouseX, mouseY) -> previousPage()));
-            addChild(new AeOutputButton(gui, relativeX + 116, relativeY + 94,
+            this.passiveIntervalField = addChild(new GuiTextField(gui, this, relativeX + 8, relativeY + 94, 42, NAME_FIELD_HEIGHT));
+            this.passiveMultiplierField = addChild(new GuiTextField(gui, this, relativeX + 54, relativeY + 94, 42, NAME_FIELD_HEIGHT));
+            this.passiveIntervalField.setMaxLength(6);
+            this.passiveMultiplierField.setMaxLength(12);
+            this.passiveIntervalField.setEnterHandler(this::savePassiveCraftingSettings);
+            this.passiveMultiplierField.setEnterHandler(this::savePassiveCraftingSettings);
+            syncPassiveCraftingFields();
+            addChild(new MekanismImageButton(gui, relativeX + 8, relativeY + 114, 12, LEFT_BUTTON, (element, mouseX, mouseY) -> previousPage()));
+            addChild(new AeOutputButton(gui, relativeX + 116, relativeY + 114,
                     Component.literal("I"), TransmissionType.ITEM, target));
-            addChild(new AeOutputButton(gui, relativeX + 130, relativeY + 94,
+            addChild(new AeOutputButton(gui, relativeX + 130, relativeY + 114,
                     Component.literal("C"), TransmissionType.CHEMICAL, target));
-            addChild(new AeOutputButton(gui, relativeX + 144, relativeY + 94,
+            addChild(new AeOutputButton(gui, relativeX + 144, relativeY + 114,
                     Component.literal("F"), TransmissionType.FLUID, target));
-            addChild(new MekanismImageButton(gui, relativeX + width - 20, relativeY + 94, 12, RIGHT_BUTTON, (element, mouseX, mouseY) -> nextPage()));
+            addChild(new MekanismImageButton(gui, relativeX + width - 20, relativeY + 114, 12, RIGHT_BUTTON, (element, mouseX, mouseY) -> nextPage()));
+        }
+
+        private boolean savePassiveCraftingSettings() {
+            if (!this.passiveCraftingEnabled) return true;
+            int interval = parseInt(this.passiveIntervalField.getText(), this.target.passiveCraftingAccess().interval());
+            long multiplier = parseLong(this.passiveMultiplierField.getText(), this.target.passiveCraftingAccess().multiplier());
+            interval = Math.clamp(interval, 1, 72_000);
+            multiplier = Math.max(1, multiplier);
+            this.passiveIntervalField.setText(Integer.toString(interval));
+            this.passiveMultiplierField.setText(Long.toString(multiplier));
+            this.target.passiveCraftingAccess().set(interval, multiplier);
+            PacketDistributor.sendToServer(new SetPassiveCraftingSettingsPacket(
+                    this.target.container().getTileEntity().getBlockPos(), interval, multiplier));
+            return true;
+        }
+
+        private void syncPassiveCraftingFields() {
+            this.passiveIntervalField.visible = this.passiveCraftingEnabled;
+            this.passiveMultiplierField.visible = this.passiveCraftingEnabled;
+            this.passiveIntervalField.setVisible(this.passiveCraftingEnabled);
+            this.passiveMultiplierField.setVisible(this.passiveCraftingEnabled);
+            if (this.passiveCraftingEnabled) {
+                if (!this.passiveIntervalField.isFocused()) this.passiveIntervalField.setText(Integer.toString(this.target.passiveCraftingAccess().interval()));
+                if (!this.passiveMultiplierField.isFocused()) this.passiveMultiplierField.setText(Long.toString(this.target.passiveCraftingAccess().multiplier()));
+            }
+            this.smartMultiplicationButton.active = !this.passiveCraftingEnabled;
+        }
+
+        private static int parseInt(String value, int fallback) {
+            try { return Integer.parseInt(value); } catch (NumberFormatException ignored) { return fallback; }
+        }
+
+        private static long parseLong(String value, long fallback) {
+            try { return Long.parseLong(value); } catch (NumberFormatException ignored) { return fallback; }
         }
 
         private boolean toggleSmartPatternMultiplication() {
@@ -442,6 +507,13 @@ public final class MePatternWindowOverlay {
             if (syncedSmartMultiplication != this.smartMultiplicationEnabled) {
                 this.smartMultiplicationEnabled = syncedSmartMultiplication;
                 updateSmartMultiplicationTooltip();
+            }
+            boolean syncedPassiveCrafting = this.target.passiveCraftingAccess().isEnabled();
+            if (syncedPassiveCrafting != this.passiveCraftingEnabled) {
+                this.passiveCraftingEnabled = syncedPassiveCrafting;
+                syncPassiveCraftingFields();
+            } else if (this.passiveCraftingEnabled) {
+                syncPassiveCraftingFields();
             }
             boolean syncedTerminalVisibility = this.target.terminalVisibilityAccess().get();
             if (syncedTerminalVisibility != this.visibleInTerminal) {

@@ -10,6 +10,8 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.helpers.patternprovider.PatternContainer;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
+import com.beipuo.mekenergistics.upgrade.MePassiveCraftingSettings;
+import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -104,6 +106,19 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
 
     default void setSmartPatternMultiplicationEnabled(boolean enabled) {
         getRecipeAeSupport().setSmartPatternMultiplicationEnabled(enabled);
+    }
+
+    default boolean hasPassiveCraftingUpgrade() {
+        TileEntityMekanism tile = getAeOwnerTile();
+        return tile.getComponent() != null && tile.getComponent().isUpgradeInstalled(MePassiveCraftingUpgrade.get());
+    }
+
+    default MePassiveCraftingSettings getPassiveCraftingSettings() {
+        return getRecipeAeSupport().getPassiveCraftingSettings();
+    }
+
+    default void setPassiveCraftingSettings(int intervalTicks, long multiplier) {
+        getRecipeAeSupport().setPassiveCraftingSettings(intervalTicks, multiplier);
     }
 
     AbstractMeAeSupport<?> getRecipeAeSupport();

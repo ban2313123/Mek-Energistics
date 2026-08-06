@@ -3,6 +3,7 @@ package com.beipuo.mekenergistics.network;
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputModePacket;
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputTypePacket;
 import com.beipuo.mekenergistics.network.packet.SetPatternTerminalNamePacket;
+import com.beipuo.mekenergistics.network.packet.SetPassiveCraftingSettingsPacket;
 import com.beipuo.mekenergistics.network.packet.SetSmartPatternMultiplicationPacket;
 import com.beipuo.mekenergistics.network.packet.SetTerminalVisibilityPacket;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -17,6 +18,7 @@ public final class ModNetwork {
         registrar.playToServer(CycleAeOutputModePacket.TYPE, CycleAeOutputModePacket.STREAM_CODEC, CycleAeOutputModePacket::handle);
         registrar.playToServer(CycleAeOutputTypePacket.TYPE, CycleAeOutputTypePacket.STREAM_CODEC, CycleAeOutputTypePacket::handle);
         registrar.playToServer(SetPatternTerminalNamePacket.TYPE, SetPatternTerminalNamePacket.STREAM_CODEC, SetPatternTerminalNamePacket::handle);
+        registrar.playToServer(SetPassiveCraftingSettingsPacket.TYPE, SetPassiveCraftingSettingsPacket.STREAM_CODEC, SetPassiveCraftingSettingsPacket::handle);
         registrar.playToServer(SetSmartPatternMultiplicationPacket.TYPE, SetSmartPatternMultiplicationPacket.STREAM_CODEC, SetSmartPatternMultiplicationPacket::handle);
         registrar.playToServer(SetTerminalVisibilityPacket.TYPE, SetTerminalVisibilityPacket.STREAM_CODEC, SetTerminalVisibilityPacket::handle);
     }

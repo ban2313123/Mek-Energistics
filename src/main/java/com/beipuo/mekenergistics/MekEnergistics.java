@@ -8,6 +8,7 @@ import com.beipuo.mekenergistics.registry.ModMenuTypes;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.network.ModNetwork;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
+import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -29,6 +30,7 @@ public final class MekEnergistics {
         ModBlockEntities.register(modEventBus);
         modEventBus.addListener(ModNetwork::register);
         modEventBus.addListener(MePatternProviderUpgrade::commonSetup);
+        modEventBus.addListener(MePassiveCraftingUpgrade::commonSetup);
 
         LOGGER.info("Loading Mek Energistics");
     }

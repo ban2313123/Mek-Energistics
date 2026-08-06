@@ -830,6 +830,8 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         container.track(SyncableInt.create(() -> this.aeOutputMode.ordinal(), mode -> this.aeOutputMode = AeOutputMode.byId(mode)));
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(this::isSmartPatternMultiplicationEnabled, this::setSmartPatternMultiplicationEnabled));
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(this::isVisibleInTerminal, this::setVisibleInPatternAccessTerminal));
+        container.track(SyncableInt.create(() -> getPassiveCraftingSettings().intervalTicks(), value -> getPassiveCraftingSettings().set(value, getPassiveCraftingSettings().multiplier())));
+        container.track(SyncableLong.create(() -> getPassiveCraftingSettings().multiplier(), value -> getPassiveCraftingSettings().set(getPassiveCraftingSettings().intervalTicks(), value)));
         container.track(SyncableLong.create(() -> getChemicalStack().getAmount(), amount -> {
             if (this.chemicalTank != null && !this.chemicalTank.isEmpty()) {
                 ChemicalStack stack = this.chemicalTank.getStack().copy();

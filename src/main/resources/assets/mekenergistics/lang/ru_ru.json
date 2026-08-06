@@ -693,5 +693,8 @@
   "container.mekenergistics.me_chemixer": "ME Chemical Mixer",
   "item.mekenergistics.upgrade_me_pattern_provider": "ME Pattern Provider Upgrade",
   "upgrade.mekenergistics.me_pattern_provider": "ME Pattern Provider",
-  "upgrade.mekenergistics.me_pattern_provider.description": "Adds ME pattern provider functionality to a supported Mekanism machine."
+  "upgrade.mekenergistics.me_pattern_provider.description": "Adds ME pattern provider functionality to a supported Mekanism machine.",
+  "item.mekenergistics.upgrade_me_passive_crafting": "ME Passive Crafting Upgrade",
+  "upgrade.mekenergistics.me_passive_crafting": "ME Passive Crafting",
+  "upgrade.mekenergistics.me_passive_crafting.description": "Periodically submits installed patterns directly from ME storage without using a crafting CPU."
 }

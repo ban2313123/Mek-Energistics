@@ -4,6 +4,7 @@ import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.item.MeMachineBlockItem;
 import com.beipuo.mekenergistics.item.MeTierInstallerItem;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
+import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import mekanism.common.item.ItemUpgrade;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
@@ -16,6 +17,9 @@ public final class ModItems {
     public static final DeferredItem<ItemUpgrade> ME_PATTERN_PROVIDER_UPGRADE = ITEMS.register(
             "upgrade_me_pattern_provider",
             () -> new ItemUpgrade(MePatternProviderUpgrade.get(), new Item.Properties()));
+    public static final DeferredItem<ItemUpgrade> ME_PASSIVE_CRAFTING_UPGRADE = ITEMS.register(
+            "upgrade_me_passive_crafting",
+            () -> new ItemUpgrade(MePassiveCraftingUpgrade.get(), new Item.Properties()));
 
     public static final DeferredItem<MeMachineBlockItem> ME_METALLURGIC_INFUSER = getMachineItem(MeMekanismMachine.METALLURGIC_INFUSER);
 

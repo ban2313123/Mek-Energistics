@@ -52,7 +52,14 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         AeOutputMode mode = this.aeOutputMode;
         boolean changed = drainPatternOutputs(mode) || sendUpdatePacket;
         if (!hasPatternOutputBacklog(mode)) {
-            changed |= processSmartPatternViaAdapter();
+            if (this.owner.hasPassiveCraftingUpgrade()) {
+                changed |= processSmartPatternViaAdapter();
+                if (!this.smartPatternMultiplication.hasPendingWork()) {
+                    changed |= processPassiveCrafting(true);
+                }
+            } else {
+                changed |= processSmartPatternViaAdapter();
+            }
         }
         return changed;
     }

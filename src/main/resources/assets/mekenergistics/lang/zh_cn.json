@@ -834,5 +834,8 @@
   "container.mekenergistics.me_infinite_multiversal_liquifying_factory": "ME 无限多元宇宙液化工厂",
   "item.mekenergistics.upgrade_me_pattern_provider": "ME 样板供应升级",
   "upgrade.mekenergistics.me_pattern_provider": "ME 样板供应",
-  "upgrade.mekenergistics.me_pattern_provider.description": "为支持的通用机械机器添加 ME 样板供应功能。"
+  "upgrade.mekenergistics.me_pattern_provider.description": "为支持的通用机械机器添加 ME 样板供应功能。",
+  "item.mekenergistics.upgrade_me_passive_crafting": "ME 被动合成升级",
+  "upgrade.mekenergistics.me_passive_crafting": "ME 被动合成",
+  "upgrade.mekenergistics.me_passive_crafting.description": "按设定间隔直接从 ME 网络提交已安装样板，不占用合成 CPU。"
 }

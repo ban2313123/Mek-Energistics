@@ -14,6 +14,7 @@ import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import java.util.List;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.container.sync.SyncableInt;
+import mekanism.common.inventory.container.sync.SyncableLong;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.lib.transmitter.TransmissionType;
 import net.minecraft.server.level.ServerPlayer;
@@ -131,6 +132,8 @@ public interface MeFactoryAeMachine extends MeAeMachine {
                 this::isSmartPatternMultiplicationEnabled, this::setSmartPatternMultiplicationEnabled));
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(
                 this::isVisibleInTerminal, this::setVisibleInPatternAccessTerminal));
+        container.track(SyncableInt.create(() -> getPassiveCraftingSettings().intervalTicks(), value -> getPassiveCraftingSettings().set(value, getPassiveCraftingSettings().multiplier())));
+        container.track(SyncableLong.create(() -> getPassiveCraftingSettings().multiplier(), value -> getPassiveCraftingSettings().set(getPassiveCraftingSettings().intervalTicks(), value)));
     }
 
     default void setOwner(ServerPlayer player) {

@@ -8,6 +8,7 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.IManagedGridNode;
+import appeng.api.config.Actionable;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.networking.storage.IStorageService;
@@ -27,6 +28,8 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternIoAdapter;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
+import com.beipuo.mekenergistics.upgrade.MePassiveCraftingDispatcher;
+import com.beipuo.mekenergistics.upgrade.MePassiveCraftingSettings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,6 +61,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     private final List<BasicInventorySlot> patternSlotsView;
     protected final List<IPatternDetails> patterns = new ArrayList<>();
     protected final MeSmartPatternMultiplication smartPatternMultiplication = new MeSmartPatternMultiplication();
+    private final MePassiveCraftingSettings passiveCraftingSettings = new MePassiveCraftingSettings();
 
     protected IManagedGridNode mainNode;
     protected int patternPriority;
@@ -451,6 +455,40 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         alertAeTicker();
     }
 
+    public final MePassiveCraftingSettings getPassiveCraftingSettings() {
+        return passiveCraftingSettings;
+    }
+
+    public final void setPassiveCraftingSettings(int intervalTicks, long multiplier) {
+        passiveCraftingSettings.set(intervalTicks, multiplier);
+        this.owner.saveChanges();
+    }
+
+    protected final boolean processPassiveCrafting(boolean enabled) {
+        if (!enabled) {
+            return false;
+        }
+        if (this.smartPatternMultiplication.isEnabled()) {
+            setSmartPatternMultiplicationEnabled(false);
+        }
+        if (!passiveCraftingSettings.tick() || this.ownerTile.getLevel() == null
+                || this.ownerTile.getLevel().isClientSide || isPatternBusy()) {
+            return false;
+        }
+        IGrid grid = getGrid();
+        MEStorage storage = getNetworkStorage(grid);
+        if (storage == null) {
+            return false;
+        }
+        boolean changed = MePassiveCraftingDispatcher.submitFirstAvailable(
+                this.patterns, passiveCraftingSettings.multiplier(), this.ownerTile.getLevel(), storage,
+                this.actionSource, this::routeDataPatternInputs);
+        if (changed) {
+            this.owner.saveChanges();
+        }
+        return changed;
+    }
+
     public final boolean enqueueSmartPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
         if (!this.smartPatternMultiplication.enqueue(patternDetails, inputHolder)) {
             return false;
@@ -561,6 +599,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     public final void save(CompoundTag tag) {
         tag.putInt("PatternPriority", this.patternPriority);
         this.smartPatternMultiplication.saveConfig(tag);
+        this.passiveCraftingSettings.save(tag);
         tag.putBoolean(TAG_TERMINAL_VISIBLE, this.visibleInPatternAccessTerminal);
         tag.remove(TAG_PATTERN_TERMINAL_NAME);
         saveNode(tag);
@@ -582,6 +621,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     public final void load(CompoundTag tag) {
         this.patternPriority = tag.getInt("PatternPriority");
         this.smartPatternMultiplication.loadConfig(tag);
+        this.passiveCraftingSettings.load(tag);
         this.visibleInPatternAccessTerminal = !tag.contains(TAG_TERMINAL_VISIBLE) || tag.getBoolean(TAG_TERMINAL_VISIBLE);
         this.patternTerminalName = MePatternTerminalNames.migrateLegacy(this.ownerTile, tag.getString(TAG_PATTERN_TERMINAL_NAME));
         loadNode(tag);
