@@ -2,10 +2,15 @@ package com.beipuo.mekenergistics.event;
 
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
+import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
+import com.beipuo.mekenergistics.compat.extendedae.ExtendedAeRenamerCompat;
 import com.beipuo.mekenergistics.item.MeInstallerUpgradeHandler;
 import com.beipuo.mekenergistics.item.MeTierInstallerItem;
+import appeng.core.definitions.AEItems;
 import mekanism.common.registries.MekanismItems;
 import mekanism.common.tags.MekanismTags;
+import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.item.ItemStack;
@@ -22,6 +27,21 @@ public final class MeInstallerUpgradeEvents {
     @SubscribeEvent
     public static void onRightClickBlock(RightClickBlock event) {
         ItemStack stack = event.getEntity().getItemInHand(event.getHand());
+        if (!event.getEntity().isShiftKeyDown()
+                && OptionalCompatClasses.hasExtendedAe()
+                && isQuartzCuttingKnife(stack)
+                && event.getLevel().getBlockEntity(event.getPos()) instanceof MeUpgradeableMachine machine
+                && machine.isMeUpgradeActive()
+                && event.getLevel().getBlockEntity(event.getPos()) instanceof TileEntityMekanism tile) {
+            if (event.getLevel().isClientSide) {
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+            } else if (ExtendedAeRenamerCompat.openRenamer(event.getEntity(), tile)) {
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.CONSUME);
+            }
+            return;
+        }
         if (stack.is(MekanismTags.Items.CONFIGURATORS) && !stack.is(MekanismItems.CONFIGURATOR)
                 && event.getLevel().getBlockState(event.getPos()).getBlock() instanceof MeMekanismMachineBlock) {
             event.setUseBlock(TriState.TRUE);
@@ -48,5 +68,10 @@ public final class MeInstallerUpgradeEvents {
             event.setCanceled(true);
             event.setCancellationResult(result.result());
         }
+    }
+
+    private static boolean isQuartzCuttingKnife(ItemStack stack) {
+        return stack.is(AEItems.CERTUS_QUARTZ_KNIFE.asItem())
+                || stack.is(AEItems.NETHER_QUARTZ_KNIFE.asItem());
     }
 }

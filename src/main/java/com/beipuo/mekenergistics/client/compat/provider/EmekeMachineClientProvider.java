@@ -3,6 +3,7 @@ package com.beipuo.mekenergistics.client.compat.provider;
 import com.beipuo.mekenergistics.client.compat.eme.EvolvedMekanismExtrasAdvancedClientScreens;
 import com.beipuo.mekenergistics.client.compat.eme.EvolvedMekanismExtrasClientScreens;
 import com.beipuo.mekenergistics.client.compat.eme.EvolvedMekanismExtrasMoreMachineClientScreens;
+import com.beipuo.mekenergistics.client.compat.eme.EvolvedMekanismMachineClientScreens;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -10,6 +11,9 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 public final class EmekeMachineClientProvider implements CompatMachineClientProvider {
     @Override
     public void registerScreens(RegisterMenuScreensEvent event) {
+        if (CompatMachineCatalog.hasAvailableFamily(CompatMachineFamily.EMEK_MACHINE)) {
+            EvolvedMekanismMachineClientScreens.register(event);
+        }
         if (CompatMachineCatalog.hasAvailableFamily(CompatMachineFamily.EMEKE_FACTORY)) {
             EvolvedMekanismExtrasClientScreens.register(event);
         }

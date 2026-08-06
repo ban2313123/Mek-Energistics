@@ -6,6 +6,8 @@ import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
 import com.beipuo.mekenergistics.upgrade.StandaloneUpgradePersistence;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.IManagedGridNode;
 import java.util.HashSet;
 import java.util.Set;
 import mekanism.api.Upgrade;
@@ -13,6 +15,7 @@ import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeUpgradeSupport;
 import mekanism.common.tile.base.TileEntityMekanism;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,6 +27,18 @@ import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(value = TileEntityMekanism.class, remap = false)
 public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
+    /**
+     * A concrete class method takes precedence over AE2 and optional integration
+     * interface defaults when this Mixin is applied to third-party Mekanism tiles.
+     */
+    public IGridNode getGridNode(Direction side) {
+        if ((Object) this instanceof MeAeMachine machine) {
+            IManagedGridNode node = machine.getMainNode();
+            return node == null ? null : node.getNode();
+        }
+        return null;
+    }
+
     @Inject(method = "supportsUpgrades", at = @At("RETURN"), cancellable = true)
     private void mekenergistics$enableSyntheticUpgradeSupport(CallbackInfoReturnable<Boolean> cir) {
         if (!cir.getReturnValue() && mekenergistics$isSyntheticUpgradeTarget()) {

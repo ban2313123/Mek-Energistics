@@ -18,6 +18,7 @@ import com.beipuo.mekenergistics.compat.catalog.CompatMachineFamily;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineSpec;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismCompat;
+import com.beipuo.mekenergistics.compat.eme.EvolvedMekanismMachineMenuTypes;
 import fr.iglee42.evolvedmekanism.config.EMConfig;
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -45,11 +46,18 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
         super(CompatMod.EMEK, familyAdapters());
     }
 
+    @Override
+    public void registerMenus(mekanism.common.registration.impl.ContainerTypeDeferredRegister register) {
+        EvolvedMekanismMachineMenuTypes.register(register);
+    }
+
     private static Map<CompatMachineFamily, CompatMachineFamilyAdapter> familyAdapters() {
         return Map.of(
                 CompatMachineFamily.EMEK_MACHINE,
                 CompatMachineFamilyAdapter.of(
-                        spec -> ModMenuTypes.getCoreMachineContainer(spec.machine()),
+                        spec -> spec.machine() == MeMekanismMachine.THERMALIZER
+                                ? EvolvedMekanismMachineMenuTypes.ME_THERMALIZER
+                                : ModMenuTypes.getCoreMachineContainer(spec.machine()),
                         (spec, registrar) -> registerMachine(spec.machine(), registrar),
                         EmekMachineProvider::createMachineBlockType,
                         EmekMachineProvider::registerMachineGridNodeHost),
