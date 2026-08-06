@@ -1,8 +1,10 @@
 {
   "itemGroup.mekenergistics": "Mek Energistics",
-  "gui.mekenergistics.me_patterns.title": "ME Patterns",
+  "gui.mekenergistics.me_patterns.title": "Patterns",
   "gui.mekenergistics.me_patterns.button": "Patterns",
   "gui.mekenergistics.me_patterns.rename": "Rename pattern assembly",
+  "gui.mekenergistics.me_patterns.passive.interval": "Passive order interval (ticks)",
+  "gui.mekenergistics.me_patterns.passive.multiplier": "Passive order multiplier (blank = 1x)",
   "gui.mekenergistics.me_patterns.smart_multiplication.on": "Smart pattern multiplication: On",
   "gui.mekenergistics.me_patterns.smart_multiplication.off": "Smart pattern multiplication: Off",
   "gui.mekenergistics.me_patterns.terminal_visibility.shown": "Shown in Pattern Access Terminal",

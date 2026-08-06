@@ -28,6 +28,8 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
 
     public void addAeTrackers(MekanismContainer container, Supplier<AeOutputMode> outputModeSupplier,
             Consumer<AeOutputMode> outputModeSetter, boolean trackSmartPatternMultiplication) {
+        container.track(SyncableBoolean.create(this.owner::hasPassiveCraftingUpgrade,
+                this::setClientPassiveCraftingEnabled));
         container.track(SyncableInt.create(() -> outputModeSupplier.get().ordinal(), mode -> outputModeSetter.accept(AeOutputMode.byId(mode))));
         if (trackSmartPatternMultiplication) {
             container.track(SyncableBoolean.create(this.owner::isSmartPatternMultiplicationEnabled, this.owner::setSmartPatternMultiplicationEnabled));

@@ -1,8 +1,10 @@
 {
   "itemGroup.mekenergistics": "Mek Energistics",
-  "gui.mekenergistics.me_patterns.title": "ME 样板",
+  "gui.mekenergistics.me_patterns.title": "样板",
   "gui.mekenergistics.me_patterns.button": "样板",
   "gui.mekenergistics.me_patterns.rename": "重命名样板总成",
+  "gui.mekenergistics.me_patterns.passive.interval": "被动下单间隔（tick）",
+  "gui.mekenergistics.me_patterns.passive.multiplier": "被动样板倍率（留空为 1x）",
   "gui.mekenergistics.me_patterns.smart_multiplication.on": "智能样板倍增：开",
   "gui.mekenergistics.me_patterns.smart_multiplication.off": "智能样板倍增：关",
   "gui.mekenergistics.me_patterns.terminal_visibility.shown": "在样板访问终端中显示",

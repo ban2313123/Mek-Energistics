@@ -62,6 +62,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     protected final List<IPatternDetails> patterns = new ArrayList<>();
     protected final MeSmartPatternMultiplication smartPatternMultiplication = new MeSmartPatternMultiplication();
     private final MePassiveCraftingSettings passiveCraftingSettings = new MePassiveCraftingSettings();
+    private Boolean clientPassiveCraftingEnabled;
 
     protected IManagedGridNode mainNode;
     protected int patternPriority;
@@ -457,6 +458,14 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     public final MePassiveCraftingSettings getPassiveCraftingSettings() {
         return passiveCraftingSettings;
+    }
+
+    public final Boolean getClientPassiveCraftingEnabled() {
+        return clientPassiveCraftingEnabled;
+    }
+
+    public final void setClientPassiveCraftingEnabled(boolean enabled) {
+        clientPassiveCraftingEnabled = enabled;
     }
 
     public final void setPassiveCraftingSettings(int intervalTicks, long multiplier) {

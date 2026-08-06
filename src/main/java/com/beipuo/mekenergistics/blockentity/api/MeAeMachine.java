@@ -110,6 +110,12 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
 
     default boolean hasPassiveCraftingUpgrade() {
         TileEntityMekanism tile = getAeOwnerTile();
+        if (tile.getLevel() != null && tile.getLevel().isClientSide()) {
+            Boolean synced = getRecipeAeSupport().getClientPassiveCraftingEnabled();
+            if (synced != null) {
+                return synced;
+            }
+        }
         if (tile.getComponent() == null || !tile.getComponent().isUpgradeInstalled(MePassiveCraftingUpgrade.get())) {
             return false;
         }

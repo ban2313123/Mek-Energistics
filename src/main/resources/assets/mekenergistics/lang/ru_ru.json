@@ -1,8 +1,10 @@
 {
   "itemGroup.mekenergistics": "Mek Energistics",
-  "gui.mekenergistics.me_patterns.title": "МЭ Шаблоны",
+  "gui.mekenergistics.me_patterns.title": "Шаблоны",
   "gui.mekenergistics.me_patterns.button": "Шаблоны",
   "gui.mekenergistics.me_patterns.rename": "Переименовать машину",
+  "gui.mekenergistics.me_patterns.passive.interval": "Интервал пассивного заказа (тики)",
+  "gui.mekenergistics.me_patterns.passive.multiplier": "Множитель пассивного заказа (пусто = 1x)",
   "gui.mekenergistics.me_patterns.smart_multiplication.on": "Умное умножение шаблона: Вкл",
   "gui.mekenergistics.me_patterns.smart_multiplication.off": "Умное умножение шаблона: Выкл",
   "gui.mekenergistics.me_patterns.terminal_visibility.shown": "Отображается в терминале доступа к шаблонам",

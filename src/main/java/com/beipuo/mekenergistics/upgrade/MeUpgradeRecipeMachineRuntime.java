@@ -100,7 +100,6 @@ public final class MeUpgradeRecipeMachineRuntime {
     public void createNodeIfActive(boolean active) {
         if (active) {
             syncOwner();
-            this.state.markActive();
             this.support.createOnFirstTick();
         }
     }

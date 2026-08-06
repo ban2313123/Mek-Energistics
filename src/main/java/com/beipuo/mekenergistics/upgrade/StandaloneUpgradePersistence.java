@@ -20,7 +20,9 @@ public final class StandaloneUpgradePersistence {
         if (tag == null || !tag.contains(TAG_UPGRADES, Tag.TAG_COMPOUND)) {
             return upgrades;
         }
-        Map<Upgrade, Integer> result = upgrades == null ? new LinkedHashMap<>() : upgrades;
+        // Upgrade.buildMap returns Collections.emptyMap() when all native entries were filtered.
+        // Copy before adding standalone entries so the reload path is always mutable.
+        Map<Upgrade, Integer> result = upgrades == null ? new LinkedHashMap<>() : new LinkedHashMap<>(upgrades);
         load(result, tag, MePatternProviderUpgrade.get());
         load(result, tag, MePassiveCraftingUpgrade.get());
         return result;

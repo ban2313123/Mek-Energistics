@@ -21,8 +21,8 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = Upgrade.class, remap = false)
 public abstract class UpgradeMixin {
@@ -55,10 +55,10 @@ public abstract class UpgradeMixin {
         MePassiveCraftingUpgrade.setStandaloneUpgrade(passiveCrafting);
     }
 
-    @ModifyVariable(method = "buildMap", at = @At(value = "STORE", ordinal = 0), name = "upgrades")
-    private static Map<Upgrade, Integer> mekenergistics$loadStableUpgrade(
-          @Nullable Map<Upgrade, Integer> upgrades, @Nullable CompoundTag tag) {
-        return StandaloneUpgradePersistence.load(upgrades, tag);
+    @Inject(method = "buildMap", at = @At("RETURN"), cancellable = true)
+    private static void mekenergistics$loadStableUpgrade(@Nullable CompoundTag tag,
+          CallbackInfoReturnable<Map<Upgrade, Integer>> cir) {
+        cir.setReturnValue(StandaloneUpgradePersistence.load(cir.getReturnValue(), tag));
     }
 
     @ModifyExpressionValue(method = "saveMap",

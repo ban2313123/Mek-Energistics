@@ -67,6 +67,8 @@ public final class MePatternWindowOverlay {
     private static final Component SMART_MULTIPLICATION_OFF_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.smart_multiplication.off");
     private static final Component TERMINAL_VISIBLE_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.terminal_visibility.shown");
     private static final Component TERMINAL_HIDDEN_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.terminal_visibility.hidden");
+    private static final Component PASSIVE_INTERVAL_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.passive.interval");
+    private static final Component PASSIVE_MULTIPLIER_TOOLTIP = Component.translatable("gui.mekenergistics.me_patterns.passive.multiplier");
     private static final int TAB_X = 0;
     private static final int TAB_Y = 62;
     private static final int TAB_SIZE = 26;
@@ -341,8 +343,10 @@ public final class MePatternWindowOverlay {
             this.nameField.setEnterHandler(this::saveName);
             this.nameField.setText(this.lastSavedName);
             setNameFieldVisible(false);
-            this.passiveIntervalField = addChild(new GuiTextField(gui, this, relativeX + 8, relativeY + 94, 42, NAME_FIELD_HEIGHT));
-            this.passiveMultiplierField = addChild(new GuiTextField(gui, this, relativeX + 54, relativeY + 94, 42, NAME_FIELD_HEIGHT));
+            this.passiveIntervalField = addChild(new GuiTextField(gui, this, relativeX + 22, relativeY + 114, 21, NAME_FIELD_HEIGHT));
+            this.passiveMultiplierField = addChild(new GuiTextField(gui, this, relativeX + 45, relativeY + 114, 21, NAME_FIELD_HEIGHT));
+            this.passiveIntervalField.setTooltip(Tooltip.create(PASSIVE_INTERVAL_TOOLTIP));
+            this.passiveMultiplierField.setTooltip(Tooltip.create(PASSIVE_MULTIPLIER_TOOLTIP));
             this.passiveIntervalField.setMaxLength(6);
             this.passiveMultiplierField.setMaxLength(12);
             this.passiveIntervalField.setEnterHandler(this::savePassiveCraftingSettings);
@@ -523,9 +527,13 @@ public final class MePatternWindowOverlay {
                 this.visibleInTerminal = syncedTerminalVisibility;
                 updateTerminalVisibilityTooltip();
             }
-            drawTitleText(guiGraphics, PATTERN_WINDOW_TITLE, 6);
+            int titleWidth = font().width(PATTERN_WINDOW_TITLE);
+            int titleX = (width - titleWidth) / 2;
+            drawScrollingString(guiGraphics, PATTERN_WINDOW_TITLE, titleX, 6, TextAlignment.LEFT,
+                    titleTextColor(), titleWidth, 0, false);
+            int pageX = titleX + titleWidth + 4;
             drawScrollingString(guiGraphics, Component.literal((this.currentPage + 1) + "/" + pageCount()),
-                    20, 99, TextAlignment.CENTER, titleTextColor(), 94, 0, false);
+                    pageX, 6, TextAlignment.LEFT, titleTextColor(), width - pageX - 4, 0, false);
         }
     }
 

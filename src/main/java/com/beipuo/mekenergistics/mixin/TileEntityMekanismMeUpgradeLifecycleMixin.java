@@ -4,6 +4,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
+import com.beipuo.mekenergistics.upgrade.StandaloneUpgradePersistence;
 import java.util.HashSet;
 import java.util.Set;
 import mekanism.api.Upgrade;
@@ -82,12 +83,37 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
         if ((Object) this instanceof MeUpgradeableMachine machine) {
             machine.saveMeState(tag, registries);
         }
+        mekenergistics$saveStandaloneUpgrade(tag, MePatternProviderUpgrade.get());
+        mekenergistics$saveStandaloneUpgrade(tag, MePassiveCraftingUpgrade.get());
     }
 
     @Inject(method = "loadAdditional", at = @At("RETURN"))
     private void mekenergistics$loadMeState(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {
         if ((Object) this instanceof MeUpgradeableMachine machine) {
             machine.loadMeState(tag, registries);
+        }
+        mekenergistics$restoreStandaloneUpgrade(tag, MePatternProviderUpgrade.get());
+        mekenergistics$restoreStandaloneUpgrade(tag, MePassiveCraftingUpgrade.get());
+    }
+
+    @Unique
+    private void mekenergistics$saveStandaloneUpgrade(CompoundTag tag, Upgrade upgrade) {
+        TileEntityMekanism tile = (TileEntityMekanism) (Object) this;
+        if (tile.getComponent() != null) {
+            StandaloneUpgradePersistence.saveCount(tag, upgrade, tile.getComponent().getUpgrades(upgrade));
+        }
+    }
+
+    @Unique
+    private void mekenergistics$restoreStandaloneUpgrade(CompoundTag tag, Upgrade upgrade) {
+        TileEntityMekanism tile = (TileEntityMekanism) (Object) this;
+        if (tile.getComponent() == null || !tile.getComponent().supports(upgrade)) {
+            return;
+        }
+        int saved = StandaloneUpgradePersistence.loadCount(tag, upgrade);
+        int installed = tile.getComponent().getUpgrades(upgrade);
+        if (saved > installed) {
+            tile.getComponent().addUpgrades(upgrade, saved - installed);
         }
     }
 }

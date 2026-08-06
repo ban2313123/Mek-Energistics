@@ -172,7 +172,6 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
     public void createMeNodeIfActive() {
         if (isMeUpgradeActive()) {
             mekenergistics$syncMekanismOwner((TileEntityElectricMachine) (Object) this);
-            mekenergistics$runtimeState().markActive();
             mekenergistics$support().createOnFirstTick();
         }
     }

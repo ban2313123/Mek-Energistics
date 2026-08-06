@@ -208,7 +208,6 @@ public abstract class TileEntityRecipeMachineMeUpgradeMixin implements MeUpgrade
     public void createMeNodeIfActive() {
         if (isMeUpgradeActive()) {
             mekenergistics$syncOwner();
-            mekenergistics$runtimeState().markActive();
             mekenergistics$support().createOnFirstTick();
         }
     }
