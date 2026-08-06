@@ -152,6 +152,8 @@ public final class MeFactoryUpgradeGameTests {
         }
         helper.assertTrue(machine.isMeUpgradeTarget(), id + " does not resolve to an upgrade profile");
         helper.assertTrue(!machine.isMeUpgradeActive(), id + " activated before the upgrade was installed");
+        helper.assertTrue(tile.getComponent() != null,
+                id + " has no TileComponentUpgrade for the standard ME upgrade slot");
         helper.assertTrue(tile.getComponent().supports(MePatternProviderUpgrade.get()),
                 id + " does not expose the standard ME upgrade slot support");
         tile.getComponent().getUpgradeSlot().setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
