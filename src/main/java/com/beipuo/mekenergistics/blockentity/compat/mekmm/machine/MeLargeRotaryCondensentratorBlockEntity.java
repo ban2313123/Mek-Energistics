@@ -14,6 +14,7 @@ import com.beipuo.mekenergistics.mixin.TileEntityLargeRotaryCondensentratorAcces
 import com.jerry.meklm.common.tile.machine.TileEntityLargeRotaryCondensentrator;
 import java.util.List;
 import mekanism.api.IContentsListener;
+import mekanism.api.RelativeSide;
 import mekanism.api.recipes.RotaryRecipe;
 import mekanism.api.recipes.cache.CachedRecipe;
 import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
@@ -51,11 +52,11 @@ public class MeLargeRotaryCondensentratorBlockEntity extends TileEntityLargeRota
     @Override
     protected IEnergyContainerHolder getInitialEnergyContainers(IContentsListener listener,
             IContentsListener recipeCacheListener, IContentsListener recipeCacheUnpauseListener) {
-        EnergyContainerHelper builder = EnergyContainerHelper.forSideWithConfig(this);
+        EnergyContainerHelper builder = EnergyContainerHelper.forSide(this.facingSupplier);
         var energy = new MeRecipeMachineAeSupport.AeBackedEnergyContainer<TileEntityLargeRotaryCondensentrator>(
                 this, support(), recipeCacheUnpauseListener);
         ((TileEntityLargeRotaryCondensentratorAccessor) this).mekenergistics$setEnergyContainer(energy);
-        builder.addContainer(energy);
+        builder.addContainer(energy, RelativeSide.BACK);
         return builder.build();
     }
 

@@ -1,5 +1,147 @@
 # Changelog
 
+## 2.0.6-beta3
+
+### English
+
+#### Fix
+
+- Fixed smart pattern multiplication still dispatching only one craft when Thunderbolt Core was installed. Enabled ME machines and factories now advertise Thunderbolt's unbounded batch-accounting mode, allowing ordinary AE2, NeoECO, AdvancedAE, and AE2 Lightning Tech time-wheel crafting CPUs to use Thunderbolt's official batch-provider path while remaining limited by each CPU's copy budget, available materials and energy, and the machine's physical input capacity. Disabling smart multiplication retains normal single-craft accounting.
+
+### 中文
+
+#### 修复
+
+- 修复安装 Thunderbolt Core 后，智能样板倍增仍只派发单份配方的问题。开启倍增的 ME 机器与工厂现在会声明 Thunderbolt 的无界批量记账模式，使普通 AE2、NeoECO、AdvancedAE 与 AE2 Lightning Tech 时间轮合成 CPU 均可通过 Thunderbolt 官方批量供应器路径派发多份配方，同时仍受各 CPU 的份数预算、可用材料与能量，以及机器物理输入容量限制；关闭智能倍增时继续使用普通单份记账。
+
+## 2.0.6-beta2
+
+### English
+
+#### Change
+
+- Added counted batch-dispatch compatibility for AE2 Lightning Tech and Thunderbolt Core. With smart pattern multiplication enabled, Thunderbolt crafting CPUs can now send ME machines and factories as many complete crafts as their current physical input capacity accepts in one atomic transfer. Disabling smart multiplication keeps the optimized ordinary single-craft path, while direct batch routing prevents duplicate multiplication and returns every unaccepted craft to the CPU.
+- Added AE2 Lightning Tech 2.0.4 and Thunderbolt Core 1.0.2 to the compatibility test runtime and compiled directly against Thunderbolt Core's published batch-provider API.
+
+### 中文
+
+#### 变更
+
+- 新增对 AE2 Lightning Tech 与 Thunderbolt Core 计数批量派发的兼容。开启智能样板倍增后，Thunderbolt 合成 CPU 可根据 ME 机器或工厂当前的物理输入容量，在一次原子传输中派发多份完整配方；关闭智能倍增时仍使用优化后的普通单份派发路径。直接批量路由可避免与 Mek-E 自身倍增逻辑重复计算，并将所有未接收的配方份数交还 CPU。
+- 将 AE2 Lightning Tech 2.0.4 与 Thunderbolt Core 1.0.2 加入兼容性测试运行环境，并直接使用 Thunderbolt Core 已发布的批量供应器 API 进行编译。
+
+## 2.0.6-beta
+
+### English
+
+#### Change
+
+- Added counted batch-dispatch compatibility for Neo ECO AE Extension 21.2.0. Its crafting CPU can now send ME machines and factories as many complete crafts as their physical inputs, CPU inventory, available AE power, and remaining task count permit, while preserving atomic rollback and preventing duplicate multiplication even when a batch is reduced to one craft.
+- Raised the minimum supported dependency versions, without upper bounds, to Applied Energistics 2 19.2.17, Mekanism 10.7.19, and Applied Mekanistics 1.6.3. Updated the NeoForge development baseline to 21.1.228 and the OmniSequence: Transfinite test runtime to the current 1.3.9 build.
+
+#### Fix
+
+- Fixed existing ME Large Chemical Infusers, ME Large Rotary Condensentrators, and ME Large Antiprotonic Nucleosynthesizers converted with the ME Factory Installer not exposing their physical back-face energy capability until broken and placed again. Their fixed Mekanism: MoreMachine energy port is now registered directly, including for already placed converted machines.
+
+### 中文
+
+#### 变更
+
+- 新增对 Neo ECO AE Extension 21.2.0 的计数批量派发兼容。其合成 CPU 现在可根据 ME 机器或工厂的物理输入容量、CPU 库存、可用 AE 能量与任务剩余数量派发多份完整配方；失败时保持原子回滚，并且即使批量缩减为单份也不会与 Mek-E 自身倍增逻辑重复计算。
+- 在不设置上限的前提下，将最低支持版本提高至 Applied Energistics 2 19.2.17、Mekanism 10.7.19 与 Applied Mekanistics 1.6.3；同时将 NeoForge 开发基线更新至 21.1.228，并将 OmniSequence: Transfinite 测试运行环境更新到当前 1.3.9 构建。
+
+#### 修复
+
+- 修复使用 ME 工厂安装器转换后，已经放置的 ME 大型化学灌注机、ME 大型旋转式冷凝机与 ME 大型反质子核合成机无法暴露物理背面能源能力，必须拆除重放才能接入能源的问题。现在会直接注册 Mekanism: MoreMachine 的固定能源端口，已放置并完成转换的机器同样生效。
+
+## 2.0.5
+
+### English
+
+#### Fix
+
+- Fixed highly parallel ME machines and factories reporting insufficient energy after an autocrafting order even when the AE network contained enough FE. Network-backed recipe checks now see the full available local and network energy instead of being capped by the machine's local energy buffer.
+
+### 中文
+
+#### 修复
+
+- 修复高并行 ME 机器与工厂在自动合成下单后，即使 AE 网络中有足够 FE 仍显示能量不足的问题。网络供能配方检查现在会读取本地与网络中的完整可用能量，不再受机器本地能量缓存上限限制。
+
+## 2.0.3
+
+### English
+
+#### Change
+
+- Expanded AE2 memory card support to copy patterns together with item, chemical, and fluid output-to-AE settings, the pattern assembly name, and Pattern Access Terminal visibility.
+- Preserved stored block-entity components and machine configuration when dismantling ME machines and factories.
+- Made the optional OmniSequence and Data Energistics API contracts self-contained for reproducible builds, and updated the GitHub Actions upload/download steps to v5.
+- Set the Minecraft 1.21.1 NeoForge development and build baseline to 21.1.220.
+
+#### Fix
+
+- Refreshed AE nodes, published patterns, and neighboring capabilities immediately after an installer converts a machine, so the converted ME machine can accept autocrafting jobs without first being broken and placed again.
+
+### 中文
+
+#### 变更
+
+- 扩展 AE2 内存卡支持：除样板外，现在还会复制物品、化学品和流体的输出至 AE 设置、样板装配名称，以及是否在样板访问终端中显示。
+- 拆除 ME 机器与工厂时保留其方块实体组件和机器配置。
+- 将 OmniSequence 与 Data Energistics 的可选 API 契约改为项目内自包含，使构建可复现，并将 GitHub Actions 的上传与下载步骤更新至 v5。
+- 将 Minecraft 1.21.1 的 NeoForge 开发与构建基线设为 21.1.220。
+
+#### 修复
+
+- 安装器转换机器后会立即刷新 AE 节点、已发布样板和相邻能力，使转换后的 ME 机器无需先拆除重放即可正常接收自动合成订单。
+
+## 2.0.2
+
+### English
+
+#### Change
+
+- Added counted batch-provider integration for Data Energistics, allowing its crafting CPU to negotiate the number of complete crafts that an ME machine or factory can currently accept and transfer the batch atomically.
+- Added Omni Batch Provider API v1 integration for OmniSequence: Transfinite 1.3.9, including ordinary ME machines and factory tiers, while preventing duplicate multiplication when an Omni-managed crafting CPU controls the batch.
+- Replaced the fixed 1,048,576-copy smart-pattern ceiling with capacity-aware `long` sizing, so large machines can use their actual available input capacity while remaining bounded by the crafting job, input amounts, energy, and atomic routing checks.
+- Updated the NeoForge development and build baseline from 21.1.220 to 21.1.238 for Minecraft 1.21.1.
+
+#### Fix
+
+- Preserved pattern input-slot identities and substituted keys during Omni batch admission and used the authoritative delivered totals at commit time, avoiding incorrect assumptions when AE2 substitutions change keys or ratios.
+- Kept returned-container, reusable-input, malformed, incomplete, or capacity-changed batches on safe rejection or normal one-craft dispatch paths without partially consuming inputs.
+
+### 中文
+
+#### 变更
+
+- 新增 Data Energistics 计数批处理供应器适配，使其合成 CPU 能按 ME 机器或工厂当前可接收的完整配方数量进行协商，并原子地移交整批材料。
+- 新增 OmniSequence: Transfinite 1.3.9 的 Omni Batch Provider API v1 适配，覆盖普通 ME 机器与各等级 ME 工厂；当批处理由 Omni 管理的合成 CPU 执行时，会避免与本模组的倍增逻辑重复计算。
+- 移除智能样板固定 1,048,576 份的上限，改为基于机器真实输入容量的 `long` 范围计算，同时仍受合成任务余量、单份输入数量、AE 能量与原子路由检查约束。
+- 将 Minecraft 1.21.1 的 NeoForge 开发与构建基线从 21.1.220 更新至 21.1.238。
+
+#### 修复
+
+- Omni 批处理准入现在会保留样板输入槽位及替代材料键，并在提交时使用 API 交付的权威材料总量，避免 AE2 替代材料改变键或比例时产生错误推算。
+- 对带返还容器或可复用输入的配方，以及畸形、不完整或容量已变化的批次，保持安全拒绝或回退到普通单份派发，不会部分吞入材料。
+
+## 2.0.1
+
+### English
+
+#### Fix
+
+- Fixed a game crash when ME autocrafting sent recipes such as nutritional liquid to the Mekanism Extras ME Infinite Dissolving Factory by routing conversion items to the factory's real chemical input slot instead of its nullable inherited extra slot.
+- Made shared item, chemical, and fluid input adapters reject unavailable optional-machine ports safely, preventing equivalent null-slot crashes when addon machine layouts are missing or change.
+
+### 中文
+
+#### 修复
+
+- 修复 ME 自动合成向 Mekanism Extras 的 ME 悖论无限溶解工厂下单营养液等配方时发生的游戏崩溃；转换物品现在会送入工厂真实的化学品输入槽，而非继承得到的可空附加槽。
+- 共用物品、化学品与流体输入适配器现在会安全拒绝不可用的可选机器端口，避免附属模组机器布局缺失或变化时发生同类空槽崩溃。
+
 ## 2.0.0
 
 ### English

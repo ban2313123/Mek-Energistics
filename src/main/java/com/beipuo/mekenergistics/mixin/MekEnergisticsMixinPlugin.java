@@ -54,6 +54,14 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
     private static final Set<String> EMPOWERED_CORE_REPLACED_MIXINS = Set.of(
             ".upgrade.UpgradeMixin",
             ".upgrade.UpgradeUtilsMixin");
+    private static final String DATA_COUNTED_PROVIDER =
+            "com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingProvider";
+    private static final String OMNI_BATCH_PROVIDER =
+            "com.atir.molecularmanipulator.api.crafting.OmniBatchCraftingProvider";
+    private static final String NEOECO_BATCH_BRIDGE =
+            "cn.dancingsnow.neoecoae.integration.ae2lt.AE2LTBatchCraftingBridge";
+    private static final String THUNDERBOLT_BATCH_PROVIDER =
+            "com.moakiee.thunderbolt.ae2.api.crafting.IBatchCraftingProvider";
 
     private static final Map<String, Gate> OPTIONAL_MIXINS = Map.ofEntries(
             Map.entry(".TileEntityAlloyerAccessor", Gate.mod("evolvedmekanism")),
@@ -138,7 +146,23 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
                     Gate.target("mekmm", MEKLM_MACHINE + "TileEntityLargeAntiprotonicNucleosynthesizer")),
             Map.entry(".extendedae.ContainerRenamerMixin", Gate.mod("extendedae")),
             Map.entry(".dataenergistics.PatternProviderSyncHelperMixin", Gate.mod("data_energistics")),
-            Map.entry(".dataenergistics.PatternProviderNameHelperMixin", Gate.mod("data_energistics")));
+            Map.entry(".dataenergistics.PatternProviderNameHelperMixin", Gate.mod("data_energistics")),
+            Map.entry(".dataenergistics.DataCountedCraftingProviderMixin",
+                    Gate.target("data_energistics", DATA_COUNTED_PROVIDER)),
+            Map.entry(".dataenergistics.DataCountedFactoryCraftingProviderMixin",
+                    Gate.target("data_energistics", DATA_COUNTED_PROVIDER)),
+            Map.entry(".omnisequence.OmniBatchCraftingProviderMixin",
+                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+            Map.entry(".omnisequence.OmniBatchFactoryCraftingProviderMixin",
+                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+            Map.entry(".omnisequence.OmniManagedCraftingCpuMixin",
+                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+            Map.entry(".neoecoae.NeoEcoBatchCraftingBridgeMixin",
+                    Gate.target("neoecoae", NEOECO_BATCH_BRIDGE)),
+            Map.entry(".thunderbolt.ThunderboltBatchCraftingProviderMixin",
+                    Gate.target("thunderbolt", THUNDERBOLT_BATCH_PROVIDER)),
+            Map.entry(".thunderbolt.ThunderboltBatchFactoryCraftingProviderMixin",
+                    Gate.target("thunderbolt", THUNDERBOLT_BATCH_PROVIDER)));
 
     @Override
     public void onLoad(String mixinPackage) {

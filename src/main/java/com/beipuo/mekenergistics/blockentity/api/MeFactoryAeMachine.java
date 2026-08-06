@@ -7,6 +7,7 @@ import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
 import appeng.me.helpers.IGridConnectedBlockEntity;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
+import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -65,6 +66,11 @@ public interface MeFactoryAeMachine extends MeAeMachine {
         return getAeSupport().getAeOutputMode();
     }
 
+    default void setAeOutputMode(AeOutputMode mode) {
+        getAeSupport().setAeOutputMode(mode);
+        saveChanges();
+    }
+
     default String getCustomPatternTerminalName() {
         return getAeSupport().getPatternTerminalName();
     }
@@ -99,8 +105,18 @@ public interface MeFactoryAeMachine extends MeAeMachine {
     }
 
     @Override
+    default AbstractMeAeSupport<?> getPatternAeSupport() {
+        return getAeSupport();
+    }
+
+    @Override
     default boolean pushPattern(IPatternDetails patternDetails, appeng.api.stacks.KeyCounter[] inputHolder) {
         return getAeSupport().pushPatternWithAdapter(patternDetails, inputHolder);
+    }
+
+    @Override
+    default long maxAcceptedPatternCopies(appeng.api.stacks.KeyCounter[] oneCraftInputs) {
+        return getAeSupport().maxAcceptedCopies(oneCraftInputs);
     }
 
     @Override

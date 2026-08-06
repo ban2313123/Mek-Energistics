@@ -116,6 +116,7 @@ public class MeTierInstallerItem extends Item {
             MePatternSlotTransfer.copyMekanismComponents(oldTile, upgradedTile, targetBlock);
         }
         MePatternSlotTransfer.load(upgradedTile, level.registryAccess(), mePatternSlots);
+        refreshMeLifecycle(upgradedTile);
         if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
             if (upgradedTile instanceof MeAeMachine machine) {
                 machine.setOwner(serverPlayer);
@@ -133,6 +134,14 @@ public class MeTierInstallerItem extends Item {
             stack.shrink(1);
         }
         return InteractionResult.CONSUME;
+    }
+
+    private static void refreshMeLifecycle(TileEntityMekanism upgradedTile) {
+        if (upgradedTile instanceof MeAeMachine machine) {
+            machine.getRecipeAeSupport().refreshAfterWorldMutation();
+        } else if (upgradedTile instanceof MeFactoryAeMachine machine) {
+            machine.getAeSupport().refreshAfterWorldMutation();
+        }
     }
 
     private static boolean canPlaceBoundingBlocks(net.minecraft.world.level.Level level, BlockPos pos, BlockState upgradeState, AttributeHasBounding upgradeBounding) {

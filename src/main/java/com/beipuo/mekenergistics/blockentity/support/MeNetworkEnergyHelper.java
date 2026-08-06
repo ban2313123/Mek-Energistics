@@ -7,6 +7,7 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
+import java.util.function.LongUnaryOperator;
 import java.util.function.Supplier;
 import mekanism.api.Action;
 import mekanism.api.AutomationType;
@@ -55,11 +56,28 @@ public final class MeNetworkEnergyHelper {
 
     public static long availableWithLocalBuffer(MachineEnergyContainer<?> localEnergy, IGrid grid, IActionSource source) {
         long local = localEnergy instanceof LocalEnergyBuffer buffer ? buffer.getLocalEnergy() : localEnergy.getEnergy();
-        long needed = localEnergy.getMaxEnergy() - local;
-        if (needed <= 0 || grid == null) {
+        if (grid == null) {
             return local;
         }
-        return Math.min(localEnergy.getMaxEnergy(), local + extractNetworkFe(grid, source, needed, Action.SIMULATE));
+        return availableWithNetwork(local,
+                requested -> extractNetworkFe(grid, source, requested, Action.SIMULATE));
+    }
+
+    static long availableWithNetwork(long local, LongUnaryOperator simulatedNetworkExtraction) {
+        if (local >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return totalAvailableEnergy(local, simulatedNetworkExtraction.applyAsLong(Long.MAX_VALUE - Math.max(0, local)));
+    }
+
+    static long totalAvailableEnergy(long local, long network) {
+        if (local <= 0) {
+            return Math.max(0, network);
+        }
+        if (network <= 0) {
+            return local;
+        }
+        return local > Long.MAX_VALUE - network ? Long.MAX_VALUE : local + network;
     }
 
     public static long extractNetworkFe(IGrid grid, IActionSource source, long requestedFe, Action action) {

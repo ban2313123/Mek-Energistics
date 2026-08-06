@@ -90,7 +90,15 @@
     "ae2.ElapsedTimeTrackerAccessor",
     "dataenergistics.PatternProviderNameHelperMixin",
     "dataenergistics.PatternProviderSyncHelperMixin",
-    "extendedae.ContainerRenamerMixin"
+    "extendedae.ContainerRenamerMixin",
+    "dataenergistics.DataCountedCraftingProviderMixin",
+    "dataenergistics.DataCountedFactoryCraftingProviderMixin",
+    "omnisequence.OmniBatchCraftingProviderMixin",
+    "omnisequence.OmniBatchFactoryCraftingProviderMixin",
+    "omnisequence.OmniManagedCraftingCpuMixin",
+    "neoecoae.NeoEcoBatchCraftingBridgeMixin",
+    "thunderbolt.ThunderboltBatchCraftingProviderMixin",
+    "thunderbolt.ThunderboltBatchFactoryCraftingProviderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

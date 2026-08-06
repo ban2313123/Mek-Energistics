@@ -14,6 +14,7 @@ import com.beipuo.mekenergistics.mixin.TileEntityLargeAntiprotonicNucleosynthesi
 import com.jerry.meklm.common.tile.machine.TileEntityLargeAntiprotonicNucleosynthesizer;
 import java.util.List;
 import mekanism.api.IContentsListener;
+import mekanism.api.RelativeSide;
 import mekanism.common.capabilities.holder.chemical.IChemicalTankHolder;
 import mekanism.common.capabilities.holder.energy.EnergyContainerHelper;
 import mekanism.common.capabilities.holder.energy.IEnergyContainerHolder;
@@ -47,10 +48,10 @@ public class MeLargeAntiprotonicNucleosynthesizerBlockEntity extends TileEntityL
     }
 
     @Override protected IEnergyContainerHolder getInitialEnergyContainers(IContentsListener l, IContentsListener c, IContentsListener u) {
-        EnergyContainerHelper builder = EnergyContainerHelper.forSideWithConfig(this);
+        EnergyContainerHelper builder = EnergyContainerHelper.forSide(this.facingSupplier);
         var energy = new MeRecipeMachineAeSupport.AeBackedEnergyContainer<TileEntityLargeAntiprotonicNucleosynthesizer>(this, support(), u);
         ((TileEntityLargeAntiprotonicNucleosynthesizerAccessor) this).mekenergistics$setEnergyContainer(energy);
-        builder.addContainer(energy);
+        builder.addContainer(energy, RelativeSide.BACK);
         return builder.build();
     }
 

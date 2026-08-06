@@ -71,6 +71,14 @@ class MeInputLayoutTest {
     }
 
     @Test
+    void capacitySizingIsNotClampedToOneMillionCopies() {
+        FakeInputPort port = new FakeInputPort(IRON, 2_000_000);
+        MeInputLayout layout = MeInputLayout.unordered(List.of(port));
+
+        assertEquals(2_000_000, layout.maxAcceptedCopies(request(1)));
+    }
+
+    @Test
     void aLaneLayoutRoutesAndSizesThroughItsLanes() {
         FakeInputPort first = new FakeInputPort(IRON, 8);
         FakeInputPort second = new FakeInputPort(IRON, 8);

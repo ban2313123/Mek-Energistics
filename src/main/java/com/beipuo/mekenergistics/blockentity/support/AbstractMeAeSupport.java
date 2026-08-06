@@ -20,6 +20,7 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
+import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.MePatternIoOwner;
 import com.beipuo.mekenergistics.blockentity.slot.MePatternInventorySlot;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -155,14 +157,89 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return this.smartPatternMultiplication.hasPendingWork() || this.owner.isPatternBusy();
     }
 
-    public final boolean pushPatternWithAdapter(IPatternDetails patternDetails, KeyCounter[] inputs) {
-        if (!this.mainNode.isActive() || patternDetails == null || inputs == null
-                || !this.patterns.contains(patternDetails) || this.owner.isPatternBusy()) {
+    /** Returns whether the exact pattern or a same-definition registered pattern is available. */
+    public final boolean hasRegisteredPattern(IPatternDetails patternDetails) {
+        return patternDetails != null && (this.patterns.contains(patternDetails)
+                || hasMatchingPatternDefinition(this.patterns, patternDetails));
+    }
+
+    /** Returns the physical input capacity available for a counted CPU submission. */
+    public final long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
+        if (oneCraftInputs == null || !this.mainNode.isActive() || isPatternBusy()) {
+            return 0;
+        }
+        return patternInputLayout().maxAcceptedCopies(oneCraftInputs);
+    }
+
+    /** Routes pre-scaled counted inputs without invoking Mek-Energistics smart multiplication. */
+    public final boolean routeDataPatternInputs(KeyCounter[] scaledInputs) {
+        if (scaledInputs == null || !this.mainNode.isActive() || isPatternBusy()) {
             return false;
         }
-        if (this.smartPatternMultiplication.isEnabled()) {
-            return enqueueSmartPattern(patternDetails, inputs);
+        return routePatternInputs(scaledInputs);
+    }
+
+    public final boolean pushPatternWithAdapter(IPatternDetails patternDetails, KeyCounter[] inputs) {
+        if (!this.mainNode.isActive() || patternDetails == null || inputs == null
+                || this.owner.isPatternBusy()) {
+            return false;
         }
+        boolean exactPattern = this.patterns.contains(patternDetails);
+        boolean registeredPattern = exactPattern || hasMatchingPatternDefinition(this.patterns, patternDetails);
+        return dispatchWithSmartPatternFallback(
+                exactPattern,
+                registeredPattern,
+                this.smartPatternMultiplication,
+                patternDetails,
+                inputs,
+                () -> {
+                    MekEnergistics.LOGGER.warn(
+                            "Disabling smart pattern multiplication for {} after an incompatible crafting CPU batch",
+                            this.owner.getGridNodePosition());
+                    setSmartPatternMultiplicationEnabled(false);
+                },
+                () -> routePatternInputs(inputs));
+    }
+
+    /**
+     * Compatibility fallback for CPU paths without the DataEnergistics counted-provider contract:
+     * some addon CPUs pre-batch pattern inputs, but their multiplier cannot be coordinated with our
+     * smart queue. If their input shape cannot be represented, disable this machine's multiplier
+     * and accept the CPU-provided batch directly. Counted CPU integrations use their dedicated
+     * admission contracts instead of this fallback.
+     */
+    static boolean dispatchWithSmartPatternFallback(boolean exactPattern, boolean registeredPattern,
+            MeSmartPatternMultiplication multiplication, IPatternDetails patternDetails, KeyCounter[] inputs,
+            Runnable disableMultiplication, BooleanSupplier directDispatch) {
+        if (!registeredPattern) {
+            return false;
+        }
+        if (multiplication.isEnabled() && exactPattern) {
+            if (multiplication.enqueue(patternDetails, inputs)) {
+                return true;
+            }
+        }
+        if (multiplication.isEnabled()) {
+            disableMultiplication.run();
+        }
+        return directDispatch.getAsBoolean();
+    }
+
+    private static boolean hasMatchingPatternDefinition(List<IPatternDetails> registeredPatterns,
+            IPatternDetails candidate) {
+        AEItemKey definition = candidate.getDefinition();
+        if (definition == null) {
+            return false;
+        }
+        for (IPatternDetails registered : registeredPatterns) {
+            if (definition.equals(registered.getDefinition())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean routePatternInputs(KeyCounter[] inputs) {
         boolean changed = patternInputLayout().route(inputs);
         if (changed) {
             this.owner.saveChanges();
@@ -241,11 +318,29 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             return;
         }
         this.visibleInPatternAccessTerminal = visible;
+        requestCraftingUpdate();
         this.owner.saveChanges();
     }
 
     public final void createOnFirstTick() {
         GridHelper.onFirstTick(this.ownerTile, tile -> create());
+    }
+
+    public final void refreshAfterWorldMutation() {
+        GridHelper.onFirstTick(this.ownerTile, tile -> {
+            create();
+            rebuildPatternCache(false);
+            net.minecraft.world.level.Level level = this.ownerTile.getLevel();
+            if (level == null || level.isClientSide()) {
+                return;
+            }
+            BlockPos pos = this.ownerTile.getBlockPos();
+            level.invalidateCapabilities(pos);
+            for (Direction direction : Direction.values()) {
+                level.invalidateCapabilities(pos.relative(direction));
+            }
+            level.updateNeighborsAt(pos, this.ownerTile.getBlockState().getBlock());
+        });
     }
 
     private void create() {

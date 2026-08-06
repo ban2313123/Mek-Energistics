@@ -205,6 +205,12 @@ final class CompatMachineDataJson {
         JsonObject entry = new JsonObject();
         entry.addProperty("type", "minecraft:item");
         entry.addProperty("name", spec.meBlockId().toString());
+        JsonObject copyComponents = new JsonObject();
+        copyComponents.addProperty("function", "minecraft:copy_components");
+        copyComponents.addProperty("source", "block_entity");
+        JsonArray functions = new JsonArray();
+        functions.add(copyComponents);
+        entry.add("functions", functions);
         JsonArray entries = new JsonArray();
         entries.add(entry);
 

@@ -10,6 +10,12 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ],
           "name": "mekenergistics:me_absolute_overclocked_washing_factory"
         }
       ],

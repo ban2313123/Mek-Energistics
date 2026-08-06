@@ -12,8 +12,6 @@ import mekanism.api.Action;
 import me.ramidzkh.mekae2.ae2.MekanismKey;
 
 public final class MePatternInputRouter {
-    /** Keeps smart-pattern capacity probing bounded; later ticks continue the pending batch. */
-    private static final long MAX_CAPACITY_PROBE_COPIES = 1_048_576L;
     /** A malformed port must never be able to monopolize the server thread. */
     private static final int MAX_ASSIGNMENT_STEPS = 256;
 
@@ -92,21 +90,19 @@ public final class MePatternInputRouter {
                     capacity = accepted > Long.MAX_VALUE - capacity ? Long.MAX_VALUE : capacity + accepted;
                 }
             }
-            return Math.min(MAX_CAPACITY_PROBE_COPIES, capacity / request.getValue());
+            return capacity / request.getValue();
         }
         if (!canRoute(oneCraftInputs, ports)) {
             return 0;
         }
         long low = 1;
         long high = 2;
-        high = Math.min(high, MAX_CAPACITY_PROBE_COPIES);
         while (high > low && high < Long.MAX_VALUE
                 && canRoute(scale(oneCraftInputs, high), ports)) {
             low = high;
-            high = high > MAX_CAPACITY_PROBE_COPIES / 2
-                    ? MAX_CAPACITY_PROBE_COPIES : high * 2;
+            high = high > Long.MAX_VALUE / 2 ? Long.MAX_VALUE : high * 2;
         }
-        if (high == MAX_CAPACITY_PROBE_COPIES && canRoute(scale(oneCraftInputs, high), ports)) {
+        if (high == Long.MAX_VALUE && canRoute(scale(oneCraftInputs, high), ports)) {
             return high;
         }
         while (low + 1 < high) {
@@ -129,14 +125,12 @@ public final class MePatternInputRouter {
         }
         long low = 1;
         long high = 2;
-        high = Math.min(high, MAX_CAPACITY_PROBE_COPIES);
         while (high > low && high < Long.MAX_VALUE
                 && canRouteLanes(scale(oneCraftInputs, high), lanePorts)) {
             low = high;
-            high = high > MAX_CAPACITY_PROBE_COPIES / 2
-                    ? MAX_CAPACITY_PROBE_COPIES : high * 2;
+            high = high > Long.MAX_VALUE / 2 ? Long.MAX_VALUE : high * 2;
         }
-        if (high == MAX_CAPACITY_PROBE_COPIES && canRouteLanes(scale(oneCraftInputs, high), lanePorts)) {
+        if (high == Long.MAX_VALUE && canRouteLanes(scale(oneCraftInputs, high), lanePorts)) {
             return high;
         }
         while (low + 1 < high) {

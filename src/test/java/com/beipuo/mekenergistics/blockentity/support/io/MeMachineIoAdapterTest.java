@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.blockentity.support.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import appeng.api.stacks.AEKey;
@@ -38,6 +39,20 @@ class MeMachineIoAdapterTest {
         assertTrue(source.contains("ItemStack probe = itemKey.toStack(1);"));
         assertTrue(source.contains("boundedItemOffer(amount, slot.getCount(), slot.getLimit(probe))"));
         assertFalse(source.contains("itemKey.toStack((int) amount)"));
+    }
+
+    @Test
+    void missingMachineInputsRejectEverythingWithoutCrashing() {
+        for (MeInputPort port : List.of(
+                MeMachineIoAdapter.itemInput(null),
+                MeMachineIoAdapter.manualItemInput(null),
+                MeMachineIoAdapter.chemicalInput(null),
+                MeMachineIoAdapter.fluidInput(null))) {
+            assertFalse(port.supports(IRON));
+            assertEquals(0, port.insert(IRON, 1, mekanism.api.Action.SIMULATE));
+            assertNull(port.snapshot());
+            port.restore(null);
+        }
     }
 
     @Test
