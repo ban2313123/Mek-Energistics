@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.0.0beta1
+
+### English
+
+#### Change
+
+- Added the new ME upgrade card artwork, switched the mod license to MIT, and archived outdated docs and temporary project files for the 3.0.0beta1 cleanup build.
+
+### 中文
+
+#### 变更
+
+- 接入新的 ME 升级卡贴图，将模组协议改为 MIT，并归档过时文档与临时项目文件，作为 3.0.0beta1 清理构建。
+
 ## 2.0.6-beta3
 
 ### English

@@ -179,6 +179,12 @@ public final class MeFactoryUpgradeGameTests {
                     MeFactoryIoOwner legacy = (MeFactoryIoOwner) blockEntity;
                     helper.assertTrue(!legacy.getPatternSlots().isEmpty(),
                             id + " must retain permanent pattern slots");
+                    helper.assertTrue(((TileEntityMekanism) legacy).getSupportedUpgrade()
+                                    .contains(MePassiveCraftingUpgrade.get()),
+                            id + " must advertise the passive crafting upgrade");
+                    helper.assertTrue(!((TileEntityMekanism) legacy).getSupportedUpgrade()
+                                    .contains(MePatternProviderUpgrade.get()),
+                            id + " must not advertise the standalone ME pattern provider upgrade");
                     helper.assertTrue(legacy.getMainNode().getNode() != null,
                             id + " must create its permanent AE node without an upgrade");
                 })

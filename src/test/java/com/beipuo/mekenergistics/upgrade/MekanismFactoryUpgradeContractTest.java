@@ -256,6 +256,34 @@ class MekanismFactoryUpgradeContractTest {
         assertTrue(capabilities.contains("machine.isMeUpgradeActive() ? machine : null"));
     }
 
+    @Test
+    void legacyMeFactoriesStayOnTheSharedUpgradeBranch() throws IOException {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/mixin/TileEntityMekanismMeUpgradeLifecycleMixin.java"));
+
+        assertTrue(source.contains("if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget())"));
+        assertTrue(source.contains("if ((Object) this instanceof MeFactoryAeMachine)"));
+        assertTrue(source.contains("Set.of(MePassiveCraftingUpgrade.get())"));
+        assertTrue(source.indexOf("instanceof MeFactoryAeMachine")
+                        < source.indexOf("instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()"),
+                "factory support must be resolved before the generic ME upgrade branch");
+        int factoryBranch = source.lastIndexOf("if ((Object) this instanceof MeFactoryAeMachine)");
+        int genericBranch = source.indexOf("else if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget())");
+        String factoryBlock = source.substring(factoryBranch, genericBranch);
+        assertTrue(factoryBlock.contains("MePassiveCraftingUpgrade.get()"));
+        assertFalse(factoryBlock.contains("MePatternProviderUpgrade.get()"),
+                "factory support should not advertise the standalone pattern provider upgrade");
+    }
+
+    @Test
+    void legacyMeFactoryReloadWakesPausedRecipeMonitorsAfterNodeRestore() throws IOException {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/blockentity/support/MeFactoryAeSupport.java"));
+
+        assertTrue(source.contains("factory.unpauseRecipeMonitors()"),
+                "restoring a factory node must also wake its paused recipe monitors");
+    }
+
     private static Map<CompatMachineFamily, FactoryMixinCoverage> factoryMixins() {
         Map<CompatMachineFamily, FactoryMixinCoverage> coverage =
                 new EnumMap<>(CompatMachineFamily.class);

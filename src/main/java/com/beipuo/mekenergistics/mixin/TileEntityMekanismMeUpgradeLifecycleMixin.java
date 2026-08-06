@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.mixin;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
@@ -33,7 +34,9 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
     @Inject(method = "getSupportedUpgrade", at = @At("HEAD"), cancellable = true)
     private void mekenergistics$provideSyntheticUpgradeSet(CallbackInfoReturnable<Set<Upgrade>> cir) {
         if (mekenergistics$isSyntheticUpgradeTarget()) {
-            cir.setReturnValue(Set.of(MePatternProviderUpgrade.get(), MePassiveCraftingUpgrade.get()));
+            cir.setReturnValue((Object) this instanceof MeFactoryAeMachine
+                    ? Set.of(MePassiveCraftingUpgrade.get())
+                    : Set.of(MePatternProviderUpgrade.get(), MePassiveCraftingUpgrade.get()));
         }
     }
 
@@ -42,7 +45,11 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
         if (mekenergistics$isSyntheticUpgradeTarget()) {
             return;
         }
-        if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()) {
+        if ((Object) this instanceof MeFactoryAeMachine) {
+            Set<Upgrade> upgrades = new HashSet<>(cir.getReturnValue());
+            upgrades.add(MePassiveCraftingUpgrade.get());
+            cir.setReturnValue(upgrades);
+        } else if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()) {
             Set<Upgrade> upgrades = new HashSet<>(cir.getReturnValue());
             upgrades.add(MePatternProviderUpgrade.get());
             upgrades.add(MePassiveCraftingUpgrade.get());

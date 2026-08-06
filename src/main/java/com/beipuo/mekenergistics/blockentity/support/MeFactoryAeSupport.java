@@ -8,6 +8,7 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEItemKey;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.List;
@@ -147,6 +148,9 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
     public void createNodeOnFirstTick(TileEntityMekanism tile) {
         createOnFirstTick();
+        if (this.owner instanceof MeFactoryIoOwner factory) {
+            factory.unpauseRecipeMonitors();
+        }
     }
 
     public void destroy() {

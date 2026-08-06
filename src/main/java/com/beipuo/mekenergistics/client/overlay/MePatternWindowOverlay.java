@@ -85,7 +85,7 @@ public final class MePatternWindowOverlay {
     private static final ResourceLocation PATTERN_BUTTON_ICON = ResourceLocation.fromNamespaceAndPath(MekEnergistics.MODID, "textures/gui/button/pattern_button.png");
     private static final ResourceLocation EMPTY_PATTERN_ICON = ResourceLocation.fromNamespaceAndPath(MekEnergistics.MODID, "textures/gui/slot/pattern_empty.png");
     private static final int WINDOW_WIDTH = 178;
-    private static final int WINDOW_HEIGHT = 136;
+    private static final int WINDOW_HEIGHT = 118;
     private static final int NAME_FIELD_WIDTH = 24;
     private static final int NAME_FIELD_HEIGHT = 12;
     private static final int SLOT_COLUMNS = MekEnergisticsConfig.PATTERN_SLOT_COLUMNS;
@@ -150,10 +150,7 @@ public final class MePatternWindowOverlay {
         if (!(screen instanceof GuiMekanism<?> gui) || !(gui.getMenu() instanceof MekanismTileContainer<?> container)) {
             return null;
         }
-        if (container.getTileEntity() instanceof MeAeMachine machine) {
-            if (machine instanceof MeUpgradeableMachine upgradeable && !upgradeable.isMeUpgradeActive()) {
-                return null;
-            }
+        if (container.getTileEntity() instanceof MeFactoryAeMachine machine) {
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
                     new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
                     new PassiveCraftingAccess(machine::hasPassiveCraftingUpgrade,
@@ -162,7 +159,10 @@ public final class MePatternWindowOverlay {
                     new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode),
                     new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
-        if (container.getTileEntity() instanceof MeFactoryAeMachine machine) {
+        if (container.getTileEntity() instanceof MeAeMachine machine) {
+            if (machine instanceof MeUpgradeableMachine upgradeable && !upgradeable.isMeUpgradeActive()) {
+                return null;
+            }
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
                     new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
                     new PassiveCraftingAccess(machine::hasPassiveCraftingUpgrade,
@@ -343,8 +343,8 @@ public final class MePatternWindowOverlay {
             this.nameField.setEnterHandler(this::saveName);
             this.nameField.setText(this.lastSavedName);
             setNameFieldVisible(false);
-            this.passiveIntervalField = addChild(new GuiTextField(gui, this, relativeX + 22, relativeY + 114, 21, NAME_FIELD_HEIGHT));
-            this.passiveMultiplierField = addChild(new GuiTextField(gui, this, relativeX + 45, relativeY + 114, 21, NAME_FIELD_HEIGHT));
+            this.passiveIntervalField = addChild(new GuiTextField(gui, this, relativeX + 22, relativeY + 96, 21, NAME_FIELD_HEIGHT));
+            this.passiveMultiplierField = addChild(new GuiTextField(gui, this, relativeX + 45, relativeY + 96, 21, NAME_FIELD_HEIGHT));
             this.passiveIntervalField.setTooltip(Tooltip.create(PASSIVE_INTERVAL_TOOLTIP));
             this.passiveMultiplierField.setTooltip(Tooltip.create(PASSIVE_MULTIPLIER_TOOLTIP));
             this.passiveIntervalField.setMaxLength(6);
@@ -352,14 +352,14 @@ public final class MePatternWindowOverlay {
             this.passiveIntervalField.setEnterHandler(this::savePassiveCraftingSettings);
             this.passiveMultiplierField.setEnterHandler(this::savePassiveCraftingSettings);
             syncPassiveCraftingFields();
-            addChild(new MekanismImageButton(gui, relativeX + 8, relativeY + 114, 12, LEFT_BUTTON, (element, mouseX, mouseY) -> previousPage()));
-            addChild(new AeOutputButton(gui, relativeX + 116, relativeY + 114,
+            addChild(new MekanismImageButton(gui, relativeX + 8, relativeY + 96, 12, LEFT_BUTTON, (element, mouseX, mouseY) -> previousPage()));
+            addChild(new AeOutputButton(gui, relativeX + 116, relativeY + 96,
                     Component.literal("I"), TransmissionType.ITEM, target));
-            addChild(new AeOutputButton(gui, relativeX + 130, relativeY + 114,
+            addChild(new AeOutputButton(gui, relativeX + 130, relativeY + 96,
                     Component.literal("C"), TransmissionType.CHEMICAL, target));
-            addChild(new AeOutputButton(gui, relativeX + 144, relativeY + 114,
+            addChild(new AeOutputButton(gui, relativeX + 144, relativeY + 96,
                     Component.literal("F"), TransmissionType.FLUID, target));
-            addChild(new MekanismImageButton(gui, relativeX + width - 20, relativeY + 114, 12, RIGHT_BUTTON, (element, mouseX, mouseY) -> nextPage()));
+            addChild(new MekanismImageButton(gui, relativeX + width - 20, relativeY + 96, 12, RIGHT_BUTTON, (element, mouseX, mouseY) -> nextPage()));
         }
 
         private boolean savePassiveCraftingSettings() {

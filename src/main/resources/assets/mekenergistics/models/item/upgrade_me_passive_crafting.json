@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "mekenergistics:item/upgrade_me_pattern_provider"
+    "layer0": "mekenergistics:item/upgrade_me_passive_crafting"
   }
 }
