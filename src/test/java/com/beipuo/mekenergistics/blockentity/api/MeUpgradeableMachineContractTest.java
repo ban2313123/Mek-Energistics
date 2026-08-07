@@ -45,7 +45,8 @@ class MeUpgradeableMachineContractTest {
         String packets = Files.readString(PACKET_TARGET);
 
         assertTrue(capabilities.contains("machine.isMeUpgradeActive() ? machine : null"));
-        assertTrue(packets.contains("!machine.isMeUpgradeActive()"));
+        assertTrue(packets.contains("instanceof MeMekanismMachineBlock"));
+        assertTrue(packets.contains("!machine.isMeUpgradeTarget() || !machine.isMeUpgradeActive()"));
         assertTrue(packets.contains("return Optional.empty();"));
     }
 

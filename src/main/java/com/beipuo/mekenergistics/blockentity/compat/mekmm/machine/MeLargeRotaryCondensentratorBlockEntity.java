@@ -96,6 +96,7 @@ public class MeLargeRotaryCondensentratorBlockEntity extends TileEntityLargeRota
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.LARGE_ROTARY_CONDENSENTRATOR; }
     @Override public AeOutputMode getAeOutputMode() { return this.outputMode; }
     @Override public void cycleAeOutputMode() { this.outputMode = this.outputMode.next(); setChanged(); }
+    @Override public void nextMode() { super.nextMode(); support().invalidatePatternIoCache(); }
     @Override public void clearRemoved() { super.clearRemoved(); support().createOnFirstTick(); }
     @Override public void setRemoved() { support().destroyNode(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { support().destroyNode(); super.onChunkUnloaded(); }

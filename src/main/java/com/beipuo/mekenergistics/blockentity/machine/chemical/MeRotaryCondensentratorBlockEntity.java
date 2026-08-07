@@ -86,6 +86,7 @@ public class MeRotaryCondensentratorBlockEntity extends TileEntityRotaryCondense
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }
     @Override public void cycleAeOutputMode() { this.aeOutputMode = this.aeOutputMode.next(); setChanged(); }
+    @Override public void nextMode() { super.nextMode(); getRecipeAeSupport().invalidatePatternIoCache(); }
     @Override public void clearRemoved() { super.clearRemoved(); getRecipeAeSupport().createOnFirstTick(); }
     @Override public void setRemoved() { getRecipeAeSupport().destroyNode(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getRecipeAeSupport().destroyNode(); super.onChunkUnloaded(); }

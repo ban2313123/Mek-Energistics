@@ -36,6 +36,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = {TileEntityLargeRotaryCondensentrator.class, TileEntityLargeSolarNeutronActivator.class,
@@ -154,6 +155,14 @@ public abstract class MeklmLargeRecipeMachineMeUpgradeMixin implements MeUpgrade
     private void mekenergistics$wrapInfuser(ChemicalChemicalToChemicalRecipe recipe, int index, CallbackInfoReturnable<CachedRecipe<ChemicalChemicalToChemicalRecipe>> cir) { mekenergistics$wrapEnergy(cir); }
     @Inject(method = "createNewCachedRecipe(Lmekanism/api/recipes/NucleosynthesizingRecipe;I)Lmekanism/api/recipes/cache/CachedRecipe;", at = @At("RETURN"), cancellable = true, require = 0)
     private void mekenergistics$wrapNucleosynthesizer(NucleosynthesizingRecipe recipe, int index, CallbackInfoReturnable<CachedRecipe<NucleosynthesizingRecipe>> cir) { mekenergistics$wrapEnergy(cir); }
+
+    @Inject(method = "nextMode", at = @At("RETURN"), require = 0)
+    private void mekenergistics$refreshRotaryPatternIo(CallbackInfo ci) {
+        if (mekenergistics$tile() instanceof TileEntityLargeRotaryCondensentrator
+                && this.mekenergistics$runtime != null) {
+            this.mekenergistics$runtime.support().invalidatePatternIoCache();
+        }
+    }
 
     @Unique
     private <RECIPE extends MekanismRecipe<?>> void mekenergistics$wrapEnergy(CallbackInfoReturnable<CachedRecipe<RECIPE>> cir) {

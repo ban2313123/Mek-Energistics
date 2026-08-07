@@ -12,7 +12,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.blockentity.support.MePatternDecodeHelper;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
-import com.beipuo.mekenergistics.network.packet.CycleAeOutputTypePacket;
+import com.beipuo.mekenergistics.network.packet.SetAeOutputModePacket;
 import com.beipuo.mekenergistics.network.packet.SetPatternTerminalNamePacket;
 import com.beipuo.mekenergistics.network.packet.SetPassiveCraftingSettingsPacket;
 import com.beipuo.mekenergistics.network.packet.SetSmartPatternMultiplicationPacket;
@@ -159,7 +159,7 @@ public final class MePatternWindowOverlay {
                     new PassiveCraftingAccess(machine::hasPassiveCraftingUpgrade,
                             () -> machine.getPassiveCraftingSettings().intervalTicks(),
                             () -> machine.getPassiveCraftingSettings().multiplier(), machine::setPassiveCraftingSettings),
-                    new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode),
+                    new OutputAccess(machine::getAeOutputMode, machine::setAeOutputMode),
                     new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
         if (container.getTileEntity() instanceof MeAeMachine machine) {
@@ -177,7 +177,7 @@ public final class MePatternWindowOverlay {
                     new PassiveCraftingAccess(machine::hasPassiveCraftingUpgrade,
                             () -> machine.getPassiveCraftingSettings().intervalTicks(),
                             () -> machine.getPassiveCraftingSettings().multiplier(), machine::setPassiveCraftingSettings),
-                    new OutputAccess(machine::getAeOutputMode, machine::cycleAeOutputMode),
+                    new OutputAccess(machine::getAeOutputMode, machine::setAeOutputMode),
                     new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
         return null;
@@ -272,13 +272,13 @@ public final class MePatternWindowOverlay {
         void set(int intervalTicks, long multiplier);
     }
 
-    private record OutputAccess(Supplier<AeOutputMode> getter, Consumer<TransmissionType> toggler) {
+    private record OutputAccess(Supplier<AeOutputMode> getter, Consumer<AeOutputMode> setter) {
         private AeOutputMode get() {
             return this.getter.get();
         }
 
-        private void toggle(TransmissionType type) {
-            this.toggler.accept(type);
+        private void set(AeOutputMode mode) {
+            this.setter.accept(mode);
         }
     }
 
@@ -559,9 +559,10 @@ public final class MePatternWindowOverlay {
         }
 
         private static boolean toggleOutput(Target target, TransmissionType type) {
-            target.outputAccess().toggle(type);
-            PacketDistributor.sendToServer(new CycleAeOutputTypePacket(
-                    target.container().getTileEntity().getBlockPos(), type));
+            AeOutputMode mode = target.outputAccess().get().toggle(type);
+            target.outputAccess().set(mode);
+            PacketDistributor.sendToServer(new SetAeOutputModePacket(
+                    target.container().getTileEntity().getBlockPos(), mode));
             return true;
         }
 
