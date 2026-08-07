@@ -1,6 +1,10 @@
 package com.beipuo.mekenergistics.compat.jade;
 
 import appeng.core.definitions.AEBlocks;
+import appeng.api.AECapabilities;
+import appeng.api.config.Actionable;
+import appeng.api.config.PowerMultiplier;
+import appeng.api.networking.IInWorldGridNodeHost;
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
@@ -9,6 +13,9 @@ import com.beipuo.mekenergistics.menu.MePatternMachineContainer;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
 import com.beipuo.mekenergistics.registry.ModItems;
 import java.lang.reflect.Proxy;
+import mekanism.api.energy.IEnergyContainer;
+import mekanism.common.block.attribute.Attribute;
+import mekanism.common.block.attribute.AttributeHasBounding;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
@@ -34,6 +41,8 @@ public final class MeAeStatusGameTests {
     private static final BlockPos UPGRADED_MACHINE = new BlockPos(1, 1, 2);
     private static final BlockPos ME_FACTORY = new BlockPos(2, 1, 1);
     private static final BlockPos ME_BASE_MACHINE = new BlockPos(2, 1, 2);
+    private static final BlockPos LARGE_MACHINE = new BlockPos(1, 1, 1);
+    private static final BlockPos LARGE_MACHINE_ENERGY_CELL = new BlockPos(1, 1, 3);
 
     private MeAeStatusGameTests() {
     }
@@ -48,6 +57,9 @@ public final class MeAeStatusGameTests {
         helper.startSequence()
                 .thenExecuteAfter(1, () -> {
                     TileEntityMekanism tile = requiredTile(helper, UPGRADED_MACHINE);
+                    drainLocalEnergy(helper, tile, "Mekanism machine before ME upgrade");
+                    drainLocalEnergy(helper, requiredTile(helper, ME_FACTORY), "ME factory");
+                    drainLocalEnergy(helper, requiredTile(helper, ME_BASE_MACHINE), "ME base machine");
                     CompoundTag data = new CompoundTag();
                     MeAeStatusDataProvider.INSTANCE.appendServerData(data, accessor(tile));
                     helper.assertTrue(!data.contains(MeAeStatusDataProvider.TAG_AE_STATE),
@@ -63,8 +75,107 @@ public final class MeAeStatusGameTests {
                     assertJadeOnline(helper, upgradedTile, "upgraded Mekanism machine");
                     assertJadeOnline(helper, requiredTile(helper, ME_FACTORY), "ME factory");
                     assertBaseMachinePatternSlots(helper, requiredTile(helper, ME_BASE_MACHINE));
+                    assertLocalEnergyFilled(helper, upgradedTile, "upgraded Mekanism machine");
+                    assertLocalEnergyFilled(helper, requiredTile(helper, ME_FACTORY), "ME factory");
+                    assertLocalEnergyFilled(helper, requiredTile(helper, ME_BASE_MACHINE), "ME base machine");
                 })
                 .thenSucceed();
+    }
+
+    @GameTest(template = "empty_3x3x3", timeoutTicks = 4 * SharedConstants.TICKS_PER_SECOND)
+    public static void meLargeAntiprotonicRefillsLocalFeBeforeRecipeTick(GameTestHelper helper) {
+        runLargeAntiprotonicRefillTest(helper,
+                "mekenergistics:me_large_antiprotonic_nucleosynthesizer", false);
+    }
+
+    @GameTest(template = "empty_3x3x3", timeoutTicks = 5 * SharedConstants.TICKS_PER_SECOND)
+    public static void upgradedLargeAntiprotonicRefillsLocalFeBeforeRecipeTick(GameTestHelper helper) {
+        runLargeAntiprotonicRefillTest(helper,
+                "mekmm:large_antiprotonic_nucleosynthesizer", true);
+    }
+
+    private static void runLargeAntiprotonicRefillTest(GameTestHelper helper, String blockId,
+            boolean installUpgrade) {
+        helper.setBlock(LARGE_MACHINE, requiredBlock(blockId));
+        var largeState = helper.getBlockState(LARGE_MACHINE);
+        AttributeHasBounding bounding = Attribute.get(largeState, AttributeHasBounding.class);
+        helper.assertTrue(bounding != null, blockId + " has no large-machine bounding attribute");
+        bounding.placeBoundingBlocks(helper.getLevel(), helper.absolutePos(LARGE_MACHINE), largeState);
+
+        helper.startSequence()
+                .thenExecuteAfter(1, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, LARGE_MACHINE);
+                    // The controller fills a 3x3 footprint. Attach power after its port nodes exist.
+                    helper.setBlock(LARGE_MACHINE_ENERGY_CELL, AEBlocks.CREATIVE_ENERGY_CELL.block());
+                    drainLocalEnergy(helper, tile, blockId);
+                    if (installUpgrade) {
+                        helper.assertTrue(tile instanceof MeUpgradeableMachine upgradeable
+                                        && upgradeable.isMeUpgradeTarget(),
+                                blockId + " is missing its ME upgrade target");
+                        tile.getComponent().getUpgradeSlot()
+                                .setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+                    }
+                })
+                .thenExecuteAfter(2 * SharedConstants.TICKS_PER_SECOND, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, LARGE_MACHINE);
+                    if (installUpgrade) {
+                        helper.assertTrue(tile instanceof MeUpgradeableMachine upgradeable
+                                        && upgradeable.isMeUpgradeActive(),
+                                blockId + " did not activate its ME upgrade");
+                    }
+                    assertLargeMachinePortConnected(helper, tile, blockId);
+                    assertJadeOnline(helper, tile, blockId);
+                    drainLocalEnergy(helper, tile, blockId + " immediately before its recipe tick");
+                })
+                .thenExecuteAfter(1, () -> assertLocalEnergyFilled(helper,
+                        requiredTile(helper, LARGE_MACHINE), blockId))
+                .thenSucceed();
+    }
+
+    private static void assertLargeMachinePortConnected(GameTestHelper helper, TileEntityMekanism tile,
+            String blockId) {
+        helper.assertTrue(tile instanceof MeAeMachine, blockId + " does not implement MeAeMachine");
+        MeAeMachine machine = (MeAeMachine) tile;
+        BlockPos relativePort = LARGE_MACHINE.relative(net.minecraft.core.Direction.SOUTH);
+        BlockPos absolutePort = helper.absolutePos(relativePort);
+        var mainNode = machine.getMainNode().getNode();
+        var portNode = machine.getRecipeAeSupport()
+                .getLargeMachineGridNode(absolutePort, net.minecraft.core.Direction.SOUTH);
+        IInWorldGridNodeHost host = helper.getLevel().getCapability(
+                AECapabilities.IN_WORLD_GRID_NODE_HOST, absolutePort, null);
+        helper.assertTrue(mainNode != null && mainNode.isActive(),
+                blockId + " did not join the powered AE network: main=" + nodeState(mainNode)
+                        + ", port=" + nodeState(portNode)
+                        + ", host=" + (host != null)
+                        + ", portBlock=" + BuiltInRegistries.BLOCK.getKey(helper.getBlockState(relativePort).getBlock())
+                        + ", energyBlock=" + BuiltInRegistries.BLOCK.getKey(
+                                helper.getBlockState(LARGE_MACHINE_ENERGY_CELL).getBlock()));
+    }
+
+    private static String nodeState(appeng.api.networking.IGridNode node) {
+        return node == null ? "null" : node.isActive() ? "active" : "inactive";
+    }
+
+    private static void drainLocalEnergy(GameTestHelper helper, TileEntityMekanism tile, String description) {
+        var containers = tile.getEnergyContainers(null);
+        helper.assertTrue(!containers.isEmpty(), description + " has no local energy container");
+        for (IEnergyContainer container : containers) {
+            container.setEnergy(0);
+        }
+    }
+
+    private static void assertLocalEnergyFilled(GameTestHelper helper, TileEntityMekanism tile, String description) {
+        var containers = tile.getEnergyContainers(null);
+        helper.assertTrue(!containers.isEmpty(), description + " has no local energy container");
+        for (IEnergyContainer container : containers) {
+            double simulatedAe = tile instanceof MeAeMachine machine && machine.getGrid() != null
+                    ? machine.getGrid().getEnergyService().extractAEPower(100, Actionable.SIMULATE, PowerMultiplier.ONE)
+                    : -1;
+            helper.assertTrue(container.getMaxEnergy() > 0 && container.getEnergy() == container.getMaxEnergy(),
+                    description + " did not refill local FE from the connected AE network: "
+                            + container.getEnergy() + "/" + container.getMaxEnergy()
+                            + ", simulated AE extraction=" + simulatedAe);
+        }
     }
 
     private static void assertBaseMachinePatternSlots(GameTestHelper helper, TileEntityMekanism tile) {

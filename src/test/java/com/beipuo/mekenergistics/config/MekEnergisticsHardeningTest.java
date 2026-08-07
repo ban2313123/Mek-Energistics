@@ -47,7 +47,7 @@ class MekEnergisticsHardeningTest {
         int serverSpec = source.indexOf("private static ModConfigSpec buildServerSpec");
         int clientSpec = source.indexOf("private static ModConfigSpec buildClientSpec");
         assertTrue(serverSpec >= 0 && clientSpec > serverSpec, "Expected separate spec builders");
-        for (String synced : new String[] {"patternPages", "preferLocalFe", "preferAppliedFluxNetworkFe"}) {
+        for (String synced : new String[] {"patternPages", "preferNetworkEnergy", "preferAppliedFluxNetworkFe"}) {
             int defined = source.indexOf("\"" + synced + "\"");
             assertTrue(defined > serverSpec && defined < clientSpec,
                     synced + " must be defined on the server spec");

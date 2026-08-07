@@ -7,6 +7,7 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
+import java.util.function.LongConsumer;
 import java.util.function.LongUnaryOperator;
 import java.util.function.Supplier;
 import mekanism.api.Action;
@@ -38,7 +39,7 @@ public final class MeNetworkEnergyHelper {
         if (automationType != AutomationType.INTERNAL || grid == null) {
             return extractLocal(localEnergy, amount, action, automationType);
         }
-        if (MekEnergisticsConfig.preferLocalFe()) {
+        if (!MekEnergisticsConfig.preferNetworkEnergy()) {
             long localExtracted = extractLocal(localEnergy, amount, action, automationType);
             return localExtracted + extractNetworkFe(grid, source, amount - localExtracted, action);
         }
@@ -99,6 +100,29 @@ public final class MeNetworkEnergyHelper {
             extracted += AppliedFluxEnergyBridge.extractFe(grid, requestedFe, actionable, source);
         }
         return extracted;
+    }
+
+    public static long refillLocalEnergy(IEnergyContainer localEnergy, IGrid grid, IActionSource source) {
+        if (localEnergy == null || grid == null) {
+            return 0;
+        }
+        return refillEnergyBuffer(localEnergy.getEnergy(), localEnergy.getMaxEnergy(),
+                requested -> extractNetworkFe(grid, source, requested, Action.EXECUTE), localEnergy::setEnergy);
+    }
+
+    static long refillEnergyBuffer(long currentEnergy, long maxEnergy, LongUnaryOperator networkExtraction,
+            LongConsumer energySetter) {
+        if (currentEnergy >= maxEnergy || maxEnergy <= 0) {
+            return 0;
+        }
+        long normalizedCurrent = Math.max(0, currentEnergy);
+        long remainingCapacity = maxEnergy - normalizedCurrent;
+        long extracted = networkExtraction.applyAsLong(remainingCapacity);
+        long injected = Math.min(remainingCapacity, Math.max(0, extracted));
+        if (injected > 0) {
+            energySetter.accept(normalizedCurrent + injected);
+        }
+        return injected;
     }
 
     public static IEnergyContainer recipeEnergyView(MachineEnergyContainer<?> energyContainer, Supplier<IGrid> gridSupplier, IActionSource source) {

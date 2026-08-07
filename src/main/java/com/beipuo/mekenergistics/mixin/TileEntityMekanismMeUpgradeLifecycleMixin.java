@@ -3,6 +3,7 @@ package com.beipuo.mekenergistics.mixin;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
+import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
 import com.beipuo.mekenergistics.upgrade.StandaloneUpgradePersistence;
@@ -15,9 +16,12 @@ import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeUpgradeSupport;
 import mekanism.common.tile.base.TileEntityMekanism;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -37,6 +41,22 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
             return node == null ? null : node.getNode();
         }
         return null;
+    }
+
+    @Inject(method = "tickServer", at = @At(value = "INVOKE",
+            target = "Lmekanism/common/tile/base/TileEntityMekanism;onUpdateServer()Z"))
+    private static void mekenergistics$refillLocalEnergyFromMe(Level level, BlockPos pos, BlockState state,
+            TileEntityMekanism tile, CallbackInfo ci) {
+        if (!(tile instanceof MeAeMachine machine)) {
+            return;
+        }
+        if (!(state.getBlock() instanceof MeMekanismMachineBlock)) {
+            if (!(tile instanceof MeUpgradeableMachine upgradeable)
+                    || !upgradeable.isMeUpgradeTarget() || !upgradeable.isMeUpgradeActive()) {
+                return;
+            }
+        }
+        machine.getRecipeAeSupport().refillLocalEnergyBuffers();
     }
 
     @Inject(method = "supportsUpgrades", at = @At("RETURN"), cancellable = true)

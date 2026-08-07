@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
+import mekanism.api.energy.IEnergyContainer;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -441,6 +442,17 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     public final IGrid getGrid() {
         IGridNode node = this.mainNode.getNode();
         return node == null || !node.isActive() ? null : node.getGrid();
+    }
+
+    /** Refills every local FE buffer before Mekanism evaluates machine work for this tick. */
+    public final void refillLocalEnergyBuffers() {
+        IGrid grid = getGrid();
+        if (grid == null) {
+            return;
+        }
+        for (IEnergyContainer energyContainer : this.ownerTile.getEnergyContainers(null)) {
+            MeNetworkEnergyHelper.refillLocalEnergy(energyContainer, grid, this.actionSource);
+        }
     }
 
     public final boolean isSmartPatternMultiplicationEnabled() {

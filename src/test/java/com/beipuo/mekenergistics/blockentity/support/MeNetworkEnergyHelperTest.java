@@ -1,8 +1,12 @@
 package com.beipuo.mekenergistics.blockentity.support;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 
@@ -38,5 +42,92 @@ class MeNetworkEnergyHelperTest {
     @Test
     void combinedEnergySaturatesInsteadOfOverflowing() {
         assertEquals(Long.MAX_VALUE, MeNetworkEnergyHelper.totalAvailableEnergy(Long.MAX_VALUE - 10, 20));
+    }
+
+    @Test
+    void emptyLocalBufferIsFilledToCapacityFromTheNetwork() {
+        AtomicLong requested = new AtomicLong();
+        AtomicLong stored = new AtomicLong();
+
+        long injected = MeNetworkEnergyHelper.refillEnergyBuffer(0, 100, amount -> {
+            requested.set(amount);
+            return amount;
+        }, stored::set);
+
+        assertEquals(100, requested.get());
+        assertEquals(100, injected);
+        assertEquals(100, stored.get());
+    }
+
+    @Test
+    void partialBufferOnlyRequestsItsMissingEnergy() {
+        AtomicLong requested = new AtomicLong();
+        AtomicLong stored = new AtomicLong();
+
+        long injected = MeNetworkEnergyHelper.refillEnergyBuffer(40, 100, amount -> {
+            requested.set(amount);
+            return amount;
+        }, stored::set);
+
+        assertEquals(60, requested.get());
+        assertEquals(60, injected);
+        assertEquals(100, stored.get());
+    }
+
+    @Test
+    void networkShortageOnlyAddsEnergyActuallyExtracted() {
+        AtomicLong requested = new AtomicLong();
+        AtomicLong stored = new AtomicLong();
+
+        long injected = MeNetworkEnergyHelper.refillEnergyBuffer(40, 100, amount -> {
+            requested.set(amount);
+            return 25;
+        }, stored::set);
+
+        assertEquals(60, requested.get());
+        assertEquals(25, injected);
+        assertEquals(65, stored.get());
+    }
+
+    @Test
+    void fullBufferDoesNotTouchTheNetworkOrRewriteEnergy() {
+        AtomicBoolean extracted = new AtomicBoolean();
+        AtomicBoolean stored = new AtomicBoolean();
+
+        long injected = MeNetworkEnergyHelper.refillEnergyBuffer(100, 100, amount -> {
+            extracted.set(true);
+            return amount;
+        }, amount -> stored.set(true));
+
+        assertEquals(0, injected);
+        assertFalse(extracted.get());
+        assertFalse(stored.get());
+    }
+
+    @Test
+    void unavailableNetworkEnergyLeavesTheLocalBufferUnchanged() {
+        AtomicBoolean stored = new AtomicBoolean();
+
+        long injected = MeNetworkEnergyHelper.refillEnergyBuffer(40, 100, amount -> 0,
+                ignored -> stored.set(true));
+
+        assertEquals(0, injected);
+        assertFalse(stored.get());
+    }
+
+    @Test
+    void allMeMachinesRefillBeforeTheirMekanismServerTick() throws Exception {
+        String lifecycleMixin = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/mixin/TileEntityMekanismMeUpgradeLifecycleMixin.java"));
+        String aeSupport = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/blockentity/support/AbstractMeAeSupport.java"));
+
+        assertTrue(lifecycleMixin.contains("@Inject(method = \"tickServer\""));
+        assertTrue(lifecycleMixin.contains("TileEntityMekanism;onUpdateServer()Z"));
+        assertTrue(lifecycleMixin.contains("TileEntityMekanism tile, CallbackInfo ci"));
+        assertTrue(lifecycleMixin.contains("state.getBlock() instanceof MeMekanismMachineBlock"));
+        assertTrue(lifecycleMixin.contains("!upgradeable.isMeUpgradeTarget() || !upgradeable.isMeUpgradeActive()"));
+        assertTrue(lifecycleMixin.contains("machine.getRecipeAeSupport().refillLocalEnergyBuffers()"));
+        assertTrue(aeSupport.contains("ownerTile.getEnergyContainers(null)"));
     }
 }

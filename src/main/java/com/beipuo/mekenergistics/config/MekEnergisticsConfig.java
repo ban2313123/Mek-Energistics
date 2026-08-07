@@ -15,7 +15,7 @@ public final class MekEnergisticsConfig {
 
     private static ModConfigSpec.IntValue patternPages;
     private static ModConfigSpec.BooleanValue preferAppliedFluxNetworkFe;
-    private static ModConfigSpec.BooleanValue preferLocalFe;
+    private static ModConfigSpec.BooleanValue preferNetworkEnergy;
     private static ModConfigSpec serverSpec;
 
     private static ModConfigSpec.BooleanValue hideJeiMachineVariants;
@@ -47,11 +47,11 @@ public final class MekEnergisticsConfig {
                         "When enabled, Applied Flux FE is drained before AE network energy.",
                         "When disabled, AE network energy is drained before Applied Flux FE.")
                 .define("preferAppliedFluxNetworkFe", false);
-        preferLocalFe = builder
-                .comment("Prefer the machine's local FE buffer when it is connected to an AE network.",
-                        "When enabled, local FE is drained before network energy.",
-                        "When disabled, network energy is drained before local FE.")
-                .define("preferLocalFe", true);
+        preferNetworkEnergy = builder
+                .comment("Prefer network energy when an ME machine is connected to an AE network.",
+                        "When enabled, AE/Applied Flux energy is drained before the machine's local FE buffer.",
+                        "When disabled, the local FE buffer is drained before network energy.")
+                .define("preferNetworkEnergy", true);
         serverSpec = builder.build();
         return serverSpec;
     }
@@ -90,7 +90,7 @@ public final class MekEnergisticsConfig {
         return serverReady() && preferAppliedFluxNetworkFe.get();
     }
 
-    public static boolean preferLocalFe() {
-        return !serverReady() || preferLocalFe.get();
+    public static boolean preferNetworkEnergy() {
+        return !serverReady() || preferNetworkEnergy.get();
     }
 }
