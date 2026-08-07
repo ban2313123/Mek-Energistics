@@ -69,6 +69,18 @@ public final class MeFactoryUpgradeGameTests {
     }
 
     @GameTest(template = "empty_3x3x3", timeoutTicks = 4 * SharedConstants.TICKS_PER_SECOND)
+    public static void mekExtrasSupremeEnrichingFactoryResolvesPatternLayout(GameTestHelper helper) {
+        List<String> roots = List.of("mekanism_extras:supreme_enriching_factory");
+        helper.setBlock(position(0), requiredBlock(roots.getFirst()));
+
+        helper.startSequence()
+                .thenExecuteAfter(1, () -> installUpgrade(helper, roots, roots.getFirst()))
+                .thenExecuteAfter(SharedConstants.TICKS_PER_SECOND + 2,
+                        () -> assertActiveFactory(helper, roots, roots.getFirst()))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty_3x3x3", timeoutTicks = 4 * SharedConstants.TICKS_PER_SECOND)
     public static void combinedMoreMachineFactoriesActivateFromStandardSlot(GameTestHelper helper) {
         for (int index = 0; index < EMEKE_MORE_MACHINE_FACTORIES.size(); index++) {
             helper.setBlock(position(index), requiredBlock(EMEKE_MORE_MACHINE_FACTORIES.get(index)));

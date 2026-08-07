@@ -5,6 +5,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.upgrade.BasicFactoryUpgradeAccess;
+import com.beipuo.mekenergistics.upgrade.EvolvedAlloyingFactoryUpgradeAccess;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeRecipeMachineRuntime;
 import com.jerry.mekextras.common.tile.factory.TileEntityExtraFactory;
 import com.jerry.mekextras.common.tile.factory.TileEntityExtraItemStackChemicalToItemStackFactory;
@@ -76,7 +77,7 @@ public abstract class MekExtrasFactoryMeUpgradeMixin implements BasicFactoryUpgr
 
     @Override
     public IInventorySlot meUpgradeSecondExtraSlot() {
-        return (Object) this instanceof MekExtrasAlloyingFactoryAccessor alloying
+        return (Object) this instanceof EvolvedAlloyingFactoryUpgradeAccess alloying
                 ? alloying.mekenergistics$getSecondExtraSlot() : null;
     }
 

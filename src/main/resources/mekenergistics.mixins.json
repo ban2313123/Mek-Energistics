@@ -49,7 +49,6 @@
     "TileEntityChemicalFactoryMeUpgradeEnergyMixin",
     "EvolvedRecipeMachineMeUpgradeMixin",
     "EvolvedAlloyingFactoryMeUpgradeMixin",
-    "MekExtrasAlloyingFactoryAccessor",
     "MekExtrasAlloyingFactoryMeUpgradeEnergyMixin",
     "MekExtrasFactoryMeUpgradeMixin",
     "MekExtrasFactoryMeUpgradeEnergyMixin",

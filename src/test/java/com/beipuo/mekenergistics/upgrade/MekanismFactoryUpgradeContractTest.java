@@ -158,6 +158,20 @@ class MekanismFactoryUpgradeContractTest {
     }
 
     @Test
+    void mekExtrasFactoriesReachTheAlloyingSlotWithoutLoadingAMixinAccessor() throws IOException {
+        String factoryMixin = Files.readString(mixinSource("MekExtrasFactoryMeUpgradeMixin"));
+        String alloyingMixin = Files.readString(mixinSource("MekExtrasAlloyingFactoryMeUpgradeEnergyMixin"));
+        String mixinConfig = Files.readString(Path.of("src/main/resources/mekenergistics.mixins.json"));
+
+        assertTrue(factoryMixin.contains("instanceof EvolvedAlloyingFactoryUpgradeAccess alloying"));
+        assertFalse(factoryMixin.contains("MekExtrasAlloyingFactoryAccessor"),
+                "Mekanism Extras base factory must not load a Mixin accessor class directly");
+        assertTrue(alloyingMixin.contains("implements EvolvedAlloyingFactoryUpgradeAccess"));
+        assertTrue(alloyingMixin.contains("@Shadow LimitedInputInventorySlot secondExtraSlot"));
+        assertFalse(mixinConfig.contains("\"MekExtrasAlloyingFactoryAccessor\""));
+    }
+
+    @Test
     void mekExtrasDissolvingAccessorUsesTheExactRuntimeFieldDescriptor() throws IOException {
         String accessor = Files.readString(Path.of(
                 "src/main/java/com/beipuo/mekenergistics/mixin/TileEntityExtraDissolvingFactoryAccessor.java"));

@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.0.0-beta4
+
+### English
+
+#### Fix
+
+- Fixed a server crash when a Mekanism Extras factory with an active ME upgrade resolved its pattern input layout. Base factories no longer directly load a Mixin accessor, while alloying factories retain second-input routing through their dedicated Mixin bridge.
+
+### 中文
+
+#### 修复
+
+- 修复 Mekanism Extras 工厂启用 ME 升级后，解析样板输入布局时引发服务端崩溃的问题。基础工厂不再直接加载 Mixin 访问器，合金工厂则通过专用 Mixin 桥接保留第二输入槽路由。
+
 ## 3.0.0-beta3
 
 ### English
