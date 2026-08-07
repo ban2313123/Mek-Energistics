@@ -216,7 +216,7 @@ dependencies {
     localRuntime "curse.maven:ae2-lightning-tech-1527395:8575479"       // AE2 Lightning Tech, local compatibility runtime
     localRuntime "curse.maven:thunderbolt-core-1631756:8580186"         // Thunderbolt Core, local compatibility runtime
     localRuntime "curse.maven:ldlib-626676:8394241"                      // ldlib, local test runtime for DataEnergistics/NeoECOAE
-    localRuntime "curse.maven:data-energistics-1565514:8299879"          // published DataEnergistics 2.0.0 baseline
+    localRuntime "curse.maven:data-energistics-1565514:8583188"          // data_energistics 2.4.2
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

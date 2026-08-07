@@ -56,40 +56,52 @@ public final class StandaloneUpgradePersistence {
     }
 
     public static int loadCount(CompoundTag tag) {
-        return loadCount(tag, MePatternProviderUpgrade.get());
+        return loadCount(tag, MePatternProviderUpgrade.SERIALIZED_NAME);
     }
 
     public static int loadCount(CompoundTag tag, Upgrade upgrade) {
+        return loadCount(tag, upgrade.getSerializedName());
+    }
+
+    private static int loadCount(CompoundTag tag, String serializedName) {
         if (tag.contains(TAG_UPGRADES, Tag.TAG_COMPOUND)) {
-            return Math.max(0, tag.getCompound(TAG_UPGRADES).getInt(upgrade.getSerializedName()));
+            return Math.max(0, tag.getCompound(TAG_UPGRADES).getInt(serializedName));
         }
-        return loadEmpoweredCount(tag, upgrade);
+        return loadEmpoweredCount(tag, serializedName);
     }
 
     public static int loadEmpoweredCount(CompoundTag tag) {
-        return loadEmpoweredCount(tag, MePatternProviderUpgrade.get());
+        return loadEmpoweredCount(tag, MePatternProviderUpgrade.SERIALIZED_NAME);
     }
 
     public static int loadEmpoweredCount(CompoundTag tag, Upgrade upgrade) {
+        return loadEmpoweredCount(tag, upgrade.getSerializedName());
+    }
+
+    private static int loadEmpoweredCount(CompoundTag tag, String serializedName) {
         for (String key : new String[] {
                 "mekanism_empowered_core:additional_upgrades",
                 "additional_upgrades"}) {
             if (tag.contains(key, Tag.TAG_COMPOUND)) {
-                return Math.max(0, tag.getCompound(key).getInt(upgrade.getSerializedName()));
+                return Math.max(0, tag.getCompound(key).getInt(serializedName));
             }
         }
         return 0;
     }
 
     public static void saveCount(CompoundTag tag, int count) {
-        saveCount(tag, MePatternProviderUpgrade.get(), count);
+        saveCount(tag, MePatternProviderUpgrade.SERIALIZED_NAME, count);
     }
 
     public static void saveCount(CompoundTag tag, Upgrade upgrade, int count) {
+        saveCount(tag, upgrade.getSerializedName(), count);
+    }
+
+    private static void saveCount(CompoundTag tag, String serializedName, int count) {
         CompoundTag custom = tag.contains(TAG_UPGRADES, Tag.TAG_COMPOUND)
                 ? tag.getCompound(TAG_UPGRADES).copy() : new CompoundTag();
-        if (count > 0) custom.putInt(upgrade.getSerializedName(), count);
-        else custom.remove(upgrade.getSerializedName());
+        if (count > 0) custom.putInt(serializedName, count);
+        else custom.remove(serializedName);
         if (custom.isEmpty()) tag.remove(TAG_UPGRADES);
         else tag.put(TAG_UPGRADES, custom);
     }
