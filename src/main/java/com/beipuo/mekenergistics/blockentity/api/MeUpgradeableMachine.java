@@ -36,27 +36,33 @@ public interface MeUpgradeableMachine extends MeAeMachine, MeSmartCableConnectio
 
     @Override
     default ItemStack getTerminalIconStack() {
-        return isMeUpgradeTarget()
-                ? profileTerminalIcon()
-                : MeAeMachine.super.getTerminalIconStack();
+        MeUpgradeMachineProfile<?> profile = getMeUpgradeProfile();
+        return profile == null
+                ? new ItemStack(meUpgradeTile().getBlockState().getBlock())
+                : profileTerminalIcon(profile);
     }
 
     @Override
     default Component getPatternTerminalDisplayName() {
-        if (!isMeUpgradeTarget()) {
-                return MeAeMachine.super.getPatternTerminalDisplayName();
+        MeUpgradeMachineProfile<?> profile = getMeUpgradeProfile();
+        if (profile == null) {
+            return meUpgradeTile().getBlockState().getBlock().getName();
         }
         String customName = getCustomPatternTerminalName();
-        return customName.isBlank() ? profileTerminalName() : Component.literal(customName);
+        return customName.isBlank() ? profileTerminalName(profile) : Component.literal(customName);
+    }
+
+    private TileEntityMekanism meUpgradeTile() {
+        return (TileEntityMekanism) this;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private ItemStack profileTerminalIcon() {
-        return ((MeUpgradeMachineProfile) getMeUpgradeProfile()).terminalIconFor((TileEntityMekanism) this);
+    private ItemStack profileTerminalIcon(MeUpgradeMachineProfile<?> profile) {
+        return ((MeUpgradeMachineProfile) profile).terminalIconFor(meUpgradeTile());
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private Component profileTerminalName() {
-        return ((MeUpgradeMachineProfile) getMeUpgradeProfile()).terminalNameFor((TileEntityMekanism) this);
+    private Component profileTerminalName(MeUpgradeMachineProfile<?> profile) {
+        return ((MeUpgradeMachineProfile) profile).terminalNameFor(meUpgradeTile());
     }
 }

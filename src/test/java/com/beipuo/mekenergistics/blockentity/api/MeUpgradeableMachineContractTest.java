@@ -17,6 +17,8 @@ class MeUpgradeableMachineContractTest {
             "src/main/java/com/beipuo/mekenergistics/registry/ModBlockEntities.java");
     private static final Path PACKET_TARGET = Path.of(
             "src/main/java/com/beipuo/mekenergistics/network/packet/ServerPacketTarget.java");
+    private static final Path UPGRADE_CONTRACT = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/blockentity/api/MeUpgradeableMachine.java");
 
     @Test
     void attachmentTargetsOnlyTheVanillaEnrichmentChamber() throws IOException {
@@ -76,8 +78,7 @@ class MeUpgradeableMachineContractTest {
     @Test
     void machineSpecificSurfaceIsDelegatedToAReusableProfile() throws IOException {
         String mixin = Files.readString(ELECTRIC_MIXIN);
-        String contract = Files.readString(Path.of(
-                "src/main/java/com/beipuo/mekenergistics/blockentity/api/MeUpgradeableMachine.java"));
+        String contract = Files.readString(UPGRADE_CONTRACT);
         String profile = Files.readString(Path.of(
                 "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeMachineProfile.java"));
 
@@ -89,5 +90,19 @@ class MeUpgradeableMachineContractTest {
         assertTrue(profile.contains("Predicate<TILE> target"));
         assertTrue(profile.contains("Function<TILE, MeInputLayout> inputLayout"));
         assertTrue(profile.contains("Function<TILE, List<? extends MeOutputPort>> outputPorts"));
+    }
+
+    @Test
+    void unsupportedMixinSubtypeUsesItsOwnBlockIdentityInPatternTerminals() throws IOException {
+        String contract = Files.readString(UPGRADE_CONTRACT);
+
+        assertTrue(contract.contains("MeUpgradeMachineProfile<?> profile = getMeUpgradeProfile();"));
+        assertTrue(contract.contains("profile == null"));
+        assertTrue(contract.contains("new ItemStack(meUpgradeTile().getBlockState().getBlock())"));
+        assertTrue(contract.contains("meUpgradeTile().getBlockState().getBlock().getName()"));
+        assertTrue(contract.contains("profileTerminalIcon(profile)"));
+        assertTrue(contract.contains("profileTerminalName(profile)"));
+        assertFalse(contract.contains("MeAeMachine.super.getTerminalIconStack()"));
+        assertFalse(contract.contains("MeAeMachine.super.getPatternTerminalDisplayName()"));
     }
 }

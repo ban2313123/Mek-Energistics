@@ -1,5 +1,37 @@
 # Changelog
 
+## 3.0.0-beta3
+
+### English
+
+#### Fix
+
+- Fixed unsupported third-party Mekanism factory screens inheriting the ME upgrade hooks and displaying a phantom pattern window. External machines now expose the pattern window only when they match a supported upgrade profile and have an active ME upgrade.
+- Fixed a client crash when paging through a pattern window whose backing container did not provide the corresponding virtual slots. Missing page slots are now cleared without being passed to Mekanism's non-null virtual-slot API.
+
+### 中文
+
+#### 修复
+
+- 修复不受支持的第三方 Mekanism 工厂界面因继承 ME 升级钩子而错误显示样板窗口的问题。外部机器现在仅在匹配受支持的升级配置且 ME 升级已启用时显示样板窗口。
+- 修复样板窗口缺少对应容器虚拟槽时，翻页导致客户端崩溃的问题。缺失的页面槽现在会被安全清空，不再传给 Mekanism 要求非空的虚拟槽接口。
+
+## 3.0.0-beta2
+
+### English
+
+#### Fix
+
+- Fixed a server crash when AE2 WCWT scanned an unsupported Mekanism addon machine that inherited the ME upgrade interface without a matching machine profile. Pattern-terminal grouping now falls back to the source block's icon and name instead of dereferencing the absent profile.
+- Fixed connected ME machines only exposing AE network energy to recipe checks instead of their real local FE state. Every standalone ME machine and machine with an active ME upgrade now draws the exact missing energy from AE before its server work tick and stores it in all local energy containers, so GUIs, parallel-operation limits, and machine-specific logic see the supplied FE.
+
+### 中文
+
+#### 修复
+
+- 修复 AE2 WCWT 扫描未受支持的 Mekanism 附属机器时，机器虽继承 ME 升级接口但没有匹配配置而引发的服务端崩溃。样板终端分组现在会回退到原方块的图标和名称，不再解引用空配置。
+- 修复已连接的 ME 机器仅在配方检查中读取 AE 网络能量、本地 FE 状态却未实际更新的问题。现在所有独立 ME 机器及已启用 ME 升级的原机器都会在服务端工作 tick 前，从 AE 网络抽取本地全部能源容器的精确缺口并写入 FE，使 GUI、并行数限制和机器专用逻辑都能读取到实际供能。
+
 ## 3.0.0beta1
 
 ### English

@@ -5,6 +5,7 @@ import appeng.api.stacks.AmountFormat;
 import appeng.api.stacks.GenericStack;
 import appeng.client.gui.me.common.StackSizeRenderer;
 import com.beipuo.mekenergistics.MekEnergistics;
+import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
@@ -18,6 +19,7 @@ import com.beipuo.mekenergistics.network.packet.SetSmartPatternMultiplicationPac
 import com.beipuo.mekenergistics.network.packet.SetTerminalVisibilityPacket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import mekanism.client.SpecialColors;
@@ -56,6 +58,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ScreenEvent;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = MekEnergistics.MODID, value = Dist.CLIENT)
@@ -160,9 +163,14 @@ public final class MePatternWindowOverlay {
                     new TerminalVisibilityAccess(machine::isVisibleInTerminal, machine::setVisibleInPatternAccessTerminal));
         }
         if (container.getTileEntity() instanceof MeAeMachine machine) {
-            if (machine instanceof MeUpgradeableMachine upgradeable
-                    && upgradeable.isMeUpgradeTarget() && !upgradeable.isMeUpgradeActive()) {
-                return null;
+            if (machine instanceof MeUpgradeableMachine upgradeable) {
+                boolean nativeMeMachine = container.getTileEntity().getBlockState().getBlock()
+                        instanceof MeMekanismMachineBlock;
+                boolean upgradeTarget = upgradeable.isMeUpgradeTarget();
+                boolean upgradeActive = upgradeTarget && upgradeable.isMeUpgradeActive();
+                if (!PatternWindowTargetPolicy.shouldShow(nativeMeMachine, upgradeTarget, upgradeActive)) {
+                    return null;
+                }
             }
             return new Target(gui, container, machine.getPatternSlots(), new NameAccess(machine::getCustomPatternTerminalName, machine::setCustomPatternTerminalName),
                     new SmartMultiplicationAccess(machine::isSmartPatternMultiplicationEnabled, machine::setSmartPatternMultiplicationEnabled),
@@ -604,9 +612,26 @@ public final class MePatternWindowOverlay {
         }
 
         @Override
-        public void updateVirtualSlot(IGUIWindow window, IVirtualSlot virtualSlot) {
-            super.updateVirtualSlot(window, virtualSlot);
+        public void updateVirtualSlot(@Nullable IGUIWindow window, @Nullable IVirtualSlot virtualSlot) {
             this.virtualSlot = virtualSlot;
+            if (virtualSlot != null) {
+                super.updateVirtualSlot(window, virtualSlot);
+            }
+        }
+
+        @Override
+        public boolean isElementForSlot(IVirtualSlot virtualSlot) {
+            return this.virtualSlot == virtualSlot;
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            return this.virtualSlot != null && super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        @Override
+        public Optional<?> getIngredient(double mouseX, double mouseY) {
+            return this.virtualSlot == null ? Optional.empty() : Optional.of(this.virtualSlot.getStackToRender());
         }
 
         @Override
