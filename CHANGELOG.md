@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.0.1
+
+### English
+
+#### Fix
+
+- Fixed ME Alloyer, ME Chemixer, ME Solidification Chamber, and ME Thermalizer opening incompatible generic screens instead of their matching Evolved Mekanism GUIs. Native ME variants now also report their built-in AE connection correctly in Jade without requiring an installable ME upgrade.
+- Fixed the fluid-output-to-AE button on normal and large Rotary Condensentrators changing only on the client, resetting after the GUI was reopened, and leaving produced fluid in the machine. The selected output mode is now applied and persisted by the server for native ME machines and supported machines with an ME upgrade, while switching the Rotary Condensentrator conversion direction refreshes its cached chemical/fluid I/O ports.
+
+### 中文
+
+#### 修复
+
+- 修复 ME 合金炉、ME 化学混合机、ME 固化室与 ME 热能机错误打开不兼容的通用界面，而非对应 Evolved Mekanism 原生 GUI 的问题。原生 ME 变体现在无需安装式 ME 升级，也能在 Jade 中正确显示其内置 AE 连接状态。
+- 修复普通及大型回转式冷凝机的“流体输出到 AE”按钮仅在客户端变化、重新打开 GUI 后恢复关闭，并导致产出流体滞留在机器内的问题。所选输出模式现在会由服务端应用并持久保存，同时覆盖原生 ME 机器与安装 ME 升级的受支持机器；切换回转式冷凝机的转换方向时，也会刷新缓存的化学品/流体输入输出端口。
+
 ## 3.0.0
 
 ### English
