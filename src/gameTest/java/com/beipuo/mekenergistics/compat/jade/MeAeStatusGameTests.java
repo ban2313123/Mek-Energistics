@@ -6,13 +6,16 @@ import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.networking.IInWorldGridNodeHost;
 import com.beipuo.mekenergistics.MekEnergistics;
+import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.blockentity.machine.process.MeElectricMachineBlockEntity;
+import com.beipuo.mekenergistics.menu.MePatternMekanismTileContainer;
 import com.beipuo.mekenergistics.menu.MePatternMachineContainer;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
 import com.beipuo.mekenergistics.registry.ModItems;
 import java.lang.reflect.Proxy;
+import java.util.List;
 import mekanism.api.energy.IEnergyContainer;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeHasBounding;
@@ -43,6 +46,11 @@ public final class MeAeStatusGameTests {
     private static final BlockPos ME_BASE_MACHINE = new BlockPos(2, 1, 2);
     private static final BlockPos LARGE_MACHINE = new BlockPos(1, 1, 1);
     private static final BlockPos LARGE_MACHINE_ENERGY_CELL = new BlockPos(1, 1, 3);
+    private static final List<MachinePlacement> EMEK_MACHINES = List.of(
+            new MachinePlacement(new BlockPos(1, 1, 0), "mekenergistics:me_alloyer"),
+            new MachinePlacement(new BlockPos(0, 1, 1), "mekenergistics:me_chemixer"),
+            new MachinePlacement(new BlockPos(2, 1, 1), "mekenergistics:me_solidification_chamber"),
+            new MachinePlacement(new BlockPos(1, 1, 2), "mekenergistics:me_thermalizer"));
 
     private MeAeStatusGameTests() {
     }
@@ -78,6 +86,46 @@ public final class MeAeStatusGameTests {
                     assertLocalEnergyFilled(helper, upgradedTile, "upgraded Mekanism machine");
                     assertLocalEnergyFilled(helper, requiredTile(helper, ME_FACTORY), "ME factory");
                     assertLocalEnergyFilled(helper, requiredTile(helper, ME_BASE_MACHINE), "ME base machine");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty_3x3x3", timeoutTicks = 4 * SharedConstants.TICKS_PER_SECOND)
+    public static void jadeReportsOnlineForEveryEvolvedMeMachine(GameTestHelper helper) {
+        helper.setBlock(ENERGY_CELL, AEBlocks.CREATIVE_ENERGY_CELL.block());
+        EMEK_MACHINES.forEach(machine -> helper.setBlock(machine.position(), requiredBlock(machine.blockId())));
+
+        helper.startSequence()
+                .thenExecuteAfter(2 * SharedConstants.TICKS_PER_SECOND, () -> {
+                    for (MachinePlacement machine : EMEK_MACHINES) {
+                        Block block = helper.getBlockState(machine.position()).getBlock();
+                        helper.assertTrue(block instanceof MeMekanismMachineBlock,
+                                machine.blockId() + " is not covered by Jade's ME machine block registration");
+                        assertJadeOnline(helper, requiredTile(helper, machine.position()), machine.blockId());
+                    }
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty_3x3x3", timeoutTicks = SharedConstants.TICKS_PER_SECOND)
+    public static void everyEvolvedMeMachineCreatesCompatibleMenu(GameTestHelper helper) {
+        EMEK_MACHINES.forEach(machine -> helper.setBlock(machine.position(), requiredBlock(machine.blockId())));
+
+        helper.startSequence()
+                .thenExecuteAfter(1, () -> {
+                    Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+                    for (MachinePlacement machine : EMEK_MACHINES) {
+                        TileEntityMekanism tile = requiredTile(helper, machine.position());
+                        helper.assertTrue(tile instanceof MeAeMachine,
+                                machine.blockId() + " does not implement the ME machine contract");
+                        var menuProvider = ModMenuTypes.getMachineContainer(((MeAeMachine) tile).getMachine())
+                                .getProvider(tile.getDisplayName(), tile, true);
+                        helper.assertTrue(menuProvider != null,
+                                machine.blockId() + " rejected its registered menu tile type");
+                        var menu = menuProvider.createMenu(0, player.getInventory(), player);
+                        helper.assertTrue(menu instanceof MePatternMekanismTileContainer,
+                                machine.blockId() + " did not create the ME pattern container");
+                    }
                 })
                 .thenSucceed();
     }
@@ -245,5 +293,8 @@ public final class MeAeStatusGameTests {
             throw new IllegalStateException("Missing required block " + id);
         }
         return block;
+    }
+
+    private record MachinePlacement(BlockPos position, String blockId) {
     }
 }

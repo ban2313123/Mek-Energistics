@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.compat.jade;
 
 import appeng.api.networking.IGridNode;
+import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import net.minecraft.nbt.CompoundTag;
@@ -21,7 +22,10 @@ public class MeAeStatusDataProvider implements IServerDataProvider<BlockAccessor
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         BlockEntity blockEntity = accessor.getBlockEntity();
+        // Dedicated ME tiles inherit the upgrade mixins of their source tile classes, but their
+        // built-in AE node must be reported even when no installable ME upgrade is present.
         if (blockEntity instanceof MeUpgradeableMachine upgradeable
+                && !(blockEntity.getBlockState().getBlock() instanceof MeMekanismMachineBlock)
                 && upgradeable.isMeUpgradeTarget() && !upgradeable.isMeUpgradeActive()) {
             return;
         }

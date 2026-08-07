@@ -55,9 +55,13 @@ public final class EmekMachineProvider extends AbstractCompatMachineProvider imp
         return Map.of(
                 CompatMachineFamily.EMEK_MACHINE,
                 CompatMachineFamilyAdapter.of(
-                        spec -> spec.machine() == MeMekanismMachine.THERMALIZER
-                                ? EvolvedMekanismMachineMenuTypes.ME_THERMALIZER
-                                : ModMenuTypes.getCoreMachineContainer(spec.machine()),
+                        spec -> switch (spec.machine().identity()) {
+                            case ALLOYER -> EvolvedMekanismMachineMenuTypes.ME_ALLOYER;
+                            case CHEMIXER -> EvolvedMekanismMachineMenuTypes.ME_CHEMIXER;
+                            case SOLIDIFICATION_CHAMBER -> EvolvedMekanismMachineMenuTypes.ME_SOLIDIFIER;
+                            case THERMALIZER -> EvolvedMekanismMachineMenuTypes.ME_THERMALIZER;
+                            default -> throw new IllegalArgumentException("Unknown EMEK machine " + spec.machine());
+                        },
                         (spec, registrar) -> registerMachine(spec.machine(), registrar),
                         EmekMachineProvider::createMachineBlockType,
                         EmekMachineProvider::registerMachineGridNodeHost),
