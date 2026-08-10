@@ -2,14 +2,11 @@ package com.beipuo.mekenergistics.blockentity.support;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.crafting.PatternDetailsHelper;
-import appeng.api.networking.GridFlags;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
-import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.config.Actionable;
-import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.networking.storage.IStorageService;
 import appeng.api.networking.ticking.IGridTickable;
@@ -33,9 +30,7 @@ import com.beipuo.mekenergistics.upgrade.MePassiveCraftingDispatcher;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingSettings;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import mekanism.api.energy.IEnergyContainer;
@@ -54,7 +49,6 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     private static final String TAG_PATTERN_SCHEMA = "AePatternSchema";
     private static final String TAG_PATTERN_TERMINAL_NAME = "PatternTerminalName";
     private static final String TAG_TERMINAL_VISIBLE = "PatternTerminalVisible";
-    private static final String TAG_NODE = "node";
 
     protected final O owner;
     protected final TileEntityMekanism ownerTile;
@@ -66,21 +60,17 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     private final MePassiveCraftingSettings passiveCraftingSettings = new MePassiveCraftingSettings();
     private Boolean clientPassiveCraftingEnabled;
 
-    protected IManagedGridNode mainNode;
     protected int patternPriority;
     protected String patternTerminalName = "";
     protected boolean visibleInPatternAccessTerminal = true;
 
-    private NodeState nodeState = NodeState.NEW;
-    private CompoundTag retainedNodeData;
-    private final CraftingUpdateState craftingUpdateState = new CraftingUpdateState();
-    private final Map<BlockPos, IManagedGridNode> largeMachinePortNodes = new HashMap<>();
+    private final MeAeNodeLifecycle<O> nodeLifecycle;
 
     protected AbstractMeAeSupport(O owner) {
         this.owner = owner;
         this.ownerTile = owner.getAeOwnerTile();
         this.actionSource = IActionSource.ofMachine(owner);
-        this.mainNode = createManagedNode();
+        this.nodeLifecycle = new MeAeNodeLifecycle<>(owner, this.ownerTile, () -> new AeTicker(), () -> rebuildPatternCache(false));
         List<BasicInventorySlot> externalSlots = owner.getExternalPatternSlots();
         if (!externalSlots.isEmpty()) {
             this.patternSlots = externalSlots;
@@ -94,20 +84,8 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         this.patternSlotsView = Collections.unmodifiableList(this.patternSlots);
     }
 
-    private IManagedGridNode createManagedNode() {
-        IManagedGridNode node = GridHelper.createManagedNode(this.owner, new NodeListener())
-                .setTagName(TAG_NODE)
-                .setFlags(GridFlags.REQUIRE_CHANNEL)
-                .addService(ICraftingProvider.class, this.owner)
-                .addService(IGridTickable.class, new AeTicker());
-        if (this.retainedNodeData != null) {
-            node.loadFromNBT(this.retainedNodeData);
-        }
-        return node;
-    }
-
     public final IManagedGridNode getMainNode() {
-        return this.mainNode;
+        return this.nodeLifecycle.getMainNode();
     }
 
     /**
@@ -115,8 +93,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
      *             node already carries the machine's real exposed faces.
      */
     public final IGridNode getLargeMachineGridNode(BlockPos position, Direction side) {
-        IManagedGridNode port = this.largeMachinePortNodes.get(position);
-        return port == null ? null : port.getNode();
+        return this.nodeLifecycle.getLargeMachineGridNode(position, side);
     }
 
     /** Wrapped once: the backing list is final, and the inventory queries this on every call. */
@@ -172,7 +149,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     /** Returns the physical input capacity available for a counted CPU submission. */
     public final long maxAcceptedCopies(KeyCounter[] oneCraftInputs) {
-        if (oneCraftInputs == null || !this.mainNode.isActive() || isPatternBusy()) {
+        if (oneCraftInputs == null || !this.nodeLifecycle.getMainNode().isActive() || isPatternBusy()) {
             return 0;
         }
         return patternInputLayout().maxAcceptedCopies(oneCraftInputs);
@@ -180,14 +157,14 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
     /** Routes pre-scaled counted inputs without invoking Mek-Energistics smart multiplication. */
     public final boolean routeDataPatternInputs(KeyCounter[] scaledInputs) {
-        if (scaledInputs == null || !this.mainNode.isActive() || isPatternBusy()) {
+        if (scaledInputs == null || !this.nodeLifecycle.getMainNode().isActive() || isPatternBusy()) {
             return false;
         }
         return routePatternInputs(scaledInputs);
     }
 
     public final boolean pushPatternWithAdapter(IPatternDetails patternDetails, KeyCounter[] inputs) {
-        if (!this.mainNode.isActive() || patternDetails == null || inputs == null
+        if (!this.nodeLifecycle.getMainNode().isActive() || patternDetails == null || inputs == null
                 || this.owner.isPatternBusy()) {
             return false;
         }
@@ -330,12 +307,12 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     public final void createOnFirstTick() {
-        GridHelper.onFirstTick(this.ownerTile, tile -> create());
+        this.nodeLifecycle.createOnFirstTick();
     }
 
     public final void refreshAfterWorldMutation() {
         GridHelper.onFirstTick(this.ownerTile, tile -> {
-            create();
+            this.nodeLifecycle.create();
             rebuildPatternCache(false);
             net.minecraft.world.level.Level level = this.ownerTile.getLevel();
             if (level == null || level.isClientSide()) {
@@ -350,99 +327,21 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         });
     }
 
-    private void create() {
-        if (this.ownerTile.isRemoved() || this.ownerTile.getLevel() == null || this.ownerTile.getLevel().isClientSide()) {
-            return;
-        }
-        create(this.ownerTile.getLevel(), this.owner.getGridNodePosition());
-    }
-
     public final void create(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
-        if (level == null || level.isClientSide() || this.ownerTile.isRemoved()) {
-            return;
-        }
-        if (this.nodeState == NodeState.DESTROYED) {
-            this.mainNode = createManagedNode();
-            this.nodeState = NodeState.NEW;
-        }
-        if (this.nodeState == NodeState.NEW) {
-            this.mainNode.setInWorldNode(true);
-            if (this.owner.getMachine().isMekmmLargeMachine()) {
-                createLargeMachineNodes(level, pos);
-            } else {
-                this.mainNode.create(level, pos);
-            }
-            this.nodeState = NodeState.ACTIVE;
-            rebuildPatternCache(false);
-        }
-    }
-
-    /**
-     * Places a node on every block the machine occupies so a cable can attach anywhere along its
-     * surface. The controller keeps the main node — which carries the crafting and ticking services —
-     * while the bounding blocks get bare nodes wired back to it.
-     *
-     * <p>Each node is exposed only on the faces that lead out of the machine, so two nodes of the same
-     * machine never face each other and AE2's in-world scan cannot duplicate the direct connections
-     * made here.
-     */
-    private void createLargeMachineNodes(net.minecraft.world.level.Level level, BlockPos controllerPos) {
-        this.largeMachinePortNodes.clear();
-        MeLargeMachineFootprint footprint =
-                MeLargeMachineFootprint.of(level, controllerPos, this.ownerTile.getBlockState());
-        this.mainNode.setExposedOnSides(footprint.exposedFaces(controllerPos));
-        this.mainNode.create(level, controllerPos);
-        IGridNode mainGridNode = this.mainNode.getNode();
-        if (mainGridNode == null) {
-            return;
-        }
-        int owningPlayerId = mainGridNode.getOwningPlayerId();
-        footprint.forEachExposedPosition((position, exposed) -> {
-            if (position.equals(controllerPos)) {
-                return;
-            }
-            IManagedGridNode portNode = GridHelper.createManagedNode(this.owner, new PortNodeListener())
-                    .setInWorldNode(true)
-                    .setExposedOnSides(exposed)
-                    .setIdlePowerUsage(0);
-            portNode.setOwningPlayerId(owningPlayerId);
-            portNode.create(level, position);
-            GridHelper.createConnection(mainGridNode, portNode.getNode());
-            this.largeMachinePortNodes.put(position, portNode);
-            // The bounding block had no grid node when its capability was last resolved.
-            level.invalidateCapabilities(position);
-        });
+        this.nodeLifecycle.create(level, pos);
     }
 
     /** Keeps every node of the machine attributed to the same player for AE2's security checks. */
     public final void setOwningPlayer(net.minecraft.server.level.ServerPlayer player) {
-        this.mainNode.setOwningPlayer(player);
-        for (IManagedGridNode port : this.largeMachinePortNodes.values()) {
-            port.setOwningPlayer(player);
-        }
+        this.nodeLifecycle.setOwningPlayer(player);
     }
 
     public final void destroyNode() {
-        if (this.nodeState == NodeState.DESTROYED) {
-            return;
-        }
-        retainNodeData();
-        this.craftingUpdateState.markPending();
-        net.minecraft.world.level.Level level = this.ownerTile.getLevel();
-        for (Map.Entry<BlockPos, IManagedGridNode> port : this.largeMachinePortNodes.entrySet()) {
-            port.getValue().destroy();
-            if (level != null) {
-                level.invalidateCapabilities(port.getKey());
-            }
-        }
-        this.largeMachinePortNodes.clear();
-        this.mainNode.destroy();
-        this.nodeState = NodeState.DESTROYED;
+        this.nodeLifecycle.destroyNode();
     }
 
     public final IGrid getGrid() {
-        IGridNode node = this.mainNode.getNode();
-        return node == null || !node.isActive() ? null : node.getGrid();
+        return this.nodeLifecycle.getGrid();
     }
 
     /** Refills every local FE buffer before Mekanism evaluates machine work for this tick. */
@@ -564,7 +463,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     protected final void alertAeTicker() {
-        this.mainNode.ifPresent((grid, node) -> grid.getTickManager().alertDevice(node));
+        this.nodeLifecycle.alertAeTicker();
     }
 
     protected final long insertIntoNetwork(AEKey key, long amount) {
@@ -636,9 +535,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     protected abstract boolean processAeOutputWork();
 
     private void requestCraftingUpdate() {
-        IGridNode node = this.mainNode.getNode();
-        this.craftingUpdateState.request(node != null && node.isActive(),
-                () -> ICraftingProvider.requestUpdate(this.mainNode));
+        this.nodeLifecycle.requestCraftingUpdate();
     }
 
     protected final void saveCommon(CompoundTag tag, HolderLookup.Provider registries) {
@@ -692,7 +589,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         // Block entities can be deserialized before they have a level. Decode the
         // restored patterns after the managed node is created on the first tick.
         this.patterns.clear();
-        this.craftingUpdateState.markPending();
+        this.nodeLifecycle.markCraftingUpdatePending();
     }
 
     private boolean hasPatternSlotTags(CompoundTag tag) {
@@ -722,93 +619,14 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     protected final void saveNode(CompoundTag tag) {
-        if (this.nodeState == NodeState.DESTROYED && this.retainedNodeData != null) {
-            if (this.retainedNodeData.contains(TAG_NODE)) {
-                tag.put(TAG_NODE, this.retainedNodeData.getCompound(TAG_NODE).copy());
-            }
-            return;
-        }
-        this.mainNode.saveToNBT(tag);
+        this.nodeLifecycle.saveNode(tag);
     }
 
     protected final void loadNode(CompoundTag tag) {
-        this.retainedNodeData = copyNodeData(tag);
-        if (this.nodeState == NodeState.DESTROYED) {
-            this.mainNode = createManagedNode();
-            this.nodeState = NodeState.NEW;
-        } else {
-            this.mainNode.loadFromNBT(tag);
-        }
+        this.nodeLifecycle.loadNode(tag);
     }
 
-    private void retainNodeData() {
-        CompoundTag tag = new CompoundTag();
-        this.mainNode.saveToNBT(tag);
-        this.retainedNodeData = copyNodeData(tag);
-    }
-
-    private static CompoundTag copyNodeData(CompoundTag source) {
-        CompoundTag result = new CompoundTag();
-        if (source.contains(TAG_NODE)) {
-            result.put(TAG_NODE, source.getCompound(TAG_NODE).copy());
-        }
-        return result;
-    }
-
-    enum NodeState {
-        NEW,
-        ACTIVE,
-        DESTROYED
-    }
-
-    private final class PortNodeListener implements IGridNodeListener<O> {
-        @Override
-        public void onSaveChanges(O nodeOwner, IGridNode node) {
-            // Port nodes contain no persistent services or state of their own.
-        }
-    }
-
-    private final class NodeListener implements IGridNodeListener<O> {
-        @Override
-        public void onSaveChanges(O nodeOwner, IGridNode node) {
-            nodeOwner.saveChanges();
-        }
-
-        @Override
-        public void onStateChanged(O nodeOwner, IGridNode node, State state) {
-            if (node.isActive()) {
-                craftingUpdateState.flush(() -> ICraftingProvider.requestUpdate(mainNode));
-                node.getGrid().getTickManager().alertDevice(node);
-            }
-        }
-    }
-
-    static final class CraftingUpdateState {
-        private boolean pending;
-
-        void request(boolean nodeActive, Runnable update) {
-            if (nodeActive) {
-                update.run();
-                this.pending = false;
-            } else {
-                this.pending = true;
-            }
-        }
-
-        void markPending() {
-            this.pending = true;
-        }
-
-        void flush(Runnable update) {
-            if (this.pending) {
-                update.run();
-                this.pending = false;
-            }
-        }
-
-        boolean isPending() {
-            return this.pending;
-        }
+    static final class CraftingUpdateState extends MeAeNodeLifecycle.CraftingUpdateState {
     }
 
     private final class AeTicker implements IGridTickable {
@@ -819,7 +637,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
 
         @Override
         public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
-            if (!mainNode.isActive()) {
+            if (!nodeLifecycle.getMainNode().isActive()) {
                 return TickRateModulation.SLEEP;
             }
             boolean hadWork = hasAeOutputWork();
