@@ -26,8 +26,41 @@ on:
         type: string
 
 jobs:
+  # P2-9: GameTest gate. Mirrors the GameTest job in build.yml because GitHub Actions
+  # needs cannot reference a job in another workflow; publishing only proceeds after
+  # the game test matrix passes.
+  gametest:
+    name: GameTest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Run tests and GameTest server
+        timeout-minutes: 20
+        run: ./gradlew test runGameTestServer --no-daemon
+
   publish:
     runs-on: ubuntu-latest
+    needs: gametest
     permissions:
       contents: read
 
@@ -52,6 +85,13 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew build
+
+      # P2-9: hard gate before publishing - refuse to publish unless build.gradle pins
+      # both optional runtime mods the release matrix depends on.
+      - name: Verify required dependency pins in build.gradle
+        run: |
+          grep -q 'data-energistics-1565514:8613673' build.gradle || { echo "::error::build.gradle is missing the data-energistics-1565514:8613673 pin"; exit 1; }
+          grep -q 'mekanism-more-machine-1275257:7919872' build.gradle || { echo "::error::build.gradle is missing the mekanism-more-machine-1275257:7919872 pin"; exit 1; }
 
       - name: Publish to CurseForge
         uses: Kira-NT/mc-publish@v3.3
