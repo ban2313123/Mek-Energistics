@@ -7,6 +7,7 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
+import com.beipuo.mekenergistics.MekEnergistics;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,24 +19,98 @@ public final class MePassiveCraftingDispatcher {
     }
 
     public static boolean submitAvailable(List<IPatternDetails> patterns, long copies, Level level,
-            MEStorage storage, IActionSource source, Predicate<KeyCounter[]> submitter) {
-        boolean submitted = false;
-        for (IPatternDetails pattern : patterns) {
-            KeyCounter[] inputs = plan(pattern, copies, level, storage, source);
+            MEStorage storage, IActionSource source, Predicate<KeyCounter[]> submitter,
+            MePassiveCraftingSettings settings) {
+        settings.beginRun();
+        boolean submitted = flushRecoveryBuffer(settings, storage, source);
+        int size = patterns.size();
+        int cursor = settings.patternScanCursor();
+        if (cursor < 0 || cursor >= size) {
+            cursor = 0;
+        }
+        settings.setPatternScanCursor(cursor);
+        int budget = settings.patternScanBudget();
+        long requested = settings.cappedCopies(copies);
+        int cursorSteps = 0;
+        for (int scanned = 0; scanned < budget && cursorSteps < size; scanned++) {
+            cursorSteps++;
+            IPatternDetails pattern = patterns.get(cursor);
+            settings.recordPatternScanned();
+            KeyCounter[] inputs = plan(pattern, requested, level, storage, source);
             if (inputs == null) {
+                settings.recordRejected();
+                cursor = advance(cursor, size);
                 continue;
             }
-            KeyCounter extracted = extract(inputs, storage, source);
+            KeyCounter extracted = extract(inputs, storage, source, settings);
             if (extracted == null) {
+                settings.recordRestored();
+                cursor = advance(cursor, size);
                 continue;
             }
             if (submitter.test(inputs)) {
                 submitted = true;
+                settings.recordSubmitted();
+                cursor = advance(cursor, size);
                 continue;
             }
-            restore(extracted, storage, source);
+            restoreRemainder(extracted, storage, source, settings);
+            settings.recordRestored();
+            cursor = advance(cursor, size);
         }
+        settings.setPatternScanCursor(cursor);
+        logRunMetrics(settings);
         return submitted;
+    }
+
+    private static int advance(int cursor, int size) {
+        return size <= 0 ? 0 : (cursor + 1) % size;
+    }
+
+    /**
+     * Returns the extracted inputs to the network. Anything the network cannot accept right now is
+     * persisted into the durable recovery buffer instead of being silently dropped.
+     */
+    private static void restoreRemainder(KeyCounter extracted, MEStorage storage, IActionSource source,
+            MePassiveCraftingSettings settings) {
+        for (var entry : extracted) {
+            long amount = entry.getLongValue();
+            if (amount <= 0) {
+                continue;
+            }
+            long inserted = storage.insert(entry.getKey(), amount, Actionable.MODULATE, source);
+            long remainder = amount - inserted;
+            if (remainder > 0) {
+                settings.bufferRemainder(entry.getKey(), remainder);
+            }
+        }
+    }
+
+    /** Retries the durable recovery buffer first; returns true when any buffered remainder was returned. */
+    private static boolean flushRecoveryBuffer(MePassiveCraftingSettings settings, MEStorage storage,
+            IActionSource source) {
+        boolean changed = false;
+        for (MePassiveCraftingSettings.RecoveryEntry entry : settings.drainRecoveryBuffer()) {
+            long amount = entry.amount();
+            if (amount <= 0) {
+                continue;
+            }
+            long inserted = storage.insert(entry.key(), amount, Actionable.MODULATE, source);
+            if (inserted >= amount) {
+                changed = true;
+                settings.recordBufferFlush();
+            } else {
+                settings.bufferRemainder(entry.key(), amount - inserted);
+            }
+        }
+        return changed;
+    }
+
+    private static void logRunMetrics(MePassiveCraftingSettings settings) {
+        MekEnergistics.LOGGER.debug(
+                "Passive crafting run: scanned={}, rejected={}, restored={}, submitted={}, bufferFlushes={}",
+                settings.patternsScanned(), settings.patternsRejected(), settings.patternsRestored(),
+                settings.patternsSubmitted(), settings.bufferFlushes());
     }
 
     private static KeyCounter[] plan(IPatternDetails pattern, long copies, Level level,
@@ -68,17 +143,17 @@ public final class MePassiveCraftingDispatcher {
         return result;
     }
 
-    private static KeyCounter extract(KeyCounter[] inputs, MEStorage storage, IActionSource source) {
+    private static KeyCounter extract(KeyCounter[] inputs, MEStorage storage, IActionSource source,
+            MePassiveCraftingSettings settings) {
         KeyCounter extracted = new KeyCounter();
         for (KeyCounter input : inputs) for (var entry : input) {
             long amount = storage.extract(entry.getKey(), entry.getLongValue(), Actionable.MODULATE, source);
             if (amount > 0) extracted.add(entry.getKey(), amount);
-            if (amount != entry.getLongValue()) { restore(extracted, storage, source); return null; }
+            if (amount != entry.getLongValue()) {
+                restoreRemainder(extracted, storage, source, settings);
+                return null;
+            }
         }
         return extracted;
-    }
-
-    private static void restore(KeyCounter extracted, MEStorage storage, IActionSource source) {
-        for (var entry : extracted) storage.insert(entry.getKey(), entry.getLongValue(), Actionable.MODULATE, source);
     }
 }

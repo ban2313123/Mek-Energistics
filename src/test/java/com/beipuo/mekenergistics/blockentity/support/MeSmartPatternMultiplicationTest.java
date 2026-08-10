@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import org.junit.jupiter.api.Test;
 
 class MeSmartPatternMultiplicationTest {
@@ -217,6 +220,113 @@ class MeSmartPatternMultiplicationTest {
 
         assertEquals(64, feeder.acceptedCopies);
         assertTrue(multiplication.hasPendingWork());
+    }
+
+    @Test
+    void corruptedPendingEntriesAreQuarantinedAndKeptOutOfTheLiveQueue() {
+        MeSmartPatternMultiplication multiplication = new MeSmartPatternMultiplication();
+        CompoundTag tag = new CompoundTag();
+        ListTag pending = new ListTag();
+        pending.add(pendingEntry(8, garbageDefinition(), "iron"));
+        pending.add(pendingEntry(4, badTypeDefinition(), "iron"));
+        pending.add(pendingEntry(0, garbageDefinition(), "iron"));
+        tag.put("SmartPatternMultiplicationPending", pending);
+
+        multiplication.loadPending(tag, RegistryAccess.EMPTY, null);
+
+        assertFalse(multiplication.hasPendingWork());
+        assertEquals(2, multiplication.quarantinedPendingCount());
+    }
+
+    @Test
+    void quarantinedEntriesArePersistedBySavePending() {
+        MeSmartPatternMultiplication multiplication = new MeSmartPatternMultiplication();
+        CompoundTag tag = new CompoundTag();
+        ListTag pending = new ListTag();
+        pending.add(pendingEntry(8, garbageDefinition(), "iron"));
+        pending.add(pendingEntry(4, badTypeDefinition(), "iron"));
+        tag.put("SmartPatternMultiplicationPending", pending);
+        multiplication.loadPending(tag, RegistryAccess.EMPTY, null);
+        assertEquals(2, multiplication.quarantinedPendingCount());
+
+        CompoundTag saved = new CompoundTag();
+        multiplication.savePending(saved, RegistryAccess.EMPTY);
+
+        MeSmartPatternMultiplication restored = new MeSmartPatternMultiplication();
+        restored.loadPending(saved, RegistryAccess.EMPTY, null);
+        assertFalse(restored.hasPendingWork());
+        assertEquals(2, restored.quarantinedPendingCount());
+    }
+
+    @Test
+    void quarantinedLoadDoesNotPoisonLaterEnqueues() {
+        MeSmartPatternMultiplication multiplication = new MeSmartPatternMultiplication();
+        CompoundTag tag = new CompoundTag();
+        ListTag pending = new ListTag();
+        pending.add(pendingEntry(8, garbageDefinition(), "iron"));
+        tag.put("SmartPatternMultiplicationPending", pending);
+        multiplication.loadPending(tag, RegistryAccess.EMPTY, null);
+        assertEquals(1, multiplication.quarantinedPendingCount());
+
+        FakeKey inputKey = new FakeKey("after_quarantine");
+        assertTrue(multiplication.enqueueForTesting(inputKey, List.of(new GenericStack(inputKey, 1)), 16));
+        CountingFeeder feeder = new CountingFeeder(inputKey, 16);
+        assertTrue(multiplication.processNext(feeder));
+        assertEquals(16, feeder.acceptedCopies);
+        assertFalse(multiplication.hasPendingWork());
+        assertEquals(1, multiplication.quarantinedPendingCount());
+    }
+
+    @Test
+    void nonPositiveRemainingEntriesAreDroppedWithoutQuarantine() {
+        MeSmartPatternMultiplication multiplication = new MeSmartPatternMultiplication();
+        CompoundTag tag = new CompoundTag();
+        ListTag pending = new ListTag();
+        pending.add(pendingEntry(0, garbageDefinition(), "iron"));
+        pending.add(pendingEntry(-5, garbageDefinition(), "iron"));
+        tag.put("SmartPatternMultiplicationPending", pending);
+
+        multiplication.loadPending(tag, RegistryAccess.EMPTY, null);
+
+        assertFalse(multiplication.hasPendingWork());
+        assertEquals(0, multiplication.quarantinedPendingCount());
+    }
+
+    @Test
+    void refundableBalanceScalesRemainingCopiesWithoutLossOrOverflow() {
+        FakeKey iron = new FakeKey("refund_iron");
+        assertEquals(20, MeSmartPatternMultiplication.refundableBalance(
+                List.of(new GenericStack(iron, 4)), 5));
+        assertEquals(0, MeSmartPatternMultiplication.refundableBalance(
+                List.of(new GenericStack(iron, 4)), 0));
+        assertEquals(0, MeSmartPatternMultiplication.refundableBalance(List.of(), 5));
+        assertEquals(0, MeSmartPatternMultiplication.refundableBalance(null, 5));
+        assertEquals(Long.MAX_VALUE, MeSmartPatternMultiplication.refundableBalance(
+                List.of(new GenericStack(iron, Long.MAX_VALUE)), 2));
+    }
+
+    private static CompoundTag pendingEntry(long remaining, CompoundTag definition, String... inputs) {
+        CompoundTag entry = new CompoundTag();
+        entry.putLong("Remaining", remaining);
+        entry.put("Definition", definition);
+        ListTag inputList = new ListTag();
+        for (String input : inputs) {
+            CompoundTag inputTag = new CompoundTag();
+            inputTag.putString("Input", input);
+            inputList.add(inputTag);
+        }
+        entry.put("Inputs", inputList);
+        return entry;
+    }
+
+    private static CompoundTag garbageDefinition() {
+        return new CompoundTag();
+    }
+
+    private static CompoundTag badTypeDefinition() {
+        CompoundTag definition = new CompoundTag();
+        definition.putString("#t", "mekenergistics_test:item");
+        return definition;
     }
 
     private static final class CountingFeeder implements MeSmartPatternMultiplication.CapacityAwareFeeder {

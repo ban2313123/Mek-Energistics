@@ -18,6 +18,7 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.api.storage.StorageHelper;
@@ -503,7 +504,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         }
         boolean changed = MePassiveCraftingDispatcher.submitAvailable(
                 this.patterns, passiveCraftingSettings.multiplier(), this.ownerTile.getLevel(), storage,
-                this.actionSource, this::routeDataPatternInputs);
+                this.actionSource, this::routeDataPatternInputs, this.passiveCraftingSettings);
         if (changed) {
             this.owner.saveChanges();
         }
@@ -578,6 +579,34 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return storageService == null ? null : storageService.getInventory();
     }
 
+    /**
+     * Returns a quarantined smart-multiplication balance to the AE network. Returns 0 when the
+     * machine has no active grid yet (normal during deserialization), so the caller keeps the
+     * balance in the quarantined NBT instead of losing it.
+     */
+    private long refundPendingBalance(List<GenericStack> inputs, long remaining) {
+        if (inputs == null || inputs.isEmpty() || remaining <= 0) {
+            return 0;
+        }
+        MEStorage storage = getNetworkStorage(getGrid());
+        if (storage == null) {
+            return 0;
+        }
+        long refunded = 0;
+        for (GenericStack input : inputs) {
+            if (input == null || input.what() == null) {
+                continue;
+            }
+            long amount = MeSmartPatternMultiplication.scaleAmountClamped(input.amount(), remaining);
+            if (amount <= 0) {
+                continue;
+            }
+            long inserted = storage.insert(input.what(), amount, Actionable.MODULATE, this.actionSource);
+            refunded = refunded > Long.MAX_VALUE - inserted ? Long.MAX_VALUE : refunded + inserted;
+        }
+        return refunded;
+    }
+
     public final void updatePatterns() {
         rebuildPatternCache(true);
     }
@@ -613,14 +642,14 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     protected final void saveCommon(CompoundTag tag, HolderLookup.Provider registries) {
-        save(tag);
+        save(tag, registries);
         saveSlots(tag, registries);
     }
 
-    public final void save(CompoundTag tag) {
+    public final void save(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putInt("PatternPriority", this.patternPriority);
         this.smartPatternMultiplication.saveConfig(tag);
-        this.passiveCraftingSettings.save(tag);
+        this.passiveCraftingSettings.save(tag, registries);
         tag.putBoolean(TAG_TERMINAL_VISIBLE, this.visibleInPatternAccessTerminal);
         tag.remove(TAG_PATTERN_TERMINAL_NAME);
         saveNode(tag);
@@ -635,14 +664,14 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     protected final void loadCommon(CompoundTag tag, HolderLookup.Provider registries) {
-        load(tag);
+        load(tag, registries);
         loadSlots(tag, registries);
     }
 
-    public final void load(CompoundTag tag) {
+    public final void load(CompoundTag tag, HolderLookup.Provider registries) {
         this.patternPriority = tag.getInt("PatternPriority");
         this.smartPatternMultiplication.loadConfig(tag);
-        this.passiveCraftingSettings.load(tag);
+        this.passiveCraftingSettings.load(tag, registries);
         this.visibleInPatternAccessTerminal = !tag.contains(TAG_TERMINAL_VISIBLE) || tag.getBoolean(TAG_TERMINAL_VISIBLE);
         this.patternTerminalName = MePatternTerminalNames.migrateLegacy(this.ownerTile, tag.getString(TAG_PATTERN_TERMINAL_NAME));
         loadNode(tag);
@@ -659,7 +688,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             int offset = this.owner instanceof MePatternIoOwner io ? Math.max(0, io.getLegacyPatternSlotOffset()) : 0;
             loadLegacyInventory(this.patternSlots, tag, registries, offset);
         }
-        this.smartPatternMultiplication.loadPending(tag, registries);
+        this.smartPatternMultiplication.loadPending(tag, registries, this::refundPendingBalance);
         // Block entities can be deserialized before they have a level. Decode the
         // restored patterns after the managed node is created on the first tick.
         this.patterns.clear();

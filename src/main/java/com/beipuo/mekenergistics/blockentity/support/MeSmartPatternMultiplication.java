@@ -6,6 +6,7 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
+import com.beipuo.mekenergistics.MekEnergistics;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,12 +30,17 @@ public final class MeSmartPatternMultiplication {
     private static final String TAG_DEFINITION = "Definition";
     private static final String TAG_INPUTS = "Inputs";
     private static final String TAG_INPUT = "Input";
+    private static final String TAG_QUARANTINED = "SmartPatternMultiplicationQuarantined";
+    private static final String TAG_QUARANTINE_ENTRY = "Entry";
+    private static final String TAG_QUARANTINE_INDEX = "Index";
+    private static final String TAG_QUARANTINE_REASON = "Reason";
 
     private final List<PendingPattern> pendingPatterns = new ArrayList<>();
     private final Set<PendingPattern> pendingSet = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Map<PendingKey, PendingPattern> pendingByKey = new HashMap<>();
     private final Map<AEKey, Set<PendingPattern>> pendingByInputKey = new HashMap<>();
     private final List<PendingPattern> hotPendingPatterns = new ArrayList<>();
+    private final List<CompoundTag> quarantinedPending = new ArrayList<>();
     private boolean enabled = true;
     private int nextPendingScanIndex;
 
@@ -296,56 +302,114 @@ public final class MeSmartPatternMultiplication {
     }
 
     public void savePending(CompoundTag tag, HolderLookup.Provider registries) {
-        if (this.pendingPatterns.isEmpty()) {
+        if (this.pendingPatterns.isEmpty() && this.quarantinedPending.isEmpty()) {
             tag.remove(TAG_PENDING);
+            tag.remove(TAG_QUARANTINED);
             return;
         }
-        ListTag pending = new ListTag();
-        for (PendingPattern pendingPattern : this.pendingPatterns) {
-            CompoundTag pendingTag = new CompoundTag();
-            pendingTag.putLong(TAG_REMAINING, pendingPattern.remaining);
-            pendingTag.put(TAG_DEFINITION, GenericStack.writeTag(registries, new GenericStack(pendingPattern.definition, 1)));
-            ListTag inputs = new ListTag();
-            for (GenericStack input : pendingPattern.inputs) {
-                CompoundTag inputTag = new CompoundTag();
-                inputTag.put(TAG_INPUT, GenericStack.writeTag(registries, input));
-                inputs.add(inputTag);
+        if (this.pendingPatterns.isEmpty()) {
+            tag.remove(TAG_PENDING);
+        } else {
+            ListTag pending = new ListTag();
+            for (PendingPattern pendingPattern : this.pendingPatterns) {
+                CompoundTag pendingTag = new CompoundTag();
+                pendingTag.putLong(TAG_REMAINING, pendingPattern.remaining);
+                pendingTag.put(TAG_DEFINITION, GenericStack.writeTag(registries, new GenericStack(pendingPattern.definition, 1)));
+                ListTag inputs = new ListTag();
+                for (GenericStack input : pendingPattern.inputs) {
+                    CompoundTag inputTag = new CompoundTag();
+                    inputTag.put(TAG_INPUT, GenericStack.writeTag(registries, input));
+                    inputs.add(inputTag);
+                }
+                pendingTag.put(TAG_INPUTS, inputs);
+                pending.add(pendingTag);
             }
-            pendingTag.put(TAG_INPUTS, inputs);
-            pending.add(pendingTag);
+            tag.put(TAG_PENDING, pending);
         }
-        tag.put(TAG_PENDING, pending);
+        if (this.quarantinedPending.isEmpty()) {
+            tag.remove(TAG_QUARANTINED);
+        } else {
+            ListTag quarantined = new ListTag();
+            for (CompoundTag entry : this.quarantinedPending) {
+                quarantined.add(entry);
+            }
+            tag.put(TAG_QUARANTINED, quarantined);
+        }
     }
 
     public void loadPending(CompoundTag tag, HolderLookup.Provider registries) {
+        loadPending(tag, registries, null);
+    }
+
+    public void loadPending(CompoundTag tag, HolderLookup.Provider registries,
+            @Nullable PendingBalanceRefund refund) {
         this.pendingPatterns.clear();
         this.pendingSet.clear();
         this.pendingByKey.clear();
         this.pendingByInputKey.clear();
         this.hotPendingPatterns.clear();
+        this.quarantinedPending.clear();
+        ListTag quarantined = tag.getList(TAG_QUARANTINED, CompoundTag.TAG_COMPOUND);
+        for (int q = 0; q < quarantined.size(); q++) {
+            this.quarantinedPending.add(quarantined.getCompound(q).copy());
+        }
         ListTag pending = tag.getList(TAG_PENDING, CompoundTag.TAG_COMPOUND);
         for (int i = 0; i < pending.size(); i++) {
             CompoundTag pendingTag = pending.getCompound(i);
             long remaining = pendingTag.getLong(TAG_REMAINING);
             if (remaining <= 0) {
+                logDroppedPending(i, "non-positive remaining " + remaining);
                 continue;
             }
-            GenericStack definition = GenericStack.readTag(registries, pendingTag.getCompound(TAG_DEFINITION));
-            if (definition == null || !(definition.what() instanceof AEItemKey definitionKey)) {
+            String reason = null;
+            List<GenericStack> decodedInputs = List.of();
+            try {
+                ListTag inputTags = pendingTag.getList(TAG_INPUTS, CompoundTag.TAG_COMPOUND);
+                decodedInputs = inputTags.isEmpty() ? List.of() : decodeInputs(registries, inputTags);
+                GenericStack definition = GenericStack.readTag(registries, pendingTag.getCompound(TAG_DEFINITION));
+                if (definition == null) {
+                    reason = "undecodable definition";
+                } else if (!(definition.what() instanceof AEItemKey definitionKey)) {
+                    reason = "definition is not an item key: " + definition.what();
+                } else if (inputTags.isEmpty()) {
+                    reason = "no inputs listed";
+                } else if (decodedInputs.isEmpty()) {
+                    reason = "no usable inputs";
+                } else if (decodedInputs.size() < inputTags.size()) {
+                    reason = "only " + decodedInputs.size() + " of " + inputTags.size() + " inputs decoded";
+                } else {
+                    addLoadedPending(new PendingPattern(definitionKey, decodedInputs, remaining));
+                    continue;
+                }
+            } catch (RuntimeException ex) {
+                reason = "decode failed: " + ex.getMessage();
+            }
+            logDroppedPending(i, reason);
+            long balance = refundableBalance(decodedInputs, remaining);
+            if (balance > 0 && refund != null && refund.refund(decodedInputs, remaining) >= balance) {
                 continue;
             }
-            ListTag inputs = pendingTag.getList(TAG_INPUTS, CompoundTag.TAG_COMPOUND);
-            List<GenericStack> stacks = new ArrayList<>(inputs.size());
-            for (int j = 0; j < inputs.size(); j++) {
-                GenericStack stack = GenericStack.readTag(registries, inputs.getCompound(j).getCompound(TAG_INPUT));
+            quarantinePending(i, reason, pendingTag);
+        }
+    }
+
+    /**
+     * Decodes as many inputs as possible. A partial result is still useful: the decodable portion
+     * can be refunded to the network while the raw entry is quarantined for recovery.
+     */
+    private List<GenericStack> decodeInputs(HolderLookup.Provider registries, ListTag inputTags) {
+        List<GenericStack> stacks = new ArrayList<>(inputTags.size());
+        for (int j = 0; j < inputTags.size(); j++) {
+            try {
+                GenericStack stack = GenericStack.readTag(registries, inputTags.getCompound(j).getCompound(TAG_INPUT));
                 if (stack != null && stack.amount() > 0) {
                     stacks.add(stack);
                 }
-            }
-            if (!stacks.isEmpty()) {
-                addLoadedPending(new PendingPattern(definitionKey, stacks, remaining));
+            } catch (RuntimeException ignored) {
+                // treated as an undecodable input; the caller decides the disposition
             }
         }
+        return stacks;
     }
 
     private void addLoadedPending(PendingPattern pendingPattern) {
@@ -359,6 +423,55 @@ public final class MeSmartPatternMultiplication {
         this.pendingSet.add(pendingPattern);
         this.pendingByKey.putIfAbsent(pendingPattern.key(), pendingPattern);
         indexPendingInputs(pendingPattern);
+    }
+
+    public interface PendingBalanceRefund {
+        /** Returns the total amount of the pending balance actually returned to the AE network. */
+        long refund(List<GenericStack> inputs, long remaining);
+    }
+
+    public static long scaleAmountClamped(long amount, long copies) {
+        if (amount <= 0 || copies <= 0) {
+            return 0;
+        }
+        if (amount > Long.MAX_VALUE / copies) {
+            return Long.MAX_VALUE;
+        }
+        return amount * copies;
+    }
+
+    static long refundableBalance(List<GenericStack> inputs, long remaining) {
+        if (inputs == null || inputs.isEmpty() || remaining <= 0) {
+            return 0;
+        }
+        long balance = 0;
+        for (GenericStack input : inputs) {
+            if (input == null || input.what() == null) {
+                continue;
+            }
+            long amount = scaleAmountClamped(input.amount(), remaining);
+            if (amount <= 0) {
+                continue;
+            }
+            balance = balance > Long.MAX_VALUE - amount ? Long.MAX_VALUE : balance + amount;
+        }
+        return balance;
+    }
+
+    private static void logDroppedPending(int index, String reason) {
+        MekEnergistics.LOGGER.warn("Dropping corrupted smart-multiplication pending entry #{}: {}", index, reason);
+    }
+
+    private void quarantinePending(int index, String reason, CompoundTag pendingTag) {
+        CompoundTag quarantinedTag = new CompoundTag();
+        quarantinedTag.putInt(TAG_QUARANTINE_INDEX, index);
+        quarantinedTag.putString(TAG_QUARANTINE_REASON, reason);
+        quarantinedTag.put(TAG_QUARANTINE_ENTRY, pendingTag.copy());
+        this.quarantinedPending.add(quarantinedTag);
+    }
+
+    public int quarantinedPendingCount() {
+        return this.quarantinedPending.size();
     }
 
     public interface Feeder {
@@ -521,13 +634,7 @@ public final class MeSmartPatternMultiplication {
         }
 
         private static long multiplyClamped(long amount, long copies) {
-            if (amount <= 0 || copies <= 0) {
-                return 0;
-            }
-            if (amount > Long.MAX_VALUE / copies) {
-                return Long.MAX_VALUE;
-            }
-            return amount * copies;
+            return scaleAmountClamped(amount, copies);
         }
 
         private long maxAcceptedBy(Feeder feeder) {
