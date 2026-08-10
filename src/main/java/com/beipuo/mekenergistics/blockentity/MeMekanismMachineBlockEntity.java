@@ -16,6 +16,7 @@ import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
+import appeng.api.util.AECableType;
 import appeng.api.networking.security.IActionSource;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
@@ -60,6 +61,7 @@ import mekanism.common.tile.prefab.TileEntityConfigurableMachine;
 import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.util.MekanismUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -73,6 +75,11 @@ import java.util.function.BooleanSupplier;
 
 public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         implements ICraftingProvider, MeSmartCableConnection, IActionHost, IHasDumpButton, MeAeMachine, MePatternIoOwner {
+    @Override
+    public AECableType getCableConnectionType(Direction dir) {
+        return AECableType.SMART;
+    }
+
     private static final int BASE_TICKS_REQUIRED = 10 * 20;
     public static final int INPUT_SLOT = 0;
     public static final int SECONDARY_INPUT_SLOT = 1;

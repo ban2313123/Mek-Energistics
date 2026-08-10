@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.blockentity.compat.eme.machine;
 
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
+import appeng.api.util.AECableType;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
@@ -24,12 +25,18 @@ import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.slot.InputInventorySlot;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
 public class MeAlloyerBlockEntity extends TileEntityAlloyer implements ICraftingProvider, MeSmartCableConnection, IActionHost, MeAeMachine {
+    @Override
+    public AECableType getCableConnectionType(Direction dir) {
+        return AECableType.SMART;
+    }
+
     private MeRecipeMachineAeSupport<MeAlloyerBlockEntity> aeSupport;
 
     @Override

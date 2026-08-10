@@ -12,6 +12,7 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
+import appeng.api.util.AECableType;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.mixin.TileEntityAntiprotonicNucleosynthesizerAccessor;
 import java.util.List;
@@ -23,12 +24,18 @@ import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.slot.InputInventorySlot;
 import mekanism.common.tile.machine.TileEntityAntiprotonicNucleosynthesizer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
 public class MeAntiprotonicNucleosynthesizerBlockEntity extends TileEntityAntiprotonicNucleosynthesizer implements ICraftingProvider, MeSmartCableConnection, IActionHost, MeAeMachine {
+    @Override
+    public AECableType getCableConnectionType(Direction dir) {
+        return AECableType.SMART;
+    }
+
     private MeRecipeMachineAeSupport<MeAntiprotonicNucleosynthesizerBlockEntity> aeSupport;
 
     @Override

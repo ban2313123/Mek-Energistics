@@ -114,48 +114,79 @@ public final class MeInstallerUpgradeHandler {
                     target.registryName(), pos);
             return InteractionResult.FAIL;
         }
+        BlockState oldState = level.getBlockState(pos);
+        CompoundTag oldTileNbt = oldTile.saveWithoutMetadata(level.registryAccess());
         if (!level.setBlockAndUpdate(pos, upgradeState)) {
             MekEnergistics.LOGGER.warn("ME installer upgrade to {} failed: setBlockAndUpdate returned false at {}",
                     target.registryName(), pos);
             return InteractionResult.FAIL;
         }
-        if (upgradeBounding != null) {
-            upgradeBounding.placeBoundingBlocks(level, pos, upgradeState);
-        }
-        TileEntityMekanism upgradedTile = WorldUtils.getTileEntity(TileEntityMekanism.class, level, pos);
-        if (upgradedTile == null) {
-            MekEnergistics.LOGGER.warn("ME installer upgrade to {} failed: upgraded tile missing at {}",
-                    target.registryName(), pos);
-            return InteractionResult.FAIL;
-        }
-        if (oldTile instanceof ITileDirectional directional && directional.isDirectional()) {
-            upgradedTile.setFacing(directional.getDirection(), false);
-        }
-        if (upgradeData != null) {
-            upgradedTile.parseUpgradeData(level.registryAccess(), upgradeData);
-        } else if (copyComponents) {
-            MePatternSlotTransfer.copyMekanismComponents(oldTile, upgradedTile, targetBlock);
-        }
-        MePatternSlotTransfer.load(upgradedTile, level.registryAccess(), mePatternSlots);
-        refreshMeLifecycle(upgradedTile);
-        if (player instanceof ServerPlayer serverPlayer) {
-            if (upgradedTile instanceof MeAeMachine machine) {
-                machine.setOwner(serverPlayer);
-            } else if (upgradedTile instanceof MeFactoryAeMachine machine) {
-                machine.setOwner(serverPlayer);
-            } else {
-                MeOwnerHelper.claimMekanismOwnerIfMissing(upgradedTile, serverPlayer);
+        try {
+            if (upgradeBounding != null) {
+                upgradeBounding.placeBoundingBlocks(level, pos, upgradeState);
             }
+            TileEntityMekanism upgradedTile = WorldUtils.getTileEntity(TileEntityMekanism.class, level, pos);
+            if (upgradedTile == null) {
+                MekEnergistics.LOGGER.warn("ME installer upgrade to {} failed: upgraded tile missing at {}",
+                        target.registryName(), pos);
+                return rollbackUpgrade(level, pos, oldState, oldTileNbt, upgradeBounding, upgradeState);
+            }
+            if (oldTile instanceof ITileDirectional directional && directional.isDirectional()) {
+                upgradedTile.setFacing(directional.getDirection(), false);
+            }
+            if (upgradeData != null) {
+                upgradedTile.parseUpgradeData(level.registryAccess(), upgradeData);
+            } else if (copyComponents) {
+                MePatternSlotTransfer.copyMekanismComponents(oldTile, upgradedTile, targetBlock);
+            }
+            MePatternSlotTransfer.load(upgradedTile, level.registryAccess(), mePatternSlots);
+            refreshMeLifecycle(upgradedTile);
+            if (player instanceof ServerPlayer serverPlayer) {
+                if (upgradedTile instanceof MeAeMachine machine) {
+                    machine.setOwner(serverPlayer);
+                } else if (upgradedTile instanceof MeFactoryAeMachine machine) {
+                    machine.setOwner(serverPlayer);
+                } else {
+                    MeOwnerHelper.claimMekanismOwnerIfMissing(upgradedTile, serverPlayer);
+                }
+            }
+            upgradedTile.resyncMasterToBounding();
+            upgradedTile.sendUpdatePacket();
+            upgradedTile.setChanged();
+            upgradedTile.invalidateCapabilitiesFull();
+            if (!player.isCreative()) {
+                stack.shrink(1);
+            }
+            MekEnergistics.LOGGER.debug("ME installer upgraded machine to {} at {}", target.registryName(), pos);
+            return InteractionResult.CONSUME;
+        } catch (RuntimeException failure) {
+            MekEnergistics.LOGGER.warn("ME installer upgrade to {} failed at {}, restoring the previous machine",
+                    target.registryName(), pos, failure);
+            return rollbackUpgrade(level, pos, oldState, oldTileNbt, upgradeBounding, upgradeState);
         }
-        upgradedTile.resyncMasterToBounding();
-        upgradedTile.sendUpdatePacket();
-        upgradedTile.setChanged();
-        upgradedTile.invalidateCapabilitiesFull();
-        if (!player.isCreative()) {
-            stack.shrink(1);
+    }
+
+    private static InteractionResult rollbackUpgrade(Level level, BlockPos pos, BlockState oldState, CompoundTag oldTileNbt,
+            AttributeHasBounding upgradeBounding, BlockState upgradeState) {
+        if (upgradeBounding != null) {
+            upgradeBounding.removeBoundingBlocks(level, pos, upgradeState);
         }
-        MekEnergistics.LOGGER.debug("ME installer upgraded machine to {} at {}", target.registryName(), pos);
-        return InteractionResult.CONSUME;
+        level.setBlockAndUpdate(pos, oldState);
+        BlockEntity restoredTile = WorldUtils.getTileEntity(level, pos);
+        if (restoredTile != null && oldTileNbt != null) {
+            restoredTile.loadWithComponents(oldTileNbt, level.registryAccess());
+        }
+        AttributeHasBounding oldBounding = Attribute.get(oldState, AttributeHasBounding.class);
+        if (oldBounding != null) {
+            oldBounding.placeBoundingBlocks(level, pos, oldState);
+        }
+        if (restoredTile instanceof TileEntityMekanism tileMek) {
+            tileMek.resyncMasterToBounding();
+            tileMek.sendUpdatePacket();
+            tileMek.setChanged();
+            tileMek.invalidateCapabilitiesFull();
+        }
+        return InteractionResult.FAIL;
     }
 
     private static void refreshMeLifecycle(TileEntityMekanism upgradedTile) {
