@@ -295,13 +295,13 @@ class MeSmartPatternMultiplicationTest {
     @Test
     void refundableBalanceScalesRemainingCopiesWithoutLossOrOverflow() {
         FakeKey iron = new FakeKey("refund_iron");
-        assertEquals(20, MeSmartPatternMultiplication.refundableBalance(
+        assertEquals(20, MePendingPatternStore.refundableBalance(
                 List.of(new GenericStack(iron, 4)), 5));
-        assertEquals(0, MeSmartPatternMultiplication.refundableBalance(
+        assertEquals(0, MePendingPatternStore.refundableBalance(
                 List.of(new GenericStack(iron, 4)), 0));
-        assertEquals(0, MeSmartPatternMultiplication.refundableBalance(List.of(), 5));
-        assertEquals(0, MeSmartPatternMultiplication.refundableBalance(null, 5));
-        assertEquals(Long.MAX_VALUE, MeSmartPatternMultiplication.refundableBalance(
+        assertEquals(0, MePendingPatternStore.refundableBalance(List.of(), 5));
+        assertEquals(0, MePendingPatternStore.refundableBalance(null, 5));
+        assertEquals(Long.MAX_VALUE, MePendingPatternStore.refundableBalance(
                 List.of(new GenericStack(iron, Long.MAX_VALUE)), 2));
     }
 

@@ -496,7 +496,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
             if (input == null || input.what() == null) {
                 continue;
             }
-            long amount = MeSmartPatternMultiplication.scaleAmountClamped(input.amount(), remaining);
+            long amount = MePendingPatternStore.scaleAmountClamped(input.amount(), remaining);
             if (amount <= 0) {
                 continue;
             }
