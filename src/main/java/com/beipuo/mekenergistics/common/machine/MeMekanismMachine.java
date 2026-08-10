@@ -387,11 +387,7 @@ public final class MeMekanismMachine implements Comparable<MeMekanismMachine> {
     }
 
     public boolean hasMeVariant() {
-        return switch (identity()) {
-            case DIGITAL_MINER, ELECTRIC_PUMP, FLUIDIC_PLENISHER, TELEPORTER, RESISTIVE_HEATER,
-                    LOGISTICAL_SORTER, DIMENSIONAL_STABILIZER, OREDICTIONIFICATOR, MODIFICATION_STATION -> false;
-            default -> true;
-        };
+        return CompatMachineCatalog.hasMeVariant(this);
     }
 
     @Nullable

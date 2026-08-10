@@ -16,7 +16,30 @@ public final class CompatMachineCatalog {
     private static final Map<MeMekanismMachine, CompatMachineSpec> MACHINES = buildCatalog();
     private static final Map<ResourceLocation, CompatMachineSpec> MACHINES_BY_SOURCE_ID = buildSourceIdIndex();
 
+    /**
+     * Machines that deliberately have no ME variant. Sensor, pass-through and mobility blocks have
+     * no AE-relevant item/chemical I/O, so they must never be registered as nominal ME blocks
+     * without a grid host. {@link #hasMeVariant(MeMekanismMachine)} is the traversal entry point
+     * for the closure contract, so a new machine lands in exactly one world: fully wired for AE,
+     * or explicitly listed here.
+     */
+    private static final Set<MeMekanismMachine> NO_ME_VARIANT = Set.of(
+            MeMekanismMachine.DIGITAL_MINER,
+            MeMekanismMachine.ELECTRIC_PUMP,
+            MeMekanismMachine.FLUIDIC_PLENISHER,
+            MeMekanismMachine.TELEPORTER,
+            MeMekanismMachine.RESISTIVE_HEATER,
+            MeMekanismMachine.LOGISTICAL_SORTER,
+            MeMekanismMachine.DIMENSIONAL_STABILIZER,
+            MeMekanismMachine.OREDICTIONIFICATOR,
+            MeMekanismMachine.MODIFICATION_STATION,
+            MeMekanismMachine.SEISMIC_VIBRATOR);
+
     private CompatMachineCatalog() {
+    }
+
+    public static boolean hasMeVariant(MeMekanismMachine machine) {
+        return !NO_ME_VARIANT.contains(machine);
     }
 
     public static CompatMachineSpec get(MeMekanismMachine machine) {

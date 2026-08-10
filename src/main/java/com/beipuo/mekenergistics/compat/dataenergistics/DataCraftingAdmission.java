@@ -3,7 +3,7 @@ package com.beipuo.mekenergistics.compat.dataenergistics;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
-import com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingAdmission;
+import com.fish_dan_.data_energistics.api.crafting.dispatch.CountedCraftingAdmission;
 import org.jetbrains.annotations.Nullable;
 
 public final class DataCraftingAdmission {
