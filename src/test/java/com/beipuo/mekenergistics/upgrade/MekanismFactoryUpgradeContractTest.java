@@ -264,7 +264,9 @@ class MekanismFactoryUpgradeContractTest {
                 "src/main/java/com/beipuo/mekenergistics/mixin/EnrichmentChamberItemContainerCreatorMixin.java"));
         String capabilities = Files.readString(Path.of(
                 "src/main/java/com/beipuo/mekenergistics/registry/ModBlockEntities.java"));
-        assertTrue(attachment.contains("isSupportedFactoryBlockItem(stack)"));
+        assertTrue(attachment.contains("type == ContainerType.ITEM && index >= creators.size()"),
+                "the item container creator mixin must fabricate the ME pattern slot for any item whose"
+                + "attached item containers exceed the vanilla creators, covering every factory family");
         assertFalse(capabilities.contains("filter(spec -> !spec.machine().isFactory()"));
         assertTrue(capabilities.contains("CompatMachineCatalog.available()"));
         assertTrue(capabilities.contains("machine.isMeUpgradeActive() ? machine : null"));
