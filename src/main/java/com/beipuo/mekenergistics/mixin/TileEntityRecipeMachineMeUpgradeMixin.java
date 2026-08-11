@@ -6,7 +6,6 @@ import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
-import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeDataMigration;

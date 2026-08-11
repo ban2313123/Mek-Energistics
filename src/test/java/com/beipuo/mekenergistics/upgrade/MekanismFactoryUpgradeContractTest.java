@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import mekanism.common.content.blocktype.FactoryType;
@@ -273,22 +274,43 @@ class MekanismFactoryUpgradeContractTest {
     }
 
     @Test
-    void legacyMeFactoriesStayOnTheSharedUpgradeBranch() throws IOException {
-        String source = Files.readString(Path.of(
-                "src/main/java/com/beipuo/mekenergistics/mixin/TileEntityMekanismMeUpgradeLifecycleMixin.java"));
+    void meUpgradeStateIsContainerOnlyAndEmpoweredFree() throws IOException {
+        List<String> removedBackendSymbols = List.of(
+                "MePatternProviderUpgrade",
+                "MePassiveCraftingUpgrade",
+                "StandaloneUpgradePersistence",
+                "MePatternUpgradeLang",
+                "EmpoweredMePatternUpgradeProvider",
+                "EmpoweredMePassiveCraftingUpgradeProvider",
+                "IAdditionalUpgrades",
+                "dev.lapis256",
+                "hasMekanismEmpoweredCore");
+        Path main = Path.of("src/main/java");
+        try (var stream = Files.walk(main)) {
+            List<Path> sources = stream.filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .toList();
+            for (Path source : sources) {
+                String text = Files.readString(source);
+                for (String symbol : removedBackendSymbols) {
+                    assertFalse(text.contains(symbol),
+                            () -> source + " must not reference removed backend symbol " + symbol);
+                }
+            }
+        }
 
-        assertTrue(source.contains("if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget())"));
-        assertTrue(source.contains("if ((Object) this instanceof MeFactoryAeMachine)"));
-        assertTrue(source.contains("Set.of(MePassiveCraftingUpgrade.get())"));
-        assertTrue(source.indexOf("instanceof MeFactoryAeMachine")
-                        < source.indexOf("instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()"),
-                "factory support must be resolved before the generic ME upgrade branch");
-        int factoryBranch = source.lastIndexOf("if ((Object) this instanceof MeFactoryAeMachine)");
-        int genericBranch = source.indexOf("else if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget())");
-        String factoryBlock = source.substring(factoryBranch, genericBranch);
-        assertTrue(factoryBlock.contains("MePassiveCraftingUpgrade.get()"));
-        assertFalse(factoryBlock.contains("MePatternProviderUpgrade.get()"),
-                "factory support should not advertise the standalone pattern provider upgrade");
+        String mixins = Files.readString(Path.of("src/main/resources/mekenergistics.mixins.json"));
+        assertFalse(mixins.contains("upgrade.UpgradeMixin"));
+        assertFalse(mixins.contains("upgrade.UpgradeUtilsMixin"));
+        assertFalse(mixins.contains("upgrade.UpgradeEmpoweredCompatibilityMixin"));
+
+        assertFalse(Files.exists(Path.of(
+                "src/main/resources/META-INF/services/dev.lapis256.mekanism_empowered.core.api.upgrade.IAdditionalUpgrades")),
+                "Empowered service file must be gone");
+
+        String build = Files.readString(Path.of("build.gradle"));
+        assertFalse(build.contains("compileOnly \"curse.maven:mekanism-empowered-core"),
+                "build.gradle must not declare the Empowered Core compile dependency");
     }
 
     @Test

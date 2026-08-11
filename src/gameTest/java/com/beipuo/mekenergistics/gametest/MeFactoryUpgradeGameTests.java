@@ -5,10 +5,11 @@ import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
-import com.beipuo.mekenergistics.registry.ModItems;
-import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
-import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
-import com.beipuo.mekenergistics.upgrade.StandaloneUpgradePersistence;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeConflictPolicy;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeDataMigration;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
 import appeng.api.AECapabilities;
 import appeng.api.networking.IInWorldGridNodeHost;
 import java.util.List;
@@ -53,7 +54,7 @@ public final class MeFactoryUpgradeGameTests {
     }
 
     @GameTest(template = "empty_3x3x3", timeoutTicks = 4 * SharedConstants.TICKS_PER_SECOND)
-    public static void factoryRootsActivateFromStandardSlot(GameTestHelper helper) {
+    public static void factoryRootsActivateFromMeUpgradeContainer(GameTestHelper helper) {
         for (int index = 0; index < FACTORY_ROOTS.size(); index++) {
             helper.setBlock(position(index), requiredBlock(FACTORY_ROOTS.get(index)));
         }
@@ -81,7 +82,7 @@ public final class MeFactoryUpgradeGameTests {
     }
 
     @GameTest(template = "empty_3x3x3", timeoutTicks = 4 * SharedConstants.TICKS_PER_SECOND)
-    public static void combinedMoreMachineFactoriesActivateFromStandardSlot(GameTestHelper helper) {
+    public static void combinedMoreMachineFactoriesActivateFromMeUpgradeContainer(GameTestHelper helper) {
         for (int index = 0; index < EMEKE_MORE_MACHINE_FACTORIES.size(); index++) {
             helper.setBlock(position(index), requiredBlock(EMEKE_MORE_MACHINE_FACTORIES.get(index)));
         }
@@ -101,35 +102,41 @@ public final class MeFactoryUpgradeGameTests {
         helper.setBlock(position, requiredBlock("mekanism:enrichment_chamber"));
 
         helper.startSequence()
-                .thenExecuteAfter(1, () -> requiredTile(helper, position).getComponent().getUpgradeSlot()
-                        .setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack()))
+                .thenExecuteAfter(1, () -> {
+                    MeUpgradeContainer container = upgradeContainer(helper, position);
+                    helper.assertTrue(container.install(MeUpgradeType.PATTERN_PROVIDER).successful(),
+                            "pattern provider upgrade was not installed");
+                })
                 .thenExecuteAfter(SharedConstants.TICKS_PER_SECOND + 2, () -> {
-                    TileEntityMekanism tile = requiredTile(helper, position);
-                    helper.assertTrue(tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get()),
+                    MeUpgradeContainer container = upgradeContainer(helper, position);
+                    helper.assertTrue(container.isInstalled(MeUpgradeType.PATTERN_PROVIDER),
                             "ME upgrade was not installed before saving");
-                    tile.getComponent().getUpgradeSlot().setStack(ModItems.ME_PASSIVE_CRAFTING_UPGRADE.toStack());
+                    helper.assertTrue(container.install(MeUpgradeType.PASSIVE_CRAFTING).successful(),
+                            "passive crafting upgrade was not installed");
                 })
                 .thenExecuteAfter(SharedConstants.TICKS_PER_SECOND + 2, () -> {
                     TileEntityMekanism tile = requiredTile(helper, position);
-                    helper.assertTrue(tile.getComponent().isUpgradeInstalled(MePassiveCraftingUpgrade.get()),
+                    MeUpgradeContainer container = upgradeContainer(helper, position);
+                    helper.assertTrue(container.isInstalled(MeUpgradeType.PASSIVE_CRAFTING),
                             "passive crafting upgrade was not installed before saving");
-                    CompoundTag saved = tile.saveWithFullMetadata(helper.getLevel().registryAccess());
-                    helper.assertTrue(tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get()),
+                    helper.assertTrue(container.isInstalled(MeUpgradeType.PATTERN_PROVIDER),
                             "saving removed the live ME upgrade");
-                    helper.assertTrue(tile.getComponent().isUpgradeInstalled(MePassiveCraftingUpgrade.get()),
-                            "saving removed the live passive crafting upgrade");
-                    helper.assertTrue(StandaloneUpgradePersistence.loadCount(saved, MePatternProviderUpgrade.get()) == 1,
+                    CompoundTag saved = tile.saveWithFullMetadata(helper.getLevel().registryAccess());
+                    MeUpgradeDataMigration.MeUpgradeMigrationResult migrated =
+                            MeUpgradeDataMigration.migrate(saved);
+                    helper.assertTrue(migrated.data().count(MeUpgradeType.PATTERN_PROVIDER) == 1,
                             "saved NBT omitted the ME upgrade");
-                    helper.assertTrue(StandaloneUpgradePersistence.loadCount(saved, MePassiveCraftingUpgrade.get()) == 1,
+                    helper.assertTrue(migrated.data().count(MeUpgradeType.PASSIVE_CRAFTING) == 1,
                             "saved NBT omitted the passive crafting upgrade");
                     BlockEntity loaded = BlockEntity.loadStatic(position, tile.getBlockState(), saved,
                             helper.getLevel().registryAccess());
                     helper.assertTrue(loaded instanceof TileEntityMekanism,
                             "saved NBT did not recreate a Mekanism block entity");
                     TileEntityMekanism loadedTile = (TileEntityMekanism) loaded;
-                    helper.assertTrue(loadedTile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get()),
+                    MeUpgradeContainer loadedContainer = upgradeContainer(loadedTile);
+                    helper.assertTrue(loadedContainer.isInstalled(MeUpgradeType.PATTERN_PROVIDER),
                             "reloaded block entity lost the ME upgrade");
-                    helper.assertTrue(loadedTile.getComponent().isUpgradeInstalled(MePassiveCraftingUpgrade.get()),
+                    helper.assertTrue(loadedContainer.isInstalled(MeUpgradeType.PASSIVE_CRAFTING),
                             "reloaded block entity lost the passive crafting upgrade");
                 })
                 .thenSucceed();
@@ -146,13 +153,14 @@ public final class MeFactoryUpgradeGameTests {
                     TileEntityMekanism tile = requiredTile(helper, position);
                     helper.assertTrue(tile instanceof MeUpgradeableMachine,
                             id + " is missing its ME upgrade adapter");
-                    tile.getComponent().getUpgradeSlot().setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+                    upgradeContainer(helper, position).install(MeUpgradeType.PATTERN_PROVIDER);
                 })
                 .thenExecuteAfter(SharedConstants.TICKS_PER_SECOND + 2, () -> {
                     TileEntityMekanism tile = requiredTile(helper, position);
                     helper.assertTrue(((MeUpgradeableMachine) tile).isMeUpgradeActive(),
                             id + " did not activate before the reload check");
-                    helper.assertTrue(tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get()),
+                    helper.assertTrue(upgradeContainer(helper, position)
+                                    .isInstalled(MeUpgradeType.PATTERN_PROVIDER),
                             id + " did not install the ME upgrade");
                     CompoundTag saved = tile.saveWithFullMetadata(helper.getLevel().registryAccess());
                     net.minecraft.world.level.block.state.BlockState state = helper.getBlockState(position);
@@ -191,14 +199,16 @@ public final class MeFactoryUpgradeGameTests {
                     MeFactoryIoOwner legacy = (MeFactoryIoOwner) blockEntity;
                     helper.assertTrue(!legacy.getPatternSlots().isEmpty(),
                             id + " must retain permanent pattern slots");
-                    helper.assertTrue(((TileEntityMekanism) legacy).getSupportedUpgrade()
-                                    .contains(MePassiveCraftingUpgrade.get()),
-                            id + " must advertise the passive crafting upgrade");
-                    helper.assertTrue(!((TileEntityMekanism) legacy).getSupportedUpgrade()
-                                    .contains(MePatternProviderUpgrade.get()),
-                            id + " must not advertise the standalone ME pattern provider upgrade");
                     helper.assertTrue(legacy.getMainNode().getNode() != null,
                             id + " must create its permanent AE node without an upgrade");
+                    helper.assertTrue(blockEntity instanceof MeUpgradeStateOwner,
+                            id + " must own ME upgrade state");
+                    MeUpgradeStateOwner owner = (MeUpgradeStateOwner) blockEntity;
+                    helper.assertTrue(owner.supportsNativePatternProvider(),
+                            id + " must be a native pattern provider");
+                    helper.assertTrue(owner.getMeUpgradeContainer()
+                                    .canInstall(MeUpgradeType.PASSIVE_CRAFTING, 1).successful(),
+                            id + " must support the passive crafting upgrade");
                 })
                 .thenSucceed();
     }
@@ -257,20 +267,22 @@ public final class MeFactoryUpgradeGameTests {
         if (!(tile instanceof MeUpgradeableMachine machine)) {
             throw new GameTestAssertException(id + " is missing its ME upgrade adapter");
         }
+        if (!(tile instanceof MeUpgradeStateOwner owner)) {
+            throw new GameTestAssertException(id + " does not own ME upgrade state");
+        }
         helper.assertTrue(machine.isMeUpgradeTarget(), id + " does not resolve to an upgrade profile");
         helper.assertTrue(!machine.isMeUpgradeActive(), id + " activated before the upgrade was installed");
-        helper.assertTrue(tile.getComponent() != null,
-                id + " has no TileComponentUpgrade for the standard ME upgrade slot");
-        helper.assertTrue(tile.getComponent().supports(MePatternProviderUpgrade.get()),
-                id + " does not expose the standard ME upgrade slot support");
-        tile.getComponent().getUpgradeSlot().setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+        MeUpgradeConflictPolicy.Result result =
+                owner.getMeUpgradeContainer().install(MeUpgradeType.PATTERN_PROVIDER);
+        helper.assertTrue(result.successful(), id + " rejected the ME upgrade install: " + result.reason());
     }
 
     private static void assertActiveFactory(GameTestHelper helper, List<String> roots, String id) {
         TileEntityMekanism tile = requiredTile(helper, roots, id);
         MeUpgradeableMachine machine = (MeUpgradeableMachine) tile;
-        helper.assertTrue(tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get()),
-                id + " did not install the ME upgrade from its standard slot");
+        MeUpgradeContainer container = ((MeUpgradeStateOwner) tile).getMeUpgradeContainer();
+        helper.assertTrue(container.isInstalled(MeUpgradeType.PATTERN_PROVIDER),
+                id + " did not install the ME upgrade in its container");
         helper.assertTrue(machine.isMeUpgradeActive(), id + " did not activate after upgrade installation");
         helper.assertTrue(!machine.getPatternSlots().isEmpty(), id + " has no pattern slots");
         helper.assertTrue(machine.getPatternInputLayout() != null, id + " has no pattern input layout");
@@ -280,7 +292,9 @@ public final class MeFactoryUpgradeGameTests {
     }
 
     private static void removeUpgrade(GameTestHelper helper, List<String> roots, String id) {
-        requiredTile(helper, roots, id).getComponent().removeUpgrade(MePatternProviderUpgrade.get(), true);
+        MeUpgradeStateOwner owner = (MeUpgradeStateOwner) requiredTile(helper, roots, id);
+        helper.assertTrue(owner.getMeUpgradeContainer().uninstall(MeUpgradeType.PATTERN_PROVIDER),
+                id + " could not uninstall the ME upgrade");
     }
 
     private static void assertInactiveFactory(GameTestHelper helper, List<String> roots, String id) {
@@ -288,6 +302,17 @@ public final class MeFactoryUpgradeGameTests {
         helper.assertTrue(!machine.isMeUpgradeActive(), id + " remained active after upgrade removal");
         helper.assertTrue(machine.getMainNode().getNode() == null,
                 id + " retained its AE node after upgrade removal");
+    }
+
+    private static MeUpgradeContainer upgradeContainer(GameTestHelper helper, BlockPos position) {
+        return upgradeContainer(requiredTile(helper, position));
+    }
+
+    private static MeUpgradeContainer upgradeContainer(TileEntityMekanism tile) {
+        if (!(tile instanceof MeUpgradeStateOwner owner)) {
+            throw new GameTestAssertException("tile does not own ME upgrade state");
+        }
+        return owner.getMeUpgradeContainer();
     }
 
     private static TileEntityMekanism requiredTile(GameTestHelper helper, List<String> roots, String id) {

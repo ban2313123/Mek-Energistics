@@ -9,14 +9,12 @@ import appeng.api.networking.IManagedGridNode;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.helpers.patternprovider.PatternContainer;
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingSettings;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import com.beipuo.mekenergistics.upgrade.MeMachineMode;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
-import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -151,13 +149,7 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
                 return container.isInstalled(MeUpgradeType.PASSIVE_CRAFTING);
             }
         }
-        if (tile.getComponent() == null || !tile.getComponent().isUpgradeInstalled(MePassiveCraftingUpgrade.get())) {
-            return false;
-        }
-        if (this instanceof MeFactoryAeMachine) {
-            return true;
-        }
-        return !(this instanceof MeUpgradeableMachine machine) || machine.isMeUpgradeActive();
+        return false;
     }
 
     default MePassiveCraftingSettings getPassiveCraftingSettings() {

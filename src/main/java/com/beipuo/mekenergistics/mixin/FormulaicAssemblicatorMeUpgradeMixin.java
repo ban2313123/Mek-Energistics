@@ -8,8 +8,10 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeRecipeMachineRuntime;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import java.util.List;
 import mekanism.api.IContentsListener;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
@@ -27,7 +29,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = TileEntityFormulaicAssemblicator.class, remap = false)
-public abstract class FormulaicAssemblicatorMeUpgradeMixin implements MeUpgradeableMachine, IBlockEntityExtension {
+public abstract class FormulaicAssemblicatorMeUpgradeMixin implements MeUpgradeableMachine, MeUpgradeStateOwner, IBlockEntityExtension {
     @Unique private MeUpgradeRecipeMachineRuntime mekenergistics$runtime;
     @Unique private TileEntityFormulaicAssemblicator mekenergistics$tile() {
         return (TileEntityFormulaicAssemblicator) (Object) this;
@@ -37,6 +39,26 @@ public abstract class FormulaicAssemblicatorMeUpgradeMixin implements MeUpgradea
             this.mekenergistics$runtime = new MeUpgradeRecipeMachineRuntime(mekenergistics$tile(), AeOutputMode.BOTH);
         }
         return this.mekenergistics$runtime;
+    }
+
+    @Override
+    public MeUpgradeContainer getMeUpgradeContainer() {
+        return mekenergistics$runtime().upgrades();
+    }
+
+    @Override
+    public boolean supportsNativePatternProvider() {
+        return mekenergistics$runtime().supportsNativePatternProvider();
+    }
+
+    @Override
+    public boolean isPatternInventoryEmpty() {
+        return mekenergistics$runtime().isPatternInventoryEmpty();
+    }
+
+    @Override
+    public void onMeUpgradeStateChanged() {
+        mekenergistics$runtime().onMeUpgradeStateChanged();
     }
     @Unique private boolean mekenergistics$isSourceBlock() {
         var id = BuiltInRegistries.BLOCK.getKey(mekenergistics$tile().getBlockState().getBlock());

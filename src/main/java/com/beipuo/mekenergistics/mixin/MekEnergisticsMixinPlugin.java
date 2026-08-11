@@ -66,9 +66,6 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             "com.jerry.mekextras.common.integration.mekaf.tile.factory.";
     private static final String EMEXTRAS_MEKAF_FACTORY =
             "io.github.masyumero.emextras.common.integration.mekaf.tile.factory.";
-    private static final Set<String> EMPOWERED_CORE_REPLACED_MIXINS = Set.of(
-            ".upgrade.UpgradeMixin",
-            ".upgrade.UpgradeUtilsMixin");
     private static final String DATA_COUNTED_PROVIDER =
             "com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingProvider";
     private static final String DATA_COUNTED_ADMISSION =
@@ -193,15 +190,6 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        for (String suffix : EMPOWERED_CORE_REPLACED_MIXINS) {
-            if (mixinClassName.endsWith(suffix) && isModLoaded("mekanism_empowered_core")) {
-                return false;
-            }
-        }
-        if (mixinClassName.endsWith(".upgrade.UpgradeEmpoweredCompatibilityMixin")
-                && !isModLoaded("mekanism_empowered_core")) {
-            return false;
-        }
         for (var entry : OPTIONAL_MIXINS.entrySet()) {
             if (mixinClassName.endsWith(entry.getKey())) {
                 Gate gate = entry.getValue();

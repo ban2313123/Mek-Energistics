@@ -16,7 +16,8 @@ import com.beipuo.mekenergistics.blockentity.machine.process.MeElectricMachineBl
 import com.beipuo.mekenergistics.menu.MePatternMekanismTileContainer;
 import com.beipuo.mekenergistics.menu.MePatternMachineContainer;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
-import com.beipuo.mekenergistics.registry.ModItems;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import mekanism.api.energy.IEnergyContainer;
@@ -76,8 +77,7 @@ public final class MeAeStatusGameTests {
                     MeAeStatusDataProvider.INSTANCE.appendServerData(data, accessor(tile));
                     helper.assertTrue(!data.contains(MeAeStatusDataProvider.TAG_AE_STATE),
                             "Mekanism machine reported an AE status before the upgrade was installed");
-                    tile.getComponent().getUpgradeSlot()
-                            .setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+                    installPatternProvider(helper, UPGRADED_MACHINE, "Mekanism machine");
                 })
                 .thenExecuteAfter(2 * SharedConstants.TICKS_PER_SECOND, () -> {
                     TileEntityMekanism upgradedTile = requiredTile(helper, UPGRADED_MACHINE);
@@ -157,10 +157,8 @@ public final class MeAeStatusGameTests {
 
         helper.startSequence()
                 .thenExecuteAfter(1, () -> {
-                    TileEntityMekanism tile = requiredTile(helper, LARGE_MACHINE);
                     helper.setBlock(LARGE_MACHINE_ENERGY_CELL, AEBlocks.CREATIVE_ENERGY_CELL.block());
-                    tile.getComponent().getUpgradeSlot()
-                            .setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+                    installPatternProvider(helper, LARGE_MACHINE, blockId);
                 })
                 .thenExecuteAfter(2 * SharedConstants.TICKS_PER_SECOND, () -> {
                     TileEntityMekanism tile = requiredTile(helper, LARGE_MACHINE);
@@ -201,11 +199,7 @@ public final class MeAeStatusGameTests {
                     helper.setBlock(LARGE_MACHINE_ENERGY_CELL, AEBlocks.CREATIVE_ENERGY_CELL.block());
                     drainLocalEnergy(helper, tile, blockId);
                     if (installUpgrade) {
-                        helper.assertTrue(tile instanceof MeUpgradeableMachine upgradeable
-                                        && upgradeable.isMeUpgradeTarget(),
-                                blockId + " is missing its ME upgrade target");
-                        tile.getComponent().getUpgradeSlot()
-                                .setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+                        installPatternProvider(helper, LARGE_MACHINE, blockId);
                     }
                 })
                 .thenExecuteAfter(2 * SharedConstants.TICKS_PER_SECOND, () -> {
@@ -321,6 +315,17 @@ public final class MeAeStatusGameTests {
                     }
                     throw new UnsupportedOperationException(method.getName());
                 });
+    }
+
+    private static void installPatternProvider(GameTestHelper helper, BlockPos position, String description) {
+        TileEntityMekanism tile = requiredTile(helper, position);
+        helper.assertTrue(tile instanceof MeUpgradeableMachine upgradeable && upgradeable.isMeUpgradeTarget(),
+                description + " is missing its ME upgrade target");
+        if (!(tile instanceof MeUpgradeStateOwner owner)) {
+            throw new GameTestAssertException(description + " does not own ME upgrade state");
+        }
+        helper.assertTrue(owner.getMeUpgradeContainer().install(MeUpgradeType.PATTERN_PROVIDER).successful(),
+                description + " could not install the ME pattern provider upgrade");
     }
 
     private static TileEntityMekanism requiredTile(GameTestHelper helper, BlockPos position) {

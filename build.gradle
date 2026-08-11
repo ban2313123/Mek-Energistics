@@ -183,7 +183,6 @@ dependencies {
     // "ex-pattern-provider" is ExtendedAE under its former project name. This is what lets
     // mixin/extendedae/ContainerRenamerMixin compile; nothing else here advertises the connection.
     compileOnly "curse.maven:ex-pattern-provider-892005:8025439"        // extendedae 1.21-2.2.32-neoforge
-    compileOnly "curse.maven:mekanism-empowered-core-1256399:8064667"  // mekanism_empowered_core 21.1-1.2.2 API
     compileOnly "curse.maven:thunderbolt-core-1631756:8580186"          // Thunderbolt Core, batch-provider API
 
     localRuntime "curse.maven:guideme-1173950:8420861"                  // GuideME 21.1.x, local test runtime

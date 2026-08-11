@@ -1,20 +1,12 @@
 package com.beipuo.mekenergistics.mixin;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
-import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
-import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
-import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
 import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.util.AECableType;
-import java.util.HashSet;
-import java.util.Set;
-import mekanism.api.Upgrade;
 import mekanism.common.inventory.container.MekanismContainer;
-import mekanism.common.block.attribute.Attribute;
-import mekanism.common.block.attribute.AttributeUpgradeSupport;
 import mekanism.common.tile.base.TileEntityMekanism;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,7 +18,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(value = TileEntityMekanism.class, remap = false)
@@ -67,53 +58,6 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
             }
         }
         machine.getRecipeAeSupport().refillLocalEnergyBuffers();
-    }
-
-    @Inject(method = "supportsUpgrades", at = @At("RETURN"), cancellable = true)
-    private void mekenergistics$enableSyntheticUpgradeSupport(CallbackInfoReturnable<Boolean> cir) {
-        if (!cir.getReturnValue() && mekenergistics$isSyntheticUpgradeTarget()) {
-            cir.setReturnValue(true);
-        }
-    }
-
-    @Inject(method = "getSupportedUpgrade", at = @At("HEAD"), cancellable = true)
-    private void mekenergistics$provideSyntheticUpgradeSet(CallbackInfoReturnable<Set<Upgrade>> cir) {
-        if (mekenergistics$isSyntheticUpgradeTarget()) {
-            cir.setReturnValue((Object) this instanceof MeFactoryAeMachine
-                    ? Set.of(MePassiveCraftingUpgrade.get())
-                    : Set.of(MePatternProviderUpgrade.get(), MePassiveCraftingUpgrade.get()));
-        }
-    }
-
-    @Inject(method = "getSupportedUpgrade", at = @At("RETURN"), cancellable = true)
-    private void mekenergistics$supportMeUpgrade(CallbackInfoReturnable<Set<Upgrade>> cir) {
-        if (mekenergistics$isSyntheticUpgradeTarget()) {
-            return;
-        }
-        if ((Object) this instanceof MeFactoryAeMachine) {
-            Set<Upgrade> upgrades = new HashSet<>(cir.getReturnValue());
-            upgrades.add(MePassiveCraftingUpgrade.get());
-            cir.setReturnValue(upgrades);
-        } else if ((Object) this instanceof MeUpgradeableMachine machine && machine.isMeUpgradeTarget()) {
-            Set<Upgrade> upgrades = new HashSet<>(cir.getReturnValue());
-            upgrades.add(MePatternProviderUpgrade.get());
-            upgrades.add(MePassiveCraftingUpgrade.get());
-            cir.setReturnValue(upgrades);
-        } else if ((Object) this instanceof MeAeMachine) {
-            Set<Upgrade> upgrades = new HashSet<>(cir.getReturnValue());
-            upgrades.add(MePatternProviderUpgrade.get());
-            upgrades.add(MePassiveCraftingUpgrade.get());
-            cir.setReturnValue(upgrades);
-        }
-    }
-
-    @Unique
-    private boolean mekenergistics$isSyntheticUpgradeTarget() {
-        TileEntityMekanism tile = (TileEntityMekanism) (Object) this;
-        if (!(tile instanceof MeUpgradeableMachine) || tile.getBlockState() == null) {
-            return false;
-        }
-        return !Attribute.has(tile.getBlockHolder(), AttributeUpgradeSupport.class);
     }
 
     @Inject(method = "setRemoved", at = @At("HEAD"))

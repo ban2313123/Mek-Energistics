@@ -6,8 +6,10 @@ import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.upgrade.EvolvedRecipeUpgradeProfiles;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeRecipeMachineRuntime;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import fr.iglee42.evolvedmekanism.recipes.AlloyerRecipe;
 import fr.iglee42.evolvedmekanism.recipes.ChemixerRecipe;
 import fr.iglee42.evolvedmekanism.recipes.SolidificationRecipe;
@@ -36,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = {TileEntityAlloyer.class, TileEntitySolidifier.class, TileEntityMelter.class,
         TileEntityChemixer.class}, remap = false)
-public abstract class EvolvedRecipeMachineMeUpgradeMixin implements MeUpgradeableMachine, IBlockEntityExtension {
+public abstract class EvolvedRecipeMachineMeUpgradeMixin implements MeUpgradeableMachine, MeUpgradeStateOwner, IBlockEntityExtension {
     @Unique private MeUpgradeRecipeMachineRuntime mekenergistics$runtime;
 
     @Unique
@@ -50,6 +52,26 @@ public abstract class EvolvedRecipeMachineMeUpgradeMixin implements MeUpgradeabl
             this.mekenergistics$runtime = new MeUpgradeRecipeMachineRuntime(mekenergistics$tile(), AeOutputMode.BOTH);
         }
         return this.mekenergistics$runtime;
+    }
+
+    @Override
+    public MeUpgradeContainer getMeUpgradeContainer() {
+        return mekenergistics$runtime().upgrades();
+    }
+
+    @Override
+    public boolean supportsNativePatternProvider() {
+        return mekenergistics$runtime().supportsNativePatternProvider();
+    }
+
+    @Override
+    public boolean isPatternInventoryEmpty() {
+        return mekenergistics$runtime().isPatternInventoryEmpty();
+    }
+
+    @Override
+    public void onMeUpgradeStateChanged() {
+        mekenergistics$runtime().onMeUpgradeStateChanged();
     }
 
     @Override
