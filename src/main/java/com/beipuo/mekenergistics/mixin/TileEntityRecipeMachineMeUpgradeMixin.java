@@ -130,7 +130,8 @@ public abstract class TileEntityRecipeMachineMeUpgradeMixin implements MeUpgrade
         @Unique
     private boolean mekenergistics$isInstalled() {
         return isMeUpgradeTarget() && getMeUpgradeContainer() != null
-                && getMeUpgradeContainer().isInstalled(MeUpgradeType.PATTERN_PROVIDER);
+                && (getMeUpgradeContainer().isInstalled(MeUpgradeType.PATTERN_PROVIDER)
+                    || getMeUpgradeContainer().isInstalled(MeUpgradeType.OUTPUT_INTERFACE));
     }
 
     @Override public AbstractMeAeSupport<?> getRecipeAeSupport() { return mekenergistics$support(); }

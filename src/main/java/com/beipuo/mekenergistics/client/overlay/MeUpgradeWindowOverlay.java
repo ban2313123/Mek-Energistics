@@ -5,7 +5,6 @@ import com.beipuo.mekenergistics.network.packet.RequestUpgradeStatePacket;
 import com.beipuo.mekenergistics.network.packet.UninstallMeUpgradePacket;
 import com.beipuo.mekenergistics.network.packet.UpgradeStateSyncPacket;
 import com.beipuo.mekenergistics.registry.ModItems;
-import com.beipuo.mekenergistics.upgrade.MeUpgradeData;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
 import java.util.ArrayList;
@@ -74,7 +73,7 @@ public final class MeUpgradeWindowOverlay {
             MekEnergistics.MODID, "textures/item/upgrade_me_pattern_provider.png");
 
     /** Client-side cache of the last synced upgrade state per machine position. */
-    private static final Map<BlockPos, MeUpgradeData> KNOWN_STATE = new HashMap<>();
+    private static final Map<BlockPos, List<MeUpgradeType>> KNOWN_STATE = new HashMap<>();
     /** Positions already asked for state while their GUI is open. */
     private static final Set<BlockPos> REQUESTED = new HashSet<>();
 
@@ -84,17 +83,17 @@ public final class MeUpgradeWindowOverlay {
     /** Applies a server upgrade-state snapshot to the cache and any matching open window. */
     public static void handleStateSync(UpgradeStateSyncPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            KNOWN_STATE.put(packet.pos(), packet.data());
+            KNOWN_STATE.put(packet.pos(), packet.installed());
             Minecraft minecraft = Minecraft.getInstance();
             if (!(minecraft.screen instanceof GuiMekanism<?> gui)) {
                 return;
             }
             for (GuiWindow window : new ArrayList<>(gui.getWindows())) {
                 if (window instanceof MeUpgradeWindow upgradeWindow && upgradeWindow.matches(packet.pos())) {
-                    if (packet.data().isEmpty()) {
+                    if (packet.installed().isEmpty()) {
                         upgradeWindow.close();
                     } else {
-                        upgradeWindow.applyData(packet.data());
+                        upgradeWindow.applyData(packet.installed());
                     }
                     return;
                 }
@@ -115,7 +114,7 @@ public final class MeUpgradeWindowOverlay {
         if (!KNOWN_STATE.containsKey(pos) && REQUESTED.add(pos)) {
             PacketDistributor.sendToServer(new RequestUpgradeStatePacket(pos));
         }
-        MeUpgradeData data = KNOWN_STATE.get(pos);
+        List<MeUpgradeType> data = KNOWN_STATE.get(pos);
         if (data == null || data.isEmpty()) {
             return;
         }
@@ -142,7 +141,7 @@ public final class MeUpgradeWindowOverlay {
         if (target == null) {
             return;
         }
-        MeUpgradeData data = KNOWN_STATE.get(target.pos());
+        List<MeUpgradeType> data = KNOWN_STATE.get(target.pos());
         if (data == null || data.isEmpty() || !buttonBounds(target.gui()).contains(event.getMouseX(), event.getMouseY())) {
             return;
         }
@@ -163,7 +162,7 @@ public final class MeUpgradeWindowOverlay {
         if (target == null) {
             return false;
         }
-        MeUpgradeData data = KNOWN_STATE.get(target.pos());
+        List<MeUpgradeType> data = KNOWN_STATE.get(target.pos());
         return data != null && !data.isEmpty();
     }
 
@@ -237,39 +236,28 @@ public final class MeUpgradeWindowOverlay {
 
     private static final class MeUpgradeWindow extends GuiWindow {
         private final BlockPos pos;
-        private MeUpgradeData data;
+        private List<MeUpgradeType> installed;
 
-        private MeUpgradeWindow(IGuiWrapper gui, int x, int y, BlockPos pos, @Nullable MeUpgradeData data) {
+        private MeUpgradeWindow(IGuiWrapper gui, int x, int y, BlockPos pos, @Nullable List<MeUpgradeType> installed) {
             super(gui, x, y, WINDOW_WIDTH, WINDOW_HEIGHT, SelectedWindowData.UNSPECIFIED);
             this.pos = pos;
-            this.data = data == null ? MeUpgradeData.EMPTY : data;
+            this.installed = installed == null ? List.of() : installed;
         }
 
         private boolean matches(BlockPos other) {
             return this.pos.equals(other);
         }
 
-        private void applyData(MeUpgradeData data) {
-            this.data = data == null ? MeUpgradeData.EMPTY : data;
-        }
-
-        private List<MeUpgradeType> installedTypes() {
-            List<MeUpgradeType> installed = new ArrayList<>();
-            for (MeUpgradeType type : MeUpgradeType.values()) {
-                if (this.data.isInstalled(type)) {
-                    installed.add(type);
-                }
-            }
-            return installed;
+        private void applyData(List<MeUpgradeType> installed) {
+            this.installed = installed == null ? List.of() : installed;
         }
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                List<MeUpgradeType> installed = installedTypes();
-                int row = rowAt(mouseY, installed.size());
+                int row = rowAt(mouseY, this.installed.size());
                 if (row >= 0 && uninstallBounds(row).contains((int) mouseX, (int) mouseY)) {
-                    PacketDistributor.sendToServer(new UninstallMeUpgradePacket(this.pos, installed.get(row)));
+                    PacketDistributor.sendToServer(new UninstallMeUpgradePacket(this.pos, this.installed.get(row)));
                     return true;
                 }
             }
@@ -282,14 +270,13 @@ public final class MeUpgradeWindowOverlay {
             int titleWidth = font().width(UPGRADE_WINDOW_TITLE);
             drawScrollingString(guiGraphics, UPGRADE_WINDOW_TITLE, (width - titleWidth) / 2, 6, TextAlignment.LEFT,
                     titleTextColor(), titleWidth, 0, false);
-            List<MeUpgradeType> installed = installedTypes();
-            if (installed.isEmpty()) {
+            if (this.installed.isEmpty()) {
                 drawScrollingString(guiGraphics, EMPTY_TEXT, relativeX + ICON_X, relativeY + ROW_START_Y + 10,
                         TextAlignment.LEFT, titleTextColor(), width - 16, 0, false);
                 return;
             }
-            for (int row = 0; row < installed.size(); row++) {
-                MeUpgradeType type = installed.get(row);
+            for (int row = 0; row < this.installed.size(); row++) {
+                MeUpgradeType type = this.installed.get(row);
                 ItemStack stack = upgradeStack(type);
                 int rowY = relativeY + ROW_START_Y + row * ROW_HEIGHT;
                 if (!stack.isEmpty()) {

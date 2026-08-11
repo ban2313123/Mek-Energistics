@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.gametest;
 
 import appeng.api.config.Actionable;
+import appeng.api.crafting.IPatternDetails;
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionHost;
@@ -15,6 +16,7 @@ import appeng.core.definitions.AEItems;
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
+import com.beipuo.mekenergistics.blockentity.support.MePatternDecodeHelper;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
 import mekanism.api.energy.IEnergyContainer;
@@ -141,15 +143,17 @@ public final class MeInterfaceModeGameTests {
                             "machine is not running interface mode");
                     helper.assertTrue(machine.getAvailablePatterns().isEmpty(),
                             "interface mode exposed patterns");
-                    var pattern = PatternDetailsHelper.encodeProcessingPattern(
+                    ItemStack patternStack = PatternDetailsHelper.encodeProcessingPattern(
                             java.util.List.of(new GenericStack(AEItemKey.of(Items.IRON_ORE), 1)),
                             java.util.List.of(new GenericStack(AEItemKey.of(Items.IRON_INGOT), 1)));
-                    machine.getPatternSlots().getFirst().setStack(pattern);
+                    IPatternDetails pattern = MePatternDecodeHelper.safeDecode(patternStack, helper.getLevel(),
+                            "interface isolation test");
+                    machine.getPatternSlots().getFirst().setStack(patternStack);
                     helper.assertTrue(machine.getAvailablePatterns().isEmpty(),
                             "interface mode accepted a pattern into its published list");
                     KeyCounter[] inputs = new KeyCounter[]{new KeyCounter()};
                     inputs[0].add(AEItemKey.of(Items.IRON_ORE), 1);
-                    helper.assertTrue(!machine.pushPattern(pattern, inputs),
+                    helper.assertTrue(pattern != null && !machine.pushPattern(pattern, inputs),
                             "interface mode accepted a pattern push");
                     helper.assertTrue(machine.maxAcceptedPatternCopies(inputs) == 0,
                             "interface mode accepted pattern copies");
@@ -276,11 +280,17 @@ public final class MeInterfaceModeGameTests {
     }
 
     private static mekanism.api.inventory.IInventorySlot inputSlot(GameTestHelper helper) {
-        return requiredTile(helper, MACHINE).getInputSlots(null).getFirst();
+        return requiredTile(helper, MACHINE).getInventorySlots(null).stream()
+                .filter(slot -> slot instanceof mekanism.common.inventory.slot.InputInventorySlot)
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("machine has no input slot"));
     }
 
     private static mekanism.api.inventory.IInventorySlot outputSlot(GameTestHelper helper) {
-        return requiredTile(helper, MACHINE).getOutputSlots(null).getFirst();
+        return requiredTile(helper, MACHINE).getInventorySlots(null).stream()
+                .filter(slot -> slot instanceof mekanism.common.inventory.slot.OutputInventorySlot)
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("machine has no output slot"));
     }
 
     private static void drainLocalEnergy(GameTestHelper helper, TileEntityMekanism tile, String description) {

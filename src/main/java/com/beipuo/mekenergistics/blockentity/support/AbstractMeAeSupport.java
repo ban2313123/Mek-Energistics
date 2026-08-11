@@ -391,7 +391,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     public final boolean isSmartPatternMultiplicationEnabled() {
-        return this.smartPatternMultiplication.isEnabled();
+        return !isInterfaceMode() && this.smartPatternMultiplication.isEnabled();
     }
 
     public final void setSmartPatternMultiplicationEnabled(boolean enabled) {

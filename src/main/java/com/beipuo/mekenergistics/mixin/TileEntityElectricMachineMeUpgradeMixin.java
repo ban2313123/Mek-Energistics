@@ -124,7 +124,8 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
     @Unique
     private boolean mekenergistics$isMeUpgradeInstalled() {
         return isMeUpgradeTarget() && getMeUpgradeContainer() != null
-                && getMeUpgradeContainer().isInstalled(MeUpgradeType.PATTERN_PROVIDER);
+                && (getMeUpgradeContainer().isInstalled(MeUpgradeType.PATTERN_PROVIDER)
+                    || getMeUpgradeContainer().isInstalled(MeUpgradeType.OUTPUT_INTERFACE));
     }
 
     @Override
