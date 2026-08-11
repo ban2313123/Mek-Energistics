@@ -89,7 +89,8 @@ public final class MeUpgradeRecipeMachineRuntime {
     }
 
     public boolean installed(boolean target) {
-        return target && this.upgrades().isInstalled(MeUpgradeType.PATTERN_PROVIDER);
+        return target && (this.upgrades().isInstalled(MeUpgradeType.PATTERN_PROVIDER)
+                || this.upgrades().isInstalled(MeUpgradeType.OUTPUT_INTERFACE));
     }
 
     public MeUpgradeContainer upgrades() {

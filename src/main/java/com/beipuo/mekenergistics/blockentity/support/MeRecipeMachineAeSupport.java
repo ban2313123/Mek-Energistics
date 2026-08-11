@@ -6,6 +6,7 @@ import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.networking.security.IActionSource;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
+import com.beipuo.mekenergistics.upgrade.MeMachineMode;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import mekanism.api.IContentsListener;
@@ -30,6 +31,7 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
             Consumer<AeOutputMode> outputModeSetter, boolean trackSmartPatternMultiplication) {
         container.track(SyncableBoolean.create(this.owner::hasPassiveCraftingUpgrade,
                 this::setClientPassiveCraftingEnabled));
+        container.track(SyncableBoolean.create(this::isInterfaceMode, this::setClientInterfaceMode));
         container.track(SyncableInt.create(() -> outputModeSupplier.get().ordinal(), mode -> outputModeSetter.accept(AeOutputMode.byId(mode))));
         if (trackSmartPatternMultiplication) {
             container.track(SyncableBoolean.create(this.owner::isSmartPatternMultiplicationEnabled, this.owner::setSmartPatternMultiplicationEnabled));
@@ -41,6 +43,9 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
 
     /** Drains declared outputs before allowing another smart batch into the machine. */
     public boolean processPatternIo(AeOutputMode mode, boolean sendUpdatePacket) {
+        if (isInterfaceMode()) {
+            return processInterfaceMode() || sendUpdatePacket;
+        }
         boolean changed = drainPatternOutputs(mode) || sendUpdatePacket;
         if (!hasPatternOutputBacklog(mode)) {
             if (this.owner.hasPassiveCraftingUpgrade()) {
@@ -58,6 +63,9 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
 
     @Override
     protected boolean hasAeOutputWork() {
+        if (isInterfaceMode()) {
+            return hasInterfaceWork();
+        }
         AeOutputMode mode = this.owner.getAeOutputMode();
         if (hasPatternOutputBacklog(mode)) {
             return true;
@@ -67,6 +75,15 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
 
     @Override
     protected boolean processAeOutputWork() {
+        if (isInterfaceMode()) {
+            boolean hadWork = hasInterfaceWork();
+            boolean changed = processInterfaceMode();
+            boolean hasWork = hasInterfaceWork();
+            if (hasWork) {
+                alertAeTicker();
+            }
+            return hadWork && !hasWork;
+        }
         boolean hadWork = hasAeOutputWork();
         AeOutputMode mode = this.owner.getAeOutputMode();
         drainPatternOutputs(mode);
@@ -124,6 +141,9 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
 
     public static <RECIPE extends MekanismRecipe<?>> CachedRecipe<RECIPE> withAeRecipeEnergy(
             MeAeMachine aeMachine, IActionSource actionSource, MachineEnergyContainer<?> energyContainer, CachedRecipe<RECIPE> cachedRecipe) {
+        if (MeAeMachine.modeOf(aeMachine).isOutputInterface()) {
+            return cachedRecipe;
+        }
         return cachedRecipe.setEnergyRequirements(energyContainer::getEnergyPerTick,
                 MeNetworkEnergyHelper.recipeEnergyView(energyContainer, aeMachine::getGrid, actionSource));
     }

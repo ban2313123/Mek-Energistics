@@ -14,6 +14,7 @@ import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingSettings;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
+import com.beipuo.mekenergistics.upgrade.MeMachineMode;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
@@ -33,6 +34,14 @@ import org.jetbrains.annotations.Nullable;
 
 public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.me.helpers.IGridConnectedBlockEntity {
     int MAX_PATTERN_TERMINAL_NAME_LENGTH = 64;
+
+    /** Resolves the machine running mode; machines without a self-owned upgrade container stay in
+     * pattern mode. The mode itself lives on {@link MeUpgradeStateOwner} so interfaces and mixin
+     * classes implementing both {@code MeAeMachine} and {@code MeUpgradeStateOwner} do not inherit
+     * conflicting defaults. */
+    static MeMachineMode modeOf(MeAeMachine machine) {
+        return machine instanceof MeUpgradeStateOwner owner ? owner.getMeMachineMode() : MeMachineMode.PATTERN_PROVIDER;
+    }
 
     AeOutputMode getAeOutputMode();
 
@@ -107,6 +116,9 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
 
     @Override
     default boolean isVisibleInTerminal() {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return false;
+        }
         return getRecipeAeSupport().isVisibleInPatternAccessTerminal();
     }
 
@@ -123,6 +135,9 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
     }
 
     default boolean hasPassiveCraftingUpgrade() {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return false;
+        }
         TileEntityMekanism tile = getAeOwnerTile();
         if (tile.getLevel() != null && tile.getLevel().isClientSide()) {
             Boolean synced = getRecipeAeSupport().getClientPassiveCraftingEnabled();
@@ -161,6 +176,9 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
     }
 
     default List<IPatternDetails> getAvailablePatterns() {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return List.of();
+        }
         return getRecipeAeSupport().getAvailablePatterns();
     }
 
@@ -170,16 +188,25 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
 
     @Override
     default boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return false;
+        }
         return getRecipeAeSupport().pushPatternWithAdapter(patternDetails, inputHolder);
     }
 
     @Override
     default long maxAcceptedPatternCopies(KeyCounter[] oneCraftInputs) {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return 0;
+        }
         return getRecipeAeSupport().maxAcceptedCopies(oneCraftInputs);
     }
 
     @Override
     default boolean isBusy() {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return true;
+        }
         return getRecipeAeSupport().isPatternBusy();
     }
 

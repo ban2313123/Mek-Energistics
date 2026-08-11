@@ -111,6 +111,32 @@ class MeUpgradeContainerTest {
     }
 
     @Test
+    void modeDerivesFromInstalledUpgrades() {
+        TestOwner owner = new TestOwner();
+        assertEquals(MeMachineMode.NONE, owner.container.mode());
+        assertTrue(owner.container.install(MeUpgradeType.PATTERN_PROVIDER).successful());
+        assertEquals(MeMachineMode.PATTERN_PROVIDER, owner.container.mode());
+        assertTrue(owner.container.install(MeUpgradeType.PASSIVE_CRAFTING).successful());
+        assertEquals(MeMachineMode.PATTERN_PROVIDER, owner.container.mode());
+    }
+
+    @Test
+    void interfaceModeOverridesPatternProvider() {
+        TestOwner owner = new TestOwner();
+        assertTrue(owner.container.install(MeUpgradeType.PATTERN_PROVIDER).successful());
+        assertTrue(owner.container.install(MeUpgradeType.PASSIVE_CRAFTING).successful());
+        MeUpgradeConflictPolicy.Result blocked = owner.container.install(MeUpgradeType.OUTPUT_INTERFACE);
+        assertFalse(blocked.successful());
+        assertEquals(MeMachineMode.PATTERN_PROVIDER, owner.container.mode());
+
+        TestOwner interfaceOwner = new TestOwner();
+        assertTrue(interfaceOwner.container.install(MeUpgradeType.OUTPUT_INTERFACE).successful());
+        assertEquals(MeMachineMode.OUTPUT_INTERFACE, interfaceOwner.container.mode());
+        interfaceOwner.container.uninstall(MeUpgradeType.OUTPUT_INTERFACE);
+        assertEquals(MeMachineMode.NONE, interfaceOwner.container.mode());
+    }
+
+    @Test
     void setDataNotifiesOwnerAndChangeListener() {
         TestOwner owner = new TestOwner();
         owner.container.setData(MeUpgradeData.EMPTY.with(MeUpgradeType.OUTPUT_INTERFACE, 1));

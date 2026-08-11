@@ -37,6 +37,17 @@ public final class MeUpgradeContainer {
         return this.data.isEmpty();
     }
 
+    /** Derives the machine running mode from the installed upgrades. */
+    public MeMachineMode mode() {
+        if (this.data.isInstalled(MeUpgradeType.OUTPUT_INTERFACE)) {
+            return MeMachineMode.OUTPUT_INTERFACE;
+        }
+        if (this.data.isInstalled(MeUpgradeType.PATTERN_PROVIDER)) {
+            return MeMachineMode.PATTERN_PROVIDER;
+        }
+        return MeMachineMode.NONE;
+    }
+
     /** Installs one unit of {@code type} after validating support, prerequisites, limits and
      * conflicts. Never partially modifies state. */
     public MeUpgradeConflictPolicy.Result install(MeUpgradeType type) {

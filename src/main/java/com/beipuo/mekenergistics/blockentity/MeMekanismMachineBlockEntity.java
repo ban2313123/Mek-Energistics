@@ -568,6 +568,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
 
     private void onMeUpgradeStateChangedInternal() {
         setChanged();
+        getAeSupport().alertAeTicker();
         if (this.level != null) {
             this.level.invalidateCapabilities(this.worldPosition);
         }
@@ -581,6 +582,8 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         container.track(SyncableInt.create(() -> this.aeOutputMode.ordinal(), mode -> this.aeOutputMode = AeOutputMode.byId(mode)));
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(this::hasPassiveCraftingUpgrade,
                 getAeSupport()::setClientPassiveCraftingEnabled));
+        container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(
+                getAeSupport()::isInterfaceMode, getAeSupport()::setClientInterfaceMode));
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(this::isSmartPatternMultiplicationEnabled, this::setSmartPatternMultiplicationEnabled));
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(this::isVisibleInTerminal, this::setVisibleInPatternAccessTerminal));
         container.track(SyncableInt.create(() -> getPassiveCraftingSettings().intervalTicks(), value -> getPassiveCraftingSettings().set(value, getPassiveCraftingSettings().multiplier())));

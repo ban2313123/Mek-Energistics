@@ -28,12 +28,24 @@ public final class MeMekanismMachineAeSupport extends AbstractMeAeSupport<MeMeka
 
     @Override
     protected boolean hasAeOutputWork() {
+        if (isInterfaceMode()) {
+            return hasInterfaceWork();
+        }
         return this.smartPatternMultiplication.hasPendingWork()
                 || hasPatternOutputBacklog(this.owner.getAeOutputMode());
     }
 
     @Override
     protected boolean processAeOutputWork() {
+        if (isInterfaceMode()) {
+            boolean hadWork = hasInterfaceWork();
+            boolean changed = processInterfaceMode();
+            boolean hasWork = hasInterfaceWork();
+            if (hasWork) {
+                alertAeTicker();
+            }
+            return hadWork && !hasWork;
+        }
         AeOutputMode mode = this.owner.getAeOutputMode();
         boolean changed = drainPatternOutputs(mode);
         return hasPatternOutputBacklog(mode) ? changed : processSmartPatternViaAdapter() || changed;

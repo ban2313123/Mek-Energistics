@@ -8,6 +8,12 @@ package com.beipuo.mekenergistics.upgrade;
 public interface MeUpgradeStateOwner {
     MeUpgradeContainer getMeUpgradeContainer();
 
+    /** Defaults to the container-derived mode. */
+    default MeMachineMode getMeMachineMode() {
+        MeUpgradeContainer container = getMeUpgradeContainer();
+        return container == null ? MeMachineMode.NONE : container.mode();
+    }
+
     /** Whether this machine supports installing the given ME upgrade. Defaults to true for all
      * machines that expose a container. */
     default boolean supportsUpgrade(MeUpgradeType type) {

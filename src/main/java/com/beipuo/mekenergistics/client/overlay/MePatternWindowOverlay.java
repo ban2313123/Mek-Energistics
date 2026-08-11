@@ -150,6 +150,9 @@ public final class MePatternWindowOverlay {
     }
 
     private static Target findTarget(Screen screen) {
+        if (MeInterfaceWindowOverlay.isInterfaceMachine(screen)) {
+            return null;
+        }
         if (!(screen instanceof GuiMekanism<?> gui) || !(gui.getMenu() instanceof MekanismTileContainer<?> container)) {
             return null;
         }

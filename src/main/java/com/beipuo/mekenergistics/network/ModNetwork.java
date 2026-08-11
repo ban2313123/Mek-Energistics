@@ -1,7 +1,9 @@
 package com.beipuo.mekenergistics.network;
 
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputModePacket;
+import com.beipuo.mekenergistics.network.packet.RequestInterfaceConfigPacket;
 import com.beipuo.mekenergistics.network.packet.SetAeOutputModePacket;
+import com.beipuo.mekenergistics.network.packet.SetInterfaceConfigPacket;
 import com.beipuo.mekenergistics.network.packet.SetPatternTerminalNamePacket;
 import com.beipuo.mekenergistics.network.packet.SetPassiveCraftingSettingsPacket;
 import com.beipuo.mekenergistics.network.packet.SetSmartPatternMultiplicationPacket;
@@ -16,6 +18,8 @@ public final class ModNetwork {
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(CycleAeOutputModePacket.TYPE, CycleAeOutputModePacket.STREAM_CODEC, CycleAeOutputModePacket::handle);
+        registrar.playToServer(RequestInterfaceConfigPacket.TYPE, RequestInterfaceConfigPacket.STREAM_CODEC, RequestInterfaceConfigPacket::handle);
+        registrar.playToServer(SetInterfaceConfigPacket.TYPE, SetInterfaceConfigPacket.STREAM_CODEC, SetInterfaceConfigPacket::handle);
         registrar.playToServer(SetAeOutputModePacket.TYPE, SetAeOutputModePacket.STREAM_CODEC, SetAeOutputModePacket::handle);
         registrar.playToServer(SetPatternTerminalNamePacket.TYPE, SetPatternTerminalNamePacket.STREAM_CODEC, SetPatternTerminalNamePacket::handle);
         registrar.playToServer(SetPassiveCraftingSettingsPacket.TYPE, SetPassiveCraftingSettingsPacket.STREAM_CODEC, SetPassiveCraftingSettingsPacket::handle);

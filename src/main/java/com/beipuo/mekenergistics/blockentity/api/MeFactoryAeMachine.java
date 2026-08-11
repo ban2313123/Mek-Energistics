@@ -11,6 +11,7 @@ import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.upgrade.MeMachineMode;
 import java.util.List;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.container.sync.SyncableInt;
@@ -55,6 +56,9 @@ public interface MeFactoryAeMachine extends MeAeMachine {
 
     @Override
     default List<IPatternDetails> getAvailablePatterns() {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return List.of();
+        }
         return getAeSupport().getAvailablePatterns();
     }
 
@@ -90,6 +94,9 @@ public interface MeFactoryAeMachine extends MeAeMachine {
 
     @Override
     default boolean isVisibleInTerminal() {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return false;
+        }
         return getAeSupport().isVisibleInPatternAccessTerminal();
     }
 
@@ -112,16 +119,25 @@ public interface MeFactoryAeMachine extends MeAeMachine {
 
     @Override
     default boolean pushPattern(IPatternDetails patternDetails, appeng.api.stacks.KeyCounter[] inputHolder) {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return false;
+        }
         return getAeSupport().pushPatternWithAdapter(patternDetails, inputHolder);
     }
 
     @Override
     default long maxAcceptedPatternCopies(appeng.api.stacks.KeyCounter[] oneCraftInputs) {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return 0;
+        }
         return getAeSupport().maxAcceptedCopies(oneCraftInputs);
     }
 
     @Override
     default boolean isBusy() {
+        if (MeAeMachine.modeOf(this).isOutputInterface()) {
+            return true;
+        }
         return getAeSupport().isPatternBusy();
     }
 
