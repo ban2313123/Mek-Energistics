@@ -4,7 +4,10 @@ import appeng.core.definitions.AEBlocks;
 import appeng.api.AECapabilities;
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
+import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.networking.IInWorldGridNodeHost;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.GenericStack;
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
@@ -33,6 +36,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import snownee.jade.api.BlockAccessor;
@@ -140,6 +144,46 @@ public final class MeAeStatusGameTests {
     public static void upgradedLargeAntiprotonicRefillsLocalFeBeforeRecipeTick(GameTestHelper helper) {
         runLargeAntiprotonicRefillTest(helper,
                 "mekmm:large_antiprotonic_nucleosynthesizer", true);
+    }
+
+    @GameTest(template = "empty_3x3x3", timeoutTicks = 5 * SharedConstants.TICKS_PER_SECOND)
+    public static void activeLargeMachineRepublishesPatternsWhenSlotsReload(GameTestHelper helper) {
+        String blockId = "mekmm:large_antiprotonic_nucleosynthesizer";
+        helper.setBlock(LARGE_MACHINE, requiredBlock(blockId));
+        var largeState = helper.getBlockState(LARGE_MACHINE);
+        AttributeHasBounding bounding = Attribute.get(largeState, AttributeHasBounding.class);
+        helper.assertTrue(bounding != null, blockId + " has no large-machine bounding attribute");
+        bounding.placeBoundingBlocks(helper.getLevel(), helper.absolutePos(LARGE_MACHINE), largeState);
+
+        helper.startSequence()
+                .thenExecuteAfter(1, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, LARGE_MACHINE);
+                    helper.setBlock(LARGE_MACHINE_ENERGY_CELL, AEBlocks.CREATIVE_ENERGY_CELL.block());
+                    tile.getComponent().getUpgradeSlot()
+                            .setStack(ModItems.ME_PATTERN_PROVIDER_UPGRADE.toStack());
+                })
+                .thenExecuteAfter(2 * SharedConstants.TICKS_PER_SECOND, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, LARGE_MACHINE);
+                    helper.assertTrue(tile instanceof MeUpgradeableMachine upgradeable
+                                    && upgradeable.isMeUpgradeActive(),
+                            blockId + " did not activate its ME upgrade");
+                    MeAeMachine machine = (MeAeMachine) tile;
+                    assertLargeMachinePortConnected(helper, tile, blockId);
+
+                    var pattern = PatternDetailsHelper.encodeProcessingPattern(
+                            List.of(new GenericStack(AEItemKey.of(Items.IRON_INGOT), 1)),
+                            List.of(new GenericStack(AEItemKey.of(Items.GOLD_INGOT), 1)));
+                    machine.getPatternSlots().getFirst().setStack(pattern);
+                    helper.assertTrue(machine.getAvailablePatterns().size() == 1,
+                            blockId + " did not publish the inserted pattern");
+
+                    CompoundTag savedSlots = new CompoundTag();
+                    machine.getRecipeAeSupport().saveSlots(savedSlots, helper.getLevel().registryAccess());
+                    machine.getRecipeAeSupport().loadSlots(savedSlots, helper.getLevel().registryAccess());
+                    helper.assertTrue(machine.getAvailablePatterns().size() == 1,
+                            blockId + " lost its crafting pattern after active slot reload");
+                })
+                .thenSucceed();
     }
 
     private static void runLargeAntiprotonicRefillTest(GameTestHelper helper, String blockId,

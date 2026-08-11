@@ -56,6 +56,9 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     protected final List<BasicInventorySlot> patternSlots;
     private final List<BasicInventorySlot> patternSlotsView;
     protected final List<IPatternDetails> patterns = new ArrayList<>();
+    /** Deferred cache recovery for block entities whose slots loaded before their Level was attached. */
+    private boolean patternCacheNeedsRebuild;
+    private boolean rebuildingPatternCache;
     protected final MeSmartPatternMultiplication smartPatternMultiplication = new MeSmartPatternMultiplication();
     private final MePassiveCraftingSettings passiveCraftingSettings = new MePassiveCraftingSettings();
     private Boolean clientPassiveCraftingEnabled;
@@ -274,7 +277,26 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     public final List<IPatternDetails> getAvailablePatterns() {
+        ensurePatternCacheReady();
         return Collections.unmodifiableList(this.patterns);
+    }
+
+    /**
+     * Pattern slots can be restored before a Mekanism block entity has a Level. AE2's pattern
+     * decoder needs that Level, so an early rebuild would otherwise clear the cache permanently.
+     * Rebuild lazily once the owner is attached to a live level and keep the provider update
+     * inside the same guard to avoid recursion through AE2's crafting service.
+     */
+    private void ensurePatternCacheReady() {
+        if (!this.patternCacheNeedsRebuild || this.rebuildingPatternCache || this.ownerTile.getLevel() == null) {
+            return;
+        }
+        this.rebuildingPatternCache = true;
+        try {
+            rebuildPatternCache(false);
+        } finally {
+            this.rebuildingPatternCache = false;
+        }
     }
 
     public final int getPatternPriority() {
@@ -511,6 +533,11 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     private void rebuildPatternCache(boolean saveChanges) {
+        if (this.ownerTile.getLevel() == null) {
+            this.patternCacheNeedsRebuild = true;
+            this.nodeLifecycle.markCraftingUpdatePending();
+            return;
+        }
         this.patterns.clear();
         for (BasicInventorySlot patternSlot : this.patternSlots) {
             ItemStack stack = patternSlot.getStack();
@@ -522,6 +549,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
                 }
             }
         }
+        this.patternCacheNeedsRebuild = false;
         requestCraftingUpdate();
         if (saveChanges) {
             this.owner.saveChanges();
@@ -589,7 +617,12 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         // Block entities can be deserialized before they have a level. Decode the
         // restored patterns after the managed node is created on the first tick.
         this.patterns.clear();
-        this.nodeLifecycle.markCraftingUpdatePending();
+        this.patternCacheNeedsRebuild = true;
+        if (this.ownerTile.getLevel() != null && !this.ownerTile.getLevel().isClientSide()) {
+            rebuildPatternCache(false);
+        } else {
+            this.nodeLifecycle.markCraftingUpdatePending();
+        }
     }
 
     private boolean hasPatternSlotTags(CompoundTag tag) {
