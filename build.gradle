@@ -217,6 +217,7 @@ dependencies {
     localRuntime "curse.maven:thunderbolt-core-1631756:8580186"         // Thunderbolt Core, local compatibility runtime
     localRuntime "curse.maven:ldlib-626676:8394241"                      // ldlib, local test runtime for DataEnergistics/NeoECOAE
     localRuntime "curse.maven:data-energistics-1565514:8613673"          // data_energistics 3.0.3
+    localRuntime "curse.maven:mekanism-card-1495058:8498626"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
