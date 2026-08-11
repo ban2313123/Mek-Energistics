@@ -845,12 +845,25 @@
   "item.mekenergistics.upgrade_me_pattern_provider.tooltip": "Cannot be installed together with the ME Output Interface upgrade.",
   "gui.mekenergistics.me_interface.button": "ME Output Interface",
   "gui.mekenergistics.me_interface.title": "ME Output Interface",
-  "gui.mekenergistics.me_interface.slot_hint": "Left: mark carried item | Right: clear | Middle: edit batch";
+  "gui.mekenergistics.me_interface.slot_hint": "Left: mark carried item | Right: clear | Middle: edit batch",
   "item.mekenergistics.upgrade_me_passive_crafting.tooltip": "Cannot be installed together with the ME Output Interface upgrade.",
   "message.mekenergistics.upgrade_install_failed.conflict": "ME upgrade install rejected: conflicts with an installed upgrade.",
   "message.mekenergistics.upgrade_install_failed.unsupported": "ME upgrade install rejected: this machine does not support that upgrade.",
   "message.mekenergistics.upgrade_install_failed.missing_prerequisite": "ME upgrade install rejected: install the ME Pattern Provider upgrade first.",
   "message.mekenergistics.upgrade_install_failed.limit_reached": "ME upgrade install rejected: maximum count reached.",
   "message.mekenergistics.upgrade_install_failed.blocked": "ME upgrade install rejected.",
-  "message.mekenergistics.upgrade_install_failed.none": "ME upgrade install rejected."
+  "message.mekenergistics.upgrade_install_failed.none": "ME upgrade install rejected.",
+  "gui.mekenergistics.me_upgrades.title": "ME Upgrades",
+  "gui.mekenergistics.me_upgrades.button": "ME Upgrades",
+  "gui.mekenergistics.me_upgrades.uninstall": "Uninstall",
+  "gui.mekenergistics.me_upgrades.empty": "No ME upgrades installed",
+  "message.mekenergistics.upgrade_uninstall_failed.not_installed": "That upgrade is not installed",
+  "message.mekenergistics.upgrade_uninstall_failed.guards": "Cannot uninstall: clear the pattern inventory and uninstall the passive crafting upgrade first"
+,
+  "gui.mekenergistics.me_upgrades.title": "ME Upgrades",
+  "gui.mekenergistics.me_upgrades.button": "ME Upgrades",
+  "gui.mekenergistics.me_upgrades.uninstall": "Uninstall",
+  "gui.mekenergistics.me_upgrades.empty": "No ME upgrades installed",
+  "message.mekenergistics.upgrade_uninstall_failed.not_installed": "That upgrade is not installed",
+  "message.mekenergistics.upgrade_uninstall_failed.guards": "Cannot uninstall: clear the pattern inventory and uninstall the passive crafting upgrade first"
 }

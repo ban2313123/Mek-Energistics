@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.client.jei;
 
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.client.overlay.MePatternWindowOverlay;
+import com.beipuo.mekenergistics.client.overlay.MeUpgradeWindowOverlay;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
@@ -166,10 +167,14 @@ public class MekEnergisticsJeiPlugin implements IModPlugin {
     private static final class PatternButtonExclusionHandler implements IGuiContainerHandler<GuiMekanism<?>> {
         @Override
         public @NotNull List<Rect2i> getGuiExtraAreas(@NotNull GuiMekanism<?> gui) {
-            if (!MePatternWindowOverlay.hasPatternTarget(gui)) {
-                return List.of();
+            List<Rect2i> areas = new ArrayList<>();
+            if (MePatternWindowOverlay.hasPatternTarget(gui)) {
+                areas.add(MePatternWindowOverlay.jeiButtonArea(gui));
             }
-            return List.of(MePatternWindowOverlay.jeiButtonArea(gui));
+            if (MeUpgradeWindowOverlay.shouldShowTab(gui)) {
+                areas.add(MeUpgradeWindowOverlay.jeiButtonArea(gui));
+            }
+            return areas;
         }
     }
 }

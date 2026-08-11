@@ -2,6 +2,8 @@ package com.beipuo.mekenergistics.network;
 
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputModePacket;
 import com.beipuo.mekenergistics.network.packet.RequestInterfaceConfigPacket;
+import com.beipuo.mekenergistics.network.packet.RequestUpgradeStatePacket;
+import com.beipuo.mekenergistics.network.packet.UninstallMeUpgradePacket;
 import com.beipuo.mekenergistics.network.packet.SetAeOutputModePacket;
 import com.beipuo.mekenergistics.network.packet.SetInterfaceConfigPacket;
 import com.beipuo.mekenergistics.network.packet.SetPatternTerminalNamePacket;
@@ -19,6 +21,8 @@ public final class ModNetwork {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(CycleAeOutputModePacket.TYPE, CycleAeOutputModePacket.STREAM_CODEC, CycleAeOutputModePacket::handle);
         registrar.playToServer(RequestInterfaceConfigPacket.TYPE, RequestInterfaceConfigPacket.STREAM_CODEC, RequestInterfaceConfigPacket::handle);
+        registrar.playToServer(RequestUpgradeStatePacket.TYPE, RequestUpgradeStatePacket.STREAM_CODEC, RequestUpgradeStatePacket::handle);
+        registrar.playToServer(UninstallMeUpgradePacket.TYPE, UninstallMeUpgradePacket.STREAM_CODEC, UninstallMeUpgradePacket::handle);
         registrar.playToServer(SetInterfaceConfigPacket.TYPE, SetInterfaceConfigPacket.STREAM_CODEC, SetInterfaceConfigPacket::handle);
         registrar.playToServer(SetAeOutputModePacket.TYPE, SetAeOutputModePacket.STREAM_CODEC, SetAeOutputModePacket::handle);
         registrar.playToServer(SetPatternTerminalNamePacket.TYPE, SetPatternTerminalNamePacket.STREAM_CODEC, SetPatternTerminalNamePacket::handle);

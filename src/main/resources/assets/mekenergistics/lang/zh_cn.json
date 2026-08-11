@@ -846,11 +846,24 @@
   "item.mekenergistics.upgrade_me_passive_crafting.tooltip": "不能与 ME 接口升级同时安装。",
   "gui.mekenergistics.me_interface.button": "ME 输出接口",
   "gui.mekenergistics.me_interface.title": "ME 输出接口",
-  "gui.mekenergistics.me_interface.slot_hint": "左键：标记手持物品 | 右键：清空 | 中键：编辑批量";
+  "gui.mekenergistics.me_interface.slot_hint": "左键：标记手持物品 | 右键：清空 | 中键：编辑批量",
   "message.mekenergistics.upgrade_install_failed.conflict": "ME 升级安装被拒绝：与已安装的升级冲突。",
   "message.mekenergistics.upgrade_install_failed.unsupported": "ME 升级安装被拒绝：该机器不支持此升级。",
   "message.mekenergistics.upgrade_install_failed.missing_prerequisite": "ME 升级安装被拒绝：请先安装 ME 样板供应升级。",
   "message.mekenergistics.upgrade_install_failed.limit_reached": "ME 升级安装被拒绝：已达到数量上限。",
   "message.mekenergistics.upgrade_install_failed.blocked": "ME 升级安装被拒绝。",
-  "message.mekenergistics.upgrade_install_failed.none": "ME 升级安装被拒绝。"
+  "message.mekenergistics.upgrade_install_failed.none": "ME 升级安装被拒绝。",
+  "gui.mekenergistics.me_upgrades.title": "ME 升级",
+  "gui.mekenergistics.me_upgrades.button": "ME 升级",
+  "gui.mekenergistics.me_upgrades.uninstall": "卸载",
+  "gui.mekenergistics.me_upgrades.empty": "未安装 ME 升级",
+  "message.mekenergistics.upgrade_uninstall_failed.not_installed": "该升级未安装",
+  "message.mekenergistics.upgrade_uninstall_failed.guards": "无法卸载：请先清空样板库存并卸载被动合成升级"
+,
+  "gui.mekenergistics.me_upgrades.title": "ME 升级",
+  "gui.mekenergistics.me_upgrades.button": "ME 升级",
+  "gui.mekenergistics.me_upgrades.uninstall": "卸载",
+  "gui.mekenergistics.me_upgrades.empty": "未安装 ME 升级",
+  "message.mekenergistics.upgrade_uninstall_failed.not_installed": "该升级未安装",
+  "message.mekenergistics.upgrade_uninstall_failed.guards": "无法卸载：请先清空样板库存并卸载被动合成升级"
 }

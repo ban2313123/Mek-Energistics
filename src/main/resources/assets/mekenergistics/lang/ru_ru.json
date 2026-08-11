@@ -698,5 +698,18 @@
   "upgrade.mekenergistics.me_pattern_provider.description": "Adds ME pattern provider functionality to a supported Mekanism machine.",
   "item.mekenergistics.upgrade_me_passive_crafting": "ME Passive Crafting Upgrade",
   "upgrade.mekenergistics.me_passive_crafting": "ME Passive Crafting",
-  "upgrade.mekenergistics.me_passive_crafting.description": "Periodically submits installed patterns directly from ME storage without using a crafting CPU."
+  "upgrade.mekenergistics.me_passive_crafting.description": "Periodically submits installed patterns directly from ME storage without using a crafting CPU.",
+  "gui.mekenergistics.me_upgrades.title": "ME улучшения",
+  "gui.mekenergistics.me_upgrades.button": "ME улучшения",
+  "gui.mekenergistics.me_upgrades.uninstall": "Снять",
+  "gui.mekenergistics.me_upgrades.empty": "ME улучшения не установлены",
+  "message.mekenergistics.upgrade_uninstall_failed.not_installed": "Это улучшение не установлено",
+  "message.mekenergistics.upgrade_uninstall_failed.guards": "Нельзя снять: очистите инвентарь шаблонов и сначала снимите улучшение пассивного крафта"
+,
+  "gui.mekenergistics.me_upgrades.title": "ME улучшения",
+  "gui.mekenergistics.me_upgrades.button": "ME улучшения",
+  "gui.mekenergistics.me_upgrades.uninstall": "Снять",
+  "gui.mekenergistics.me_upgrades.empty": "ME улучшения не установлены",
+  "message.mekenergistics.upgrade_uninstall_failed.not_installed": "Это улучшение не установлено",
+  "message.mekenergistics.upgrade_uninstall_failed.guards": "Нельзя снять: очистите инвентарь шаблонов и сначала снимите улучшение пассивного крафта"
 }
