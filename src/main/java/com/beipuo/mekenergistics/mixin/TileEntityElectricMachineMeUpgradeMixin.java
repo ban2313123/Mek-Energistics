@@ -6,10 +6,15 @@ import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
-import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeDataMigration;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfiles;
+import com.beipuo.mekenergistics.upgrade.MeUpgradePersistence;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeRuntimeState;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwnerSupport;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
 import java.util.List;
 import mekanism.api.IContentsListener;
 import mekanism.api.recipes.ItemStackToItemStackRecipe;
@@ -28,13 +33,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = TileEntityElectricMachine.class, remap = false)
-public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgradeableMachine, IBlockEntityExtension {
+public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgradeableMachine, MeUpgradeStateOwner, IBlockEntityExtension {
     @Unique
     private MeRecipeMachineAeSupport<?> mekenergistics$aeSupport;
     @Unique
     private AeOutputMode mekenergistics$aeOutputMode = AeOutputMode.BOTH;
     @Unique
     private MeUpgradeRuntimeState mekenergistics$runtimeState;
+    @Unique
+    private MeUpgradeStateOwnerSupport mekenergistics$upgradeOwner;
 
     @Unique
     private MeUpgradeRuntimeState mekenergistics$runtimeState() {
@@ -42,6 +49,40 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
             this.mekenergistics$runtimeState = new MeUpgradeRuntimeState();
         }
         return this.mekenergistics$runtimeState;
+    }
+
+    @Unique
+    private MeUpgradeStateOwnerSupport mekenergistics$upgradeOwner() {
+        if (this.mekenergistics$upgradeOwner == null) {
+            this.mekenergistics$upgradeOwner = new MeUpgradeStateOwnerSupport(
+                    () -> false,
+                    () -> mekenergistics$support().getPatternSlots().stream()
+                            .allMatch(slot -> slot.getStack().isEmpty()),
+                    this::mekenergistics$onMeUpgradeStateChanged);
+        }
+        return this.mekenergistics$upgradeOwner;
+    }
+
+    @Override
+    public MeUpgradeContainer getMeUpgradeContainer() {
+        return mekenergistics$upgradeOwner().getMeUpgradeContainer();
+    }
+
+    @Override
+    public boolean isPatternInventoryEmpty() {
+        return mekenergistics$upgradeOwner().isPatternInventoryEmpty();
+    }
+
+    @Override
+    public void onMeUpgradeStateChanged() {
+        mekenergistics$upgradeOwner().onMeUpgradeStateChanged();
+    }
+
+    @Unique
+    private void mekenergistics$onMeUpgradeStateChanged() {
+        TileEntityElectricMachine tile = (TileEntityElectricMachine) (Object) this;
+        tile.setChanged();
+        mekenergistics$invalidateCapabilities();
     }
 
     @Unique
@@ -77,14 +118,13 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
     public boolean isMeUpgradeActive() {
         TileEntityElectricMachine tile = (TileEntityElectricMachine) (Object) this;
         return mekenergistics$runtimeState().activeFor(tile.getLevel(), isMeUpgradeTarget(),
-                mekenergistics$isMeUpgradeInstalledInComponent());
+                mekenergistics$isMeUpgradeInstalled());
     }
 
     @Unique
-    private boolean mekenergistics$isMeUpgradeInstalledInComponent() {
-        TileEntityElectricMachine tile = (TileEntityElectricMachine) (Object) this;
-        return isMeUpgradeTarget() && tile.getComponent() != null
-                && tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get());
+    private boolean mekenergistics$isMeUpgradeInstalled() {
+        return isMeUpgradeTarget() && getMeUpgradeContainer() != null
+                && getMeUpgradeContainer().isInstalled(MeUpgradeType.PATTERN_PROVIDER);
     }
 
     @Override
@@ -206,7 +246,7 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
     public void addMeTrackers(mekanism.common.inventory.container.MekanismContainer container) {
         if (isMeUpgradeTarget()) {
             container.track(SyncableBoolean.create(
-                    this::mekenergistics$isMeUpgradeInstalledInComponent,
+                    this::mekenergistics$isMeUpgradeInstalled,
                     active -> {
                         mekenergistics$runtimeState().acceptClientActive(active);
                     }));
@@ -219,6 +259,7 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
     @Override
     public void saveMeState(net.minecraft.nbt.CompoundTag tag,
           net.minecraft.core.HolderLookup.Provider registries) {
+        MeUpgradePersistence.save(tag, getMeUpgradeContainer().data());
         if (this.mekenergistics$aeSupport != null) {
             this.mekenergistics$aeSupport.saveAeState(tag, registries, this.mekenergistics$aeOutputMode);
         }
@@ -229,6 +270,7 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
     public void loadMeState(net.minecraft.nbt.CompoundTag tag,
           net.minecraft.core.HolderLookup.Provider registries) {
         if (isMeUpgradeTarget()) {
+            getMeUpgradeContainer().setData(MeUpgradeDataMigration.migrate(tag).data());
             this.mekenergistics$aeOutputMode = mekenergistics$support().loadAeState(tag, registries);
         }
     }

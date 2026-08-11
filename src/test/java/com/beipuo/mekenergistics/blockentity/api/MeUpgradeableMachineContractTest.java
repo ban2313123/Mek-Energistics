@@ -57,8 +57,8 @@ class MeUpgradeableMachineContractTest {
         assertTrue(source.contains("SyncableBoolean.create("));
         assertTrue(source.contains("MeUpgradeRuntimeState"));
         assertTrue(source.contains("acceptClientActive(active)"));
-        assertTrue(source.contains("this::mekenergistics$isMeUpgradeInstalledInComponent"));
-        assertTrue(source.contains("tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get())"));
+        assertTrue(source.contains("this::mekenergistics$isMeUpgradeInstalled"));
+        assertTrue(source.contains("getMeUpgradeContainer().isInstalled(MeUpgradeType.PATTERN_PROVIDER)"));
     }
 
     @Test

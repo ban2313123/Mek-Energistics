@@ -20,10 +20,30 @@ import net.neoforged.neoforge.common.extensions.IBlockEntityExtension;
  * Node lifecycle, activation, trackers, persistence, pattern I/O, and output mode behavior remain
  * centralized in {@link MeUpgradeRecipeMachineRuntime}.</p>
  */
-public interface MeUpgradeRecipeMachineAdapter extends MeUpgradeableMachine, IBlockEntityExtension {
+public interface MeUpgradeRecipeMachineAdapter extends MeUpgradeableMachine, MeUpgradeStateOwner, IBlockEntityExtension {
     MeUpgradeRecipeMachineRuntime getOrCreateMeUpgradeRuntime();
 
     MeUpgradeRecipeMachineRuntime getExistingMeUpgradeRuntime();
+
+    @Override
+    default MeUpgradeContainer getMeUpgradeContainer() {
+        return getOrCreateMeUpgradeRuntime().upgrades();
+    }
+
+    @Override
+    default boolean supportsNativePatternProvider() {
+        return getOrCreateMeUpgradeRuntime().supportsNativePatternProvider();
+    }
+
+    @Override
+    default boolean isPatternInventoryEmpty() {
+        return getOrCreateMeUpgradeRuntime().isPatternInventoryEmpty();
+    }
+
+    @Override
+    default void onMeUpgradeStateChanged() {
+        getOrCreateMeUpgradeRuntime().onMeUpgradeStateChanged();
+    }
 
     @Override
     default boolean isMeUpgradeTarget() {

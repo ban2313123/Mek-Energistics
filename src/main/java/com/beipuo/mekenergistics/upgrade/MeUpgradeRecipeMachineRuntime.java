@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.upgrade;
 
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
+import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
@@ -27,6 +28,29 @@ public final class MeUpgradeRecipeMachineRuntime {
     private final MeUpgradeRuntimeState state = new MeUpgradeRuntimeState();
     private final AeOutputMode defaultOutputMode;
     private AeOutputMode outputMode;
+    private MeUpgradeContainer upgrades;
+    private final MeUpgradeStateOwner upgradeStateOwner = new MeUpgradeStateOwner() {
+        @Override
+        public MeUpgradeContainer getMeUpgradeContainer() {
+            return MeUpgradeRecipeMachineRuntime.this.upgrades();
+        }
+
+        @Override
+        public boolean supportsNativePatternProvider() {
+            return MeUpgradeRecipeMachineRuntime.this.machine instanceof MeFactoryAeMachine;
+        }
+
+        @Override
+        public boolean isPatternInventoryEmpty() {
+            return MeUpgradeRecipeMachineRuntime.this.support.getPatternSlots().stream()
+                    .allMatch(slot -> slot.getStack().isEmpty());
+        }
+
+        @Override
+        public void onMeUpgradeStateChanged() {
+            MeUpgradeRecipeMachineRuntime.this.onMeUpgradeStateChanged();
+        }
+    };
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public MeUpgradeRecipeMachineRuntime(TileEntityMekanism tile, AeOutputMode defaultOutputMode) {
@@ -34,6 +58,7 @@ public final class MeUpgradeRecipeMachineRuntime {
         this.machine = (MeUpgradeableMachine) tile;
         this.support = new MeRecipeMachineAeSupport(tile);
         this.defaultOutputMode = defaultOutputMode;
+        this.upgrades = new MeUpgradeContainer(this.upgradeStateOwner, this::markUpgradeDirty);
     }
 
     public MeRecipeMachineAeSupport<?> support() {
@@ -64,8 +89,29 @@ public final class MeUpgradeRecipeMachineRuntime {
     }
 
     public boolean installed(boolean target) {
-        return target && this.tile.getComponent() != null
-                && this.tile.getComponent().isUpgradeInstalled(MePatternProviderUpgrade.get());
+        return target && this.upgrades().isInstalled(MeUpgradeType.PATTERN_PROVIDER);
+    }
+
+    public MeUpgradeContainer upgrades() {
+        return this.upgrades;
+    }
+
+    public boolean supportsNativePatternProvider() {
+        return this.upgradeStateOwner.supportsNativePatternProvider();
+    }
+
+    public boolean isPatternInventoryEmpty() {
+        return this.upgradeStateOwner.isPatternInventoryEmpty();
+    }
+
+    public void onMeUpgradeStateChanged() {
+        this.tile.setChanged();
+        invalidateCapabilities();
+        this.support.alertAeTicker();
+    }
+
+    private void markUpgradeDirty() {
+        this.tile.setChanged();
     }
 
     public IInventorySlotHolder withPatternSlots(IInventorySlotHolder holder, IContentsListener recipeCacheListener) {
@@ -131,10 +177,13 @@ public final class MeUpgradeRecipeMachineRuntime {
     }
 
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
+        MeUpgradePersistence.save(tag, this.upgrades().data());
         this.support.saveAeState(tag, registries, outputMode());
     }
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
+        MeUpgradeDataMigration.MeUpgradeMigrationResult migration = MeUpgradeDataMigration.migrate(tag);
+        this.upgrades().setData(migration.data());
         AeOutputMode loaded = this.support.loadAeState(tag, registries);
         this.outputMode = tag.contains("AeOutputMode") ? loaded : this.defaultOutputMode;
     }

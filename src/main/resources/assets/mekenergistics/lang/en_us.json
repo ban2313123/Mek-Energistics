@@ -849,5 +849,5 @@
   "message.mekenergistics.upgrade_install_failed.missing_prerequisite": "ME upgrade install rejected: install the ME Pattern Provider upgrade first.",
   "message.mekenergistics.upgrade_install_failed.limit_reached": "ME upgrade install rejected: maximum count reached.",
   "message.mekenergistics.upgrade_install_failed.blocked": "ME upgrade install rejected.",
-  "message.mekenergistics.upgrade_install_failed.none": "ME upgrade install rejected.",
+  "message.mekenergistics.upgrade_install_failed.none": "ME upgrade install rejected."
 }

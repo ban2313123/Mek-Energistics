@@ -484,7 +484,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return changed;
     }
 
-    protected final void alertAeTicker() {
+    public final void alertAeTicker() {
         this.nodeLifecycle.alertAeTicker();
     }
 

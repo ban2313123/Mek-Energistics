@@ -849,5 +849,5 @@
   "message.mekenergistics.upgrade_install_failed.missing_prerequisite": "ME 升级安装被拒绝：请先安装 ME 样板供应升级。",
   "message.mekenergistics.upgrade_install_failed.limit_reached": "ME 升级安装被拒绝：已达到数量上限。",
   "message.mekenergistics.upgrade_install_failed.blocked": "ME 升级安装被拒绝。",
-  "message.mekenergistics.upgrade_install_failed.none": "ME 升级安装被拒绝。",
+  "message.mekenergistics.upgrade_install_failed.none": "ME 升级安装被拒绝。"
 }

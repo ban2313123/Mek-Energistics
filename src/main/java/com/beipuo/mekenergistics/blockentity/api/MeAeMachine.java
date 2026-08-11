@@ -12,6 +12,9 @@ import appeng.helpers.patternprovider.PatternContainer;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingSettings;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingUpgrade;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
@@ -125,6 +128,12 @@ public interface MeAeMachine extends PatternContainer, MePatternIoOwner, appeng.
             Boolean synced = getRecipeAeSupport().getClientPassiveCraftingEnabled();
             if (synced != null) {
                 return synced;
+            }
+        }
+        if (this instanceof MeUpgradeStateOwner owner) {
+            MeUpgradeContainer container = owner.getMeUpgradeContainer();
+            if (container != null) {
+                return container.isInstalled(MeUpgradeType.PASSIVE_CRAFTING);
             }
         }
         if (tile.getComponent() == null || !tile.getComponent().isUpgradeInstalled(MePassiveCraftingUpgrade.get())) {
