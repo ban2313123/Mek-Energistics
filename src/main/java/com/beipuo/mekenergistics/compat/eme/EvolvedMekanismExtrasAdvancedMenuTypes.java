@@ -1,7 +1,6 @@
 package com.beipuo.mekenergistics.compat.eme;
 
-import com.beipuo.mekenergistics.menu.MePatternMekanismTileContainer;
-import com.beipuo.mekenergistics.registry.ModMenuTypes;
+import com.beipuo.mekenergistics.menu.compat.eme.MePatternEMExtraAdvancedFactoryContainer;
 import io.github.masyumero.emextras.common.integration.mekaf.tile.factory.base.TileEntityEMExtraAdvancedFactoryBase;
 import mekanism.common.inventory.container.type.MekanismContainerType;
 import mekanism.common.registration.impl.ContainerTypeDeferredRegister;
@@ -14,7 +13,6 @@ public final class EvolvedMekanismExtrasAdvancedMenuTypes {
     public static void register(ContainerTypeDeferredRegister register) {
         register.registerMenu("me_em_extra_advanced_factory", () -> MekanismContainerType.tile(
                 TileEntityEMExtraAdvancedFactoryBase.class,
-                (id, inv, tile) -> new MePatternMekanismTileContainer<>(
-                        ModMenuTypes.ME_EM_EXTRA_ADVANCED_FACTORY, id, inv, tile)));
+                (id, inv, tile) -> new MePatternEMExtraAdvancedFactoryContainer(id, inv, tile)));
     }
 }
