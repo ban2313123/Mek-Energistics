@@ -212,7 +212,7 @@ dependencies {
     localRuntime "curse.maven:glodium-957920:5821676"                   // glodium 1.21-2.2-neoforge
     localRuntime "curse.maven:applied-flux-965012:8204513"              // appflux 1.21-2.1.5-neoforge
     localRuntime "curse.maven:ex-pattern-provider-892005:8025439"       // extendedae 1.21-2.2.32-neoforge
-    localRuntime "curse.maven:extendedae-plus-1337639:8141724"          // extendedae_plus 1.21.1-1.5.4.1
+    localRuntime "curse.maven:extendedae-plus-1337639:8379620"          // extendedae_plus 1.21.1-1.5.4.1
     localRuntime "curse.maven:ae2-lightning-tech-1527395:8575479"       // AE2 Lightning Tech, local compatibility runtime
     localRuntime "curse.maven:thunderbolt-core-1631756:8580186"         // Thunderbolt Core, local compatibility runtime
     localRuntime "curse.maven:ldlib-626676:8394241"                      // ldlib, local test runtime for DataEnergistics/NeoECOAE
