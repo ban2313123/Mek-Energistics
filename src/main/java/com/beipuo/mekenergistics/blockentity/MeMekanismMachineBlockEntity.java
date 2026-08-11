@@ -16,6 +16,7 @@ import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
+import appeng.api.util.AECableType;
 import appeng.api.networking.security.IActionSource;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
@@ -33,11 +34,7 @@ import java.util.List;
 import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.chemical.IChemicalTank;
 import mekanism.api.inventory.IInventorySlot;
-import mekanism.api.recipes.CombinerRecipe;
 import mekanism.api.recipes.cache.CachedRecipe.OperationTracker.RecipeError;
-import mekanism.api.recipes.ItemStackChemicalToItemStackRecipe;
-import mekanism.api.recipes.ItemStackToItemStackRecipe;
-import mekanism.api.recipes.SawmillRecipe;
 import mekanism.common.capabilities.energy.MachineEnergyContainer;
 import mekanism.common.capabilities.holder.chemical.ChemicalTankHelper;
 import mekanism.common.capabilities.holder.chemical.IChemicalTankHolder;
@@ -51,7 +48,6 @@ import mekanism.common.inventory.container.sync.SyncableLong;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.inventory.slot.EnergyInventorySlot;
 import mekanism.common.inventory.slot.OutputInventorySlot;
-import mekanism.common.recipe.MekanismRecipeType;
 import mekanism.common.tile.machine.TileEntityMetallurgicInfuser;
 import mekanism.common.tile.component.TileComponentEjector;
 import mekanism.common.tile.interfaces.IHasDumpButton;
@@ -60,6 +56,7 @@ import mekanism.common.tile.prefab.TileEntityConfigurableMachine;
 import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.util.MekanismUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -73,6 +70,11 @@ import java.util.function.BooleanSupplier;
 
 public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         implements ICraftingProvider, MeSmartCableConnection, IActionHost, IHasDumpButton, MeAeMachine, MePatternIoOwner {
+    @Override
+    public AECableType getCableConnectionType(Direction dir) {
+        return AECableType.SMART;
+    }
+
     private static final int BASE_TICKS_REQUIRED = 10 * 20;
     public static final int INPUT_SLOT = 0;
     public static final int SECONDARY_INPUT_SLOT = 1;
@@ -92,6 +94,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     private int operatingTicks;
     private int ticksRequired = BASE_TICKS_REQUIRED;
     private AeOutputMode aeOutputMode = AeOutputMode.BOTH;
+    private final MeMachineRecipeProcessor recipeProcessor = new MeMachineRecipeProcessor(this);
 
     public MeMekanismMachineBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
         super(ModBlocks.getMachineBlock(machine), pos, state);
@@ -127,13 +130,13 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         if (this.inventorySlots[energySlot()] instanceof EnergyInventorySlot energySlot) {
             energySlot.fillContainerOrConvert();
         }
-        fillChemicalFromConversionSlot();
-        if (canProcessRecipe()) {
+        this.recipeProcessor.fillChemicalFromConversionSlot();
+        if (this.recipeProcessor.canProcessRecipe()) {
             this.energyContainer.extract(this.energyContainer.getEnergyPerTick(), Action.EXECUTE, AutomationType.INTERNAL);
             this.operatingTicks++;
             setActive(true);
             if (this.operatingTicks >= this.ticksRequired) {
-                processRecipe();
+                this.recipeProcessor.processRecipe();
                 this.operatingTicks = 0;
             }
         } else {
@@ -158,7 +161,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
             return null;
         }
         ChemicalTankHelper builder = ChemicalTankHelper.forSideWithConfig(this);
-        builder.addTank(this.chemicalTank = BasicChemicalTank.createModern(getChemicalCapacity(), ConstantPredicates.alwaysTrue(), listener));
+        builder.addTank(this.chemicalTank = BasicChemicalTank.createModern(MeMachineRecipeProcessor.getChemicalCapacity(this), ConstantPredicates.alwaysTrue(), listener));
         return builder.build();
     }
 
@@ -227,11 +230,11 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     }
 
     public int getChemicalAmount() {
-        return this.chemicalTank == null ? 0 : clampNeeded(this.chemicalTank.getStack().getAmount());
+        return this.chemicalTank == null ? 0 : this.recipeProcessor.clampNeeded(this.chemicalTank.getStack().getAmount());
     }
 
     public int getChemicalCapacityInt() {
-        return clampNeeded(getChemicalCapacity());
+        return this.recipeProcessor.clampNeeded(this.recipeProcessor.getChemicalCapacity());
     }
 
     public void dumpChemical() {
@@ -280,226 +283,11 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         return Component.translatable(this.machine.translationKey());
     }
 
-    private void processRecipe() {
-        if (this.level == null || !this.machine.hasRecipeLogic()) {
-            return;
-        }
-        switch (this.machine.slotLayout()) {
-            case SINGLE_ITEM -> processSingleItemRecipe();
-            case DOUBLE_ITEM -> processCombinerRecipe();
-            case SAWING -> processSawingRecipe();
-            case ITEM_CHEMICAL -> processItemChemicalRecipe();
-        }
-    }
-
-    private boolean canProcessRecipe() {
-        if (this.level == null || !this.machine.hasRecipeLogic()) {
-            return false;
-        }
-        if (!hasEnergyForRecipe()) {
-            return false;
-        }
-        return switch (this.machine.slotLayout()) {
-            case SINGLE_ITEM -> canProcessSingleItemRecipe();
-            case DOUBLE_ITEM -> canProcessCombinerRecipe();
-            case SAWING -> canProcessSawingRecipe();
-            case ITEM_CHEMICAL -> canProcessItemChemicalRecipe();
-        };
-    }
-
-    private boolean hasEnergyForRecipe() {
-        long energyPerTick = this.energyContainer.getEnergyPerTick();
-        return energyPerTick <= 0 || this.energyContainer.getEnergy() >= energyPerTick
-                || extractAeAsFe(energyPerTick - this.energyContainer.getEnergy(), Action.SIMULATE) >= energyPerTick - this.energyContainer.getEnergy();
-    }
-
     long extractAeAsFe(long requestedFe, Action action) {
         if (requestedFe <= 0) {
             return 0;
         }
         return MeNetworkEnergyHelper.extractNetworkFe(getGrid(), this.actionSource, requestedFe, action);
-    }
-
-    private boolean canProcessSingleItemRecipe() {
-        ItemStack input = getStack(INPUT_SLOT);
-        if (input.isEmpty()) {
-            return false;
-        }
-        ItemStackToItemStackRecipe recipe = getSingleItemRecipe(input);
-        if (recipe == null) {
-            return false;
-        }
-        int needed = clampNeeded(recipe.getInput().getNeededAmount(input));
-        ItemStack output = recipe.getOutput(input);
-        return needed > 0 && !output.isEmpty() && canFitOutput(OUTPUT_SLOT, output);
-    }
-
-    @Nullable
-    private ItemStackToItemStackRecipe getSingleItemRecipe(ItemStack input) {
-        return switch (this.machine.factoryType()) {
-            case ENRICHING -> MekanismRecipeType.ENRICHING.getInputCache().findFirstRecipe(this.level, input);
-            case CRUSHING -> MekanismRecipeType.CRUSHING.getInputCache().findFirstRecipe(this.level, input);
-            case SMELTING -> MekanismRecipeType.SMELTING.getInputCache().findFirstRecipe(this.level, input);
-            case null, default -> null;
-        };
-    }
-
-    private boolean canProcessCombinerRecipe() {
-        ItemStack input = getStack(INPUT_SLOT);
-        ItemStack secondary = getStack(SECONDARY_INPUT_SLOT);
-        if (input.isEmpty() || secondary.isEmpty()) {
-            return false;
-        }
-        CombinerRecipe recipe = MekanismRecipeType.COMBINING.getInputCache().findFirstRecipe(this.level, input, secondary);
-        if (recipe == null) {
-            return false;
-        }
-        int neededInput = clampNeeded(recipe.getMainInput().getNeededAmount(input));
-        int neededSecondary = clampNeeded(recipe.getExtraInput().getNeededAmount(secondary));
-        ItemStack output = recipe.getOutput(input, secondary);
-        return neededInput > 0 && neededSecondary > 0 && !output.isEmpty() && canFitOutput(OUTPUT_SLOT, output);
-    }
-
-    private boolean canProcessItemChemicalRecipe() {
-        ChemicalStack chemicalStack = getChemicalStack();
-        ItemStack input = getStack(INPUT_SLOT);
-        if (input.isEmpty() || chemicalStack.isEmpty()) {
-            return false;
-        }
-        ItemStackChemicalToItemStackRecipe recipe = switch (this.machine.factoryType()) {
-            case COMPRESSING -> MekanismRecipeType.COMPRESSING.getInputCache().findFirstRecipe(this.level, input, chemicalStack);
-            case INFUSING -> MekanismRecipeType.METALLURGIC_INFUSING.getInputCache().findFirstRecipe(this.level, input, chemicalStack);
-            case INJECTING -> MekanismRecipeType.INJECTING.getInputCache().findFirstRecipe(this.level, input, chemicalStack);
-            case PURIFYING -> MekanismRecipeType.PURIFYING.getInputCache().findFirstRecipe(this.level, input, chemicalStack);
-            default -> null;
-        };
-        if (recipe == null) {
-            return false;
-        }
-        int neededInput = clampNeeded(recipe.getItemInput().getNeededAmount(input));
-        long neededChemical = recipe.getChemicalInput().getNeededAmount(chemicalStack);
-        ItemStack output = recipe.getOutput(input, chemicalStack);
-        return neededInput > 0 && neededChemical > 0 && !output.isEmpty() && canFitOutput(OUTPUT_SLOT, output);
-    }
-
-    private boolean canProcessSawingRecipe() {
-        ItemStack input = getStack(INPUT_SLOT);
-        if (input.isEmpty()) {
-            return false;
-        }
-        SawmillRecipe recipe = MekanismRecipeType.SAWING.getInputCache().findFirstRecipe(this.level, input);
-        if (recipe == null) {
-            return false;
-        }
-        int needed = clampNeeded(recipe.getInput().getNeededAmount(input));
-        SawmillRecipe.ChanceOutput output = recipe.getOutput(input);
-        ItemStack mainOutput = output.getMainOutput();
-        ItemStack secondaryOutput = output.getSecondaryOutput();
-        return needed > 0
-                && (!mainOutput.isEmpty() || !secondaryOutput.isEmpty())
-                && (mainOutput.isEmpty() || canFitOutput(OUTPUT_SLOT, mainOutput))
-                && (secondaryOutput.isEmpty() || canFitOutput(SECONDARY_OUTPUT_SLOT, secondaryOutput));
-    }
-
-    private void processSingleItemRecipe() {
-        ItemStack input = getStack(INPUT_SLOT);
-        if (input.isEmpty()) {
-            return;
-        }
-        ItemStackToItemStackRecipe recipe = getSingleItemRecipe(input);
-        if (recipe == null) {
-            return;
-        }
-
-        int needed = clampNeeded(recipe.getInput().getNeededAmount(input));
-        ItemStack output = recipe.getOutput(input);
-        if (needed <= 0 || output.isEmpty() || !canFitOutput(OUTPUT_SLOT, output)) {
-            return;
-        }
-        input.shrink(needed);
-        setStack(INPUT_SLOT, input.isEmpty() ? ItemStack.EMPTY : input);
-        addToOutput(OUTPUT_SLOT, output);
-        setChanged();
-    }
-
-    private void processCombinerRecipe() {
-        ItemStack input = getStack(INPUT_SLOT);
-        ItemStack secondary = getStack(SECONDARY_INPUT_SLOT);
-        if (input.isEmpty() || secondary.isEmpty()) {
-            return;
-        }
-        CombinerRecipe recipe = MekanismRecipeType.COMBINING.getInputCache().findFirstRecipe(this.level, input, secondary);
-        if (recipe == null) {
-            return;
-        }
-
-        int neededInput = clampNeeded(recipe.getMainInput().getNeededAmount(input));
-        int neededSecondary = clampNeeded(recipe.getExtraInput().getNeededAmount(secondary));
-        ItemStack output = recipe.getOutput(input, secondary);
-        if (neededInput <= 0 || neededSecondary <= 0 || output.isEmpty() || !canFitOutput(OUTPUT_SLOT, output)) {
-            return;
-        }
-        input.shrink(neededInput);
-        secondary.shrink(neededSecondary);
-        setStack(INPUT_SLOT, input.isEmpty() ? ItemStack.EMPTY : input);
-        setStack(SECONDARY_INPUT_SLOT, secondary.isEmpty() ? ItemStack.EMPTY : secondary);
-        addToOutput(OUTPUT_SLOT, output);
-        setChanged();
-    }
-
-    private void processItemChemicalRecipe() {
-        ChemicalStack chemicalStack = getChemicalStack();
-        ItemStack input = getStack(INPUT_SLOT);
-        if (input.isEmpty() || chemicalStack.isEmpty()) {
-            return;
-        }
-
-        ItemStackChemicalToItemStackRecipe recipe = switch (this.machine.factoryType()) {
-            case COMPRESSING -> MekanismRecipeType.COMPRESSING.getInputCache().findFirstRecipe(this.level, input, chemicalStack);
-            case INFUSING -> MekanismRecipeType.METALLURGIC_INFUSING.getInputCache().findFirstRecipe(this.level, input, chemicalStack);
-            case INJECTING -> MekanismRecipeType.INJECTING.getInputCache().findFirstRecipe(this.level, input, chemicalStack);
-            case PURIFYING -> MekanismRecipeType.PURIFYING.getInputCache().findFirstRecipe(this.level, input, chemicalStack);
-            default -> null;
-        };
-        if (recipe == null) {
-            return;
-        }
-
-        int neededInput = clampNeeded(recipe.getItemInput().getNeededAmount(input));
-        long neededChemical = recipe.getChemicalInput().getNeededAmount(chemicalStack);
-        ItemStack output = recipe.getOutput(input, chemicalStack);
-        if (neededInput <= 0 || neededChemical <= 0 || output.isEmpty() || !canFitOutput(OUTPUT_SLOT, output)) {
-            return;
-        }
-
-        input.shrink(neededInput);
-        setStack(INPUT_SLOT, input.isEmpty() ? ItemStack.EMPTY : input);
-        this.chemicalTank.shrinkStack(neededChemical, Action.EXECUTE);
-        addToOutput(OUTPUT_SLOT, output);
-        setChanged();
-    }
-
-    private void fillChemicalFromConversionSlot() {
-        ItemStack conversionInput = getStack(SECONDARY_INPUT_SLOT);
-        if (conversionInput.isEmpty() || this.level == null) {
-            return;
-        }
-
-        ItemStack singleInput = conversionInput.copyWithCount(1);
-        var conversion = MekanismRecipeType.CHEMICAL_CONVERSION.getInputCache().findTypeBasedRecipe(this.level, singleInput);
-        if (conversion == null) {
-            return;
-        }
-
-        ChemicalStack converted = conversion.getOutput(singleInput);
-        if (converted.isEmpty() || !canAddChemical(converted)) {
-            return;
-        }
-
-        this.chemicalTank.insert(converted, Action.EXECUTE, AutomationType.INTERNAL);
-        conversionInput.shrink(1);
-        setStack(SECONDARY_INPUT_SLOT, conversionInput.isEmpty() ? ItemStack.EMPTY : conversionInput);
-        setChanged();
     }
 
     boolean canAddChemical(ChemicalStack stack) {
@@ -510,72 +298,8 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         if (!current.isEmpty() && !current.is(stack.getChemicalHolder())) {
             return false;
         }
-        return current.getAmount() + stack.getAmount() <= getChemicalCapacity();
+        return current.getAmount() + stack.getAmount() <= this.recipeProcessor.getChemicalCapacity();
     }
-
-    private long getChemicalCapacity() {
-        return getMachineEarly().factoryType() == mekanism.common.content.blocktype.FactoryType.INFUSING
-                ? TileEntityMetallurgicInfuser.MAX_INFUSE
-                : TileEntityAdvancedElectricMachine.MAX_GAS;
-    }
-
-    private void processSawingRecipe() {
-        ItemStack input = getStack(INPUT_SLOT);
-        if (input.isEmpty()) {
-            return;
-        }
-
-        SawmillRecipe recipe = MekanismRecipeType.SAWING.getInputCache().findFirstRecipe(this.level, input);
-        if (recipe == null) {
-            return;
-        }
-
-        int needed = clampNeeded(recipe.getInput().getNeededAmount(input));
-        SawmillRecipe.ChanceOutput output = recipe.getOutput(input);
-        ItemStack mainOutput = output.getMainOutput();
-        ItemStack secondaryOutput = output.getSecondaryOutput();
-        if (needed <= 0 || mainOutput.isEmpty() && secondaryOutput.isEmpty()) {
-            return;
-        }
-        if (!mainOutput.isEmpty() && !canFitOutput(OUTPUT_SLOT, mainOutput)) {
-            return;
-        }
-        if (!secondaryOutput.isEmpty() && !canFitOutput(SECONDARY_OUTPUT_SLOT, secondaryOutput)) {
-            return;
-        }
-        input.shrink(needed);
-        setStack(INPUT_SLOT, input.isEmpty() ? ItemStack.EMPTY : input);
-        addToOutput(OUTPUT_SLOT, mainOutput);
-        addToOutput(SECONDARY_OUTPUT_SLOT, secondaryOutput);
-        setChanged();
-    }
-
-    static int clampNeeded(long needed) {
-        return needed > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) needed;
-    }
-
-    private boolean canFitOutput(int slot, ItemStack stack) {
-        ItemStack existing = getStack(slot);
-        if (existing.isEmpty()) {
-            return stack.getCount() <= getSlotLimit(slot, stack);
-        }
-        return ItemStack.isSameItemSameComponents(existing, stack)
-                && existing.getCount() + stack.getCount() <= Math.min(existing.getMaxStackSize(), getSlotLimit(slot, existing));
-    }
-
-    private void addToOutput(int slot, ItemStack stack) {
-        if (stack.isEmpty()) {
-            return;
-        }
-        ItemStack existing = getStack(slot);
-        if (existing.isEmpty()) {
-            setStack(slot, stack.copy());
-            return;
-        }
-        existing.grow(stack.getCount());
-        setStack(slot, existing);
-    }
-
     @Nullable
     @Override
     public IGrid getGrid() {
@@ -766,7 +490,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         return this.chemicalTank == null ? ChemicalStack.EMPTY : this.chemicalTank.getStack();
     }
 
-    private MeMekanismMachine getMachineEarly() {
+    MeMekanismMachine getMachineEarly() {
         return this.machine == null ? ModBlocks.getMachine(getBlockState().getBlock()) : this.machine;
     }
 
@@ -792,7 +516,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         return slots()[slot] == null ? stack : slots()[slot].insertItem(stack, action, AutomationType.INTERNAL);
     }
 
-    private IInventorySlot[] slots() {
+    IInventorySlot[] slots() {
         if (this.inventorySlots == null) {
             this.inventorySlots = new IInventorySlot[totalSlots()];
         }
@@ -842,4 +566,3 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     }
 
 }
-

@@ -39,4 +39,61 @@ class MeInstallerLifecycleTest {
         assertTrue(patterns > create && invalidate > patterns,
                 "node creation must precede pattern publication and capability invalidation");
     }
+
+    @Test
+    void everyInstallerCapturesOldStateBeforeTheSwapForRollback() throws IOException {
+        for (Path installer : new Path[] {STANDARD_INSTALLER, COMPAT_INSTALLER}) {
+            String source = Files.readString(installer);
+            int captureState = source.indexOf("BlockState oldState = level.getBlockState(pos)");
+            int captureNbt = source.indexOf("saveWithoutMetadata", captureState);
+            int swap = source.indexOf("setBlockAndUpdate(pos, upgradeState)", captureNbt);
+            int restore = source.indexOf("rollbackUpgrade(", swap);
+            assertTrue(captureState >= 0 && captureNbt > captureState && swap > captureNbt,
+                    () -> installer.getFileName() + " must capture the old block state and tile NBT before the swap");
+            assertTrue(restore > swap,
+                    () -> installer.getFileName() + " must restore the old machine on post-swap failure");
+        }
+    }
+
+    @Test
+    void missingUpgradedTileRestoresTheOldMachine() throws IOException {
+        String source = Files.readString(COMPAT_INSTALLER);
+        int capture = source.indexOf("BlockState oldState = level.getBlockState(pos)");
+        int nbt = source.indexOf("saveWithoutMetadata", capture);
+        int swap = source.indexOf("setBlockAndUpdate(pos, upgradeState)", nbt);
+        int missing = source.indexOf("upgraded tile missing", swap);
+        int restore = source.indexOf("rollbackUpgrade(", missing);
+        assertTrue(capture >= 0 && nbt > capture && swap > nbt,
+                "the old block state and tile NBT must be captured before the block swap");
+        assertTrue(missing > swap && restore > missing,
+                "a missing upgraded tile must roll back to the old block and tile data");
+    }
+
+    @Test
+    void failedUpgradeDataParseRestoresTheOldMachine() throws IOException {
+        String source = Files.readString(COMPAT_INSTALLER);
+        int swap = source.indexOf("setBlockAndUpdate(pos, upgradeState)");
+        int parse = source.indexOf("upgradedTile.parseUpgradeData", swap);
+        int load = source.indexOf("MePatternSlotTransfer.load", parse);
+        int caught = source.indexOf("catch (RuntimeException failure)", load);
+        int restore = source.indexOf("rollbackUpgrade(", caught);
+        assertTrue(parse > swap && load > parse,
+                "upgrade data must be parsed after the block swap");
+        assertTrue(caught > load && restore > caught,
+                "a failed upgrade-data parse must roll back to the old block and tile data");
+    }
+
+    @Test
+    void rollbackReappliesOldTileStateAndRemovesNewBoundingBlocks() throws IOException {
+        for (Path installer : new Path[] {STANDARD_INSTALLER, COMPAT_INSTALLER}) {
+            String source = Files.readString(installer);
+            int helper = source.indexOf("private static InteractionResult rollbackUpgrade(");
+            int removeBounding = source.indexOf("removeBoundingBlocks", helper);
+            int setBack = source.indexOf("setBlockAndUpdate(pos, oldState)", removeBounding);
+            int reload = source.indexOf("loadWithComponents", setBack);
+            assertTrue(removeBounding > helper && setBack > removeBounding && reload > setBack,
+                    () -> installer.getFileName()
+                            + " must remove new bounding blocks, restore the old block, and reload the old tile data");
+        }
+    }
 }

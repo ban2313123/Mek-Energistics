@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.blockentity.machine.process;
 
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.security.IActionHost;
+import appeng.api.util.AECableType;
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
@@ -30,6 +31,7 @@ import mekanism.common.recipe.MekanismRecipeType;
 import mekanism.common.recipe.lookup.cache.InputRecipeCache.ItemChemical;
 import mekanism.common.tile.prefab.TileEntityAdvancedElectricMachine;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,6 +39,11 @@ import org.jetbrains.annotations.NotNull;
 
 public class MeAdvancedElectricMachineBlockEntity extends TileEntityAdvancedElectricMachine
         implements ICraftingProvider, MeSmartCableConnection, IActionHost, MeAeMachine {
+    @Override
+    public AECableType getCableConnectionType(Direction dir) {
+        return AECableType.SMART;
+    }
+
     private final MeMekanismMachine machine;
     private MeRecipeMachineAeSupport<MeAdvancedElectricMachineBlockEntity> aeSupport;
     private AeOutputMode aeOutputMode = AeOutputMode.BOTH;

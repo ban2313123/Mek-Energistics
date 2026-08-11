@@ -5,38 +5,53 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import com.beipuo.mekenergistics.compat.dataenergistics.DataAbiGate;
+import com.beipuo.mekenergistics.compat.omnisequence.OmniBatchCompat;
 import net.neoforged.fml.loading.LoadingModList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import org.spongepowered.asm.service.MixinService;
 
 public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
+    private static final Logger LOGGER = LogManager.getLogger("mekenergistics-mixin");
     /**
-     * Gate for an optional mixin. {@code modId} is the mod that must be loaded; {@code targetClass}
-     * is the binary name of the class the mixin actually targets, or null when the mod being loaded
-     * already implies the target exists.
+     * Gate for an optional mixin. {@code modId} is the mod that must be loaded;
+     * {@code targetClasses} are the binary names the mixin's bytecode actually binds to, or empty
+     * when the mod being loaded already implies the target exists.
      *
      * <p>The two are not interchangeable. Some optional mods ship their mixin targets in a
      * conditional sub-module, so mod presence does not guarantee the class is there. The
      * {@code Large*} accessors target {@code com.jerry.meklm.*}, a sub-module of {@code mekmm} that
      * {@link com.beipuo.mekenergistics.compat.OptionalCompatClasses#hasMekmmLargeMachines()} probes
      * for at registration time for exactly this reason; gating them on the mod id alone left the
-     * mixin enabled against a class that need not be present.
+     * mixin enabled against a class that need not be present. The Data/Omni bridge mixins gate on
+     * every ABI class their bytecode references so a missing member disables the whole bridge
+     * instead of leaving a half-applied mixin that double-batches.
      */
-    private record Gate(List<String> modIds, String targetClass) {
+    private record Gate(List<String> modIds, List<String> targetClasses) {
         static Gate mod(String modId) {
-            return new Gate(List.of(modId), null);
+            return new Gate(List.of(modId), List.of());
         }
 
         static Gate target(String modId, String targetClass) {
-            return new Gate(List.of(modId), targetClass);
+            return new Gate(List.of(modId), List.of(targetClass));
         }
 
         static Gate target(String modId, String targetClass, String additionalModId) {
-            return new Gate(List.of(modId, additionalModId), targetClass);
+            return new Gate(List.of(modId, additionalModId), List.of(targetClass));
+        }
+
+        static Gate targets(String modId, String... targetClasses) {
+            return new Gate(List.of(modId), List.of(targetClasses));
         }
     }
+
+    private static final Set<Boolean> DATA_BRIDGE_STATE_REPORTED = ConcurrentHashMap.newKeySet();
+    private static final Set<Boolean> OMNI_BRIDGE_STATE_REPORTED = ConcurrentHashMap.newKeySet();
 
     private static final String MEKLM_MACHINE = "com.jerry.meklm.common.tile.machine.";
     private static final String MEKEX_FACTORY = "com.jerry.mekextras.common.tile.factory.";
@@ -56,8 +71,12 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             ".upgrade.UpgradeUtilsMixin");
     private static final String DATA_COUNTED_PROVIDER =
             "com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingProvider";
-    private static final String OMNI_BATCH_PROVIDER =
-            "com.atir.molecularmanipulator.api.crafting.OmniBatchCraftingProvider";
+    private static final String DATA_COUNTED_ADMISSION =
+            "com.fish_dan_.data_energistics.api.crafting.dispatch.CountedCraftingAdmission";
+    private static final String OMNI_MOLECULAR_BATCH_PROVIDER =
+            "com.atir.molecularmanipulator.integration.ae2.MolecularBatchCraftingProvider";
+    private static final String OMNI_COMPUTATION_CORE =
+            "com.atir.molecularmanipulator.blockentity.OmniComputationCoreBlockEntity";
     private static final String NEOECO_BATCH_BRIDGE =
             "cn.dancingsnow.neoecoae.integration.ae2lt.AE2LTBatchCraftingBridge";
     private static final String THUNDERBOLT_BATCH_PROVIDER =
@@ -147,15 +166,15 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
             Map.entry(".dataenergistics.PatternProviderSyncHelperMixin", Gate.mod("data_energistics")),
             Map.entry(".dataenergistics.PatternProviderNameHelperMixin", Gate.mod("data_energistics")),
             Map.entry(".dataenergistics.DataCountedCraftingProviderMixin",
-                    Gate.target("data_energistics", DATA_COUNTED_PROVIDER)),
+                    Gate.targets("data_energistics", DATA_COUNTED_PROVIDER, DATA_COUNTED_ADMISSION)),
             Map.entry(".dataenergistics.DataCountedFactoryCraftingProviderMixin",
-                    Gate.target("data_energistics", DATA_COUNTED_PROVIDER)),
+                    Gate.targets("data_energistics", DATA_COUNTED_PROVIDER, DATA_COUNTED_ADMISSION)),
             Map.entry(".omnisequence.OmniBatchCraftingProviderMixin",
-                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+                    Gate.targets("molecularmanipulator", OMNI_MOLECULAR_BATCH_PROVIDER, OMNI_COMPUTATION_CORE)),
             Map.entry(".omnisequence.OmniBatchFactoryCraftingProviderMixin",
-                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+                    Gate.targets("molecularmanipulator", OMNI_MOLECULAR_BATCH_PROVIDER, OMNI_COMPUTATION_CORE)),
             Map.entry(".omnisequence.OmniManagedCraftingCpuMixin",
-                    Gate.target("molecularmanipulator", OMNI_BATCH_PROVIDER)),
+                    Gate.targets("molecularmanipulator", OMNI_MOLECULAR_BATCH_PROVIDER, OMNI_COMPUTATION_CORE)),
             Map.entry(".neoecoae.NeoEcoBatchCraftingBridgeMixin",
                     Gate.target("neoecoae", NEOECO_BATCH_BRIDGE)),
             Map.entry(".thunderbolt.ThunderboltBatchCraftingProviderMixin",
@@ -189,10 +208,50 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
                 if (!gate.modIds().stream().allMatch(MekEnergisticsMixinPlugin::isModLoaded)) {
                     return false;
                 }
-                return gate.targetClass() == null || isClassPresent(gate.targetClass());
+                boolean targetsPresent = gate.targetClasses().stream()
+                        .allMatch(MekEnergisticsMixinPlugin::isClassPresent);
+                if (!targetsPresent) {
+                    reportBridgeState(mixinClassName, false);
+                    return false;
+                }
+                reportBridgeState(mixinClassName, true);
+                return true;
             }
         }
         return true;
+    }
+
+    /**
+     * Logs a bridge state transition once per boot. The Data and Omni counted-crafting bridges are
+     * only safe as a whole: any half-applied mixin would either run both batching engines over the
+     * same push or bind against a class that is not there. A bridge that is present but whose ABI
+     * does not match must degrade loudly instead of silently skipping while still claiming
+     * compatibility.
+     */
+    private static void reportBridgeState(String mixinClassName, boolean enabled) {
+        if (mixinClassName.endsWith(".dataenergistics.DataCountedCraftingProviderMixin")
+                || mixinClassName.endsWith(".dataenergistics.DataCountedFactoryCraftingProviderMixin")) {
+            if (!enabled && DATA_BRIDGE_STATE_REPORTED.add(false)) {
+                DataAbiGate.countedBridgeWarning(true,
+                                isClassPresent(DATA_COUNTED_PROVIDER),
+                                isClassPresent(DATA_COUNTED_ADMISSION))
+                        .ifPresent(LOGGER::warn);
+            }
+        } else if (mixinClassName.endsWith(".omnisequence.OmniBatchCraftingProviderMixin")
+                || mixinClassName.endsWith(".omnisequence.OmniBatchFactoryCraftingProviderMixin")
+                || mixinClassName.endsWith(".omnisequence.OmniManagedCraftingCpuMixin")) {
+            if (OMNI_BRIDGE_STATE_REPORTED.add(enabled)) {
+                if (enabled) {
+                    LOGGER.info("OmniSequence batch bridge enabled: MolecularBatchCraftingProvider"
+                            + " and OmniComputationCoreBlockEntity present");
+                } else {
+                    OmniBatchCompat.bridgeWarning(true,
+                                    isClassPresent(OMNI_MOLECULAR_BATCH_PROVIDER),
+                                    isClassPresent(OMNI_COMPUTATION_CORE))
+                            .ifPresent(LOGGER::warn);
+                }
+            }
+        }
     }
 
     @Override

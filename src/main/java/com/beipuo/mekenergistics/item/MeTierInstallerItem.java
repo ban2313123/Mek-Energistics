@@ -97,43 +97,72 @@ public class MeTierInstallerItem extends Item {
         if (upgradeBounding != null && !canPlaceBoundingBlocks(level, pos, upgradeState, upgradeBounding)) {
             return InteractionResult.FAIL;
         }
+        BlockState oldState = level.getBlockState(pos);
+        CompoundTag oldTileNbt = oldTile.saveWithoutMetadata(level.registryAccess());
         if (!level.setBlockAndUpdate(pos, upgradeState)) {
             return InteractionResult.FAIL;
         }
-        if (upgradeBounding != null) {
-            upgradeBounding.placeBoundingBlocks(level, pos, upgradeState);
-        }
-        TileEntityMekanism upgradedTile = WorldUtils.getTileEntity(TileEntityMekanism.class, level, pos);
-        if (upgradedTile == null) {
-            return InteractionResult.FAIL;
-        }
-        if (oldTile instanceof ITileDirectional directional && directional.isDirectional()) {
-            upgradedTile.setFacing(directional.getDirection(), false);
-        }
-        if (upgradeData != null) {
-            upgradedTile.parseUpgradeData(level.registryAccess(), upgradeData);
-        } else if (copyComponents) {
-            MePatternSlotTransfer.copyMekanismComponents(oldTile, upgradedTile, targetBlock);
-        }
-        MePatternSlotTransfer.load(upgradedTile, level.registryAccess(), mePatternSlots);
-        refreshMeLifecycle(upgradedTile);
-        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-            if (upgradedTile instanceof MeAeMachine machine) {
-                machine.setOwner(serverPlayer);
-            } else if (upgradedTile instanceof MeFactoryAeMachine machine) {
-                machine.setOwner(serverPlayer);
-            } else {
-                MeOwnerHelper.claimMekanismOwnerIfMissing(upgradedTile, serverPlayer);
+        try {
+            if (upgradeBounding != null) {
+                upgradeBounding.placeBoundingBlocks(level, pos, upgradeState);
             }
+            TileEntityMekanism upgradedTile = WorldUtils.getTileEntity(TileEntityMekanism.class, level, pos);
+            if (upgradedTile == null) {
+                return rollbackUpgrade(level, pos, oldState, oldTileNbt, upgradeBounding, upgradeState);
+            }
+            if (oldTile instanceof ITileDirectional directional && directional.isDirectional()) {
+                upgradedTile.setFacing(directional.getDirection(), false);
+            }
+            if (upgradeData != null) {
+                upgradedTile.parseUpgradeData(level.registryAccess(), upgradeData);
+            } else if (copyComponents) {
+                MePatternSlotTransfer.copyMekanismComponents(oldTile, upgradedTile, targetBlock);
+            }
+            MePatternSlotTransfer.load(upgradedTile, level.registryAccess(), mePatternSlots);
+            refreshMeLifecycle(upgradedTile);
+            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                if (upgradedTile instanceof MeAeMachine machine) {
+                    machine.setOwner(serverPlayer);
+                } else if (upgradedTile instanceof MeFactoryAeMachine machine) {
+                    machine.setOwner(serverPlayer);
+                } else {
+                    MeOwnerHelper.claimMekanismOwnerIfMissing(upgradedTile, serverPlayer);
+                }
+            }
+            upgradedTile.resyncMasterToBounding();
+            upgradedTile.sendUpdatePacket();
+            upgradedTile.setChanged();
+            upgradedTile.invalidateCapabilitiesFull();
+            if (!player.isCreative()) {
+                stack.shrink(1);
+            }
+            return InteractionResult.CONSUME;
+        } catch (RuntimeException failure) {
+            return rollbackUpgrade(level, pos, oldState, oldTileNbt, upgradeBounding, upgradeState);
         }
-        upgradedTile.resyncMasterToBounding();
-        upgradedTile.sendUpdatePacket();
-        upgradedTile.setChanged();
-        upgradedTile.invalidateCapabilitiesFull();
-        if (!player.isCreative()) {
-            stack.shrink(1);
+    }
+
+    private static InteractionResult rollbackUpgrade(Level level, BlockPos pos, BlockState oldState, CompoundTag oldTileNbt,
+            AttributeHasBounding upgradeBounding, BlockState upgradeState) {
+        if (upgradeBounding != null) {
+            upgradeBounding.removeBoundingBlocks(level, pos, upgradeState);
         }
-        return InteractionResult.CONSUME;
+        level.setBlockAndUpdate(pos, oldState);
+        BlockEntity restoredTile = WorldUtils.getTileEntity(level, pos);
+        if (restoredTile != null && oldTileNbt != null) {
+            restoredTile.loadWithComponents(oldTileNbt, level.registryAccess());
+        }
+        AttributeHasBounding oldBounding = Attribute.get(oldState, AttributeHasBounding.class);
+        if (oldBounding != null) {
+            oldBounding.placeBoundingBlocks(level, pos, oldState);
+        }
+        if (restoredTile instanceof TileEntityMekanism tileMek) {
+            tileMek.resyncMasterToBounding();
+            tileMek.sendUpdatePacket();
+            tileMek.setChanged();
+            tileMek.invalidateCapabilitiesFull();
+        }
+        return InteractionResult.FAIL;
     }
 
     private static void refreshMeLifecycle(TileEntityMekanism upgradedTile) {

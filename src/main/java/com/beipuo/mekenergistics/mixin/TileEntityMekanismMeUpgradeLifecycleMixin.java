@@ -9,6 +9,7 @@ import com.beipuo.mekenergistics.upgrade.MePatternProviderUpgrade;
 import com.beipuo.mekenergistics.upgrade.StandaloneUpgradePersistence;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
+import appeng.api.util.AECableType;
 import java.util.HashSet;
 import java.util.Set;
 import mekanism.api.Upgrade;
@@ -41,6 +42,16 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
             return node == null ? null : node.getNode();
         }
         return null;
+    }
+
+    /**
+     * Same rationale as getGridNode: a concrete class method takes precedence over AE2 and optional
+     * integration interface defaults. Productive Bees Genesis' IAe2OutputHost supplies its own
+     * default getCableConnectionType, so every concrete tile must resolve the method in a class
+     * rather than between two interface defaults (IncompatibleClassChangeError).
+     */
+    public AECableType getCableConnectionType(Direction side) {
+        return AECableType.SMART;
     }
 
     @Inject(method = "tickServer", at = @At(value = "INVOKE",

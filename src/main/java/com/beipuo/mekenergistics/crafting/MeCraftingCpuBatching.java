@@ -10,7 +10,6 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import appeng.crafting.execution.CraftingCpuHelper;
-import appeng.crafting.execution.ElapsedTimeTracker;
 import appeng.crafting.execution.ExecutingCraftingJob;
 import appeng.crafting.inv.ListCraftingInventory;
 import com.beipuo.mekenergistics.MekEnergistics;
@@ -38,8 +37,9 @@ public final class MeCraftingCpuBatching {
             return pusher.push(provider, details, baseInputs);
         }
 
+        ExecutingCraftingJobAccessor jobAccess = (ExecutingCraftingJobAccessor) job;
         long acceptedCopies = owner.maxAcceptedPatternCopies(baseInputs);
-        Batch batch = prepareBatch(details, baseInputs, inventory, job, energyService, level, acceptedCopies);
+        Batch batch = prepareBatch(details, baseInputs, inventory, jobAccess, energyService, level, acceptedCopies);
         if (batch == null) {
             return pusher.push(provider, details, baseInputs);
         }
@@ -48,7 +48,8 @@ public final class MeCraftingCpuBatching {
         try {
             accepted = pusher.push(provider, details, baseInputs);
             if (accepted) {
-                commitBatch(batch, job, energyService);
+                commitBatch(batch, jobAccess.mekenergistics$getWaitingFor(),
+                        (ElapsedTimeTrackerAccessor) jobAccess.mekenergistics$getTimeTracker(), energyService);
             }
             return accepted;
         } finally {
@@ -60,13 +61,13 @@ public final class MeCraftingCpuBatching {
 
     @Nullable
     private static Batch prepareBatch(IPatternDetails details, KeyCounter[] baseInputs,
-            ListCraftingInventory inventory, ExecutingCraftingJob job,
+            ListCraftingInventory inventory, ExecutingCraftingJobAccessor jobAccess,
             IEnergyService energyService, Level level, long acceptedCopies) {
-        if (details == null || baseInputs == null || baseInputs.length == 0 || job == null) {
+        if (details == null || baseInputs == null || baseInputs.length == 0 || jobAccess == null) {
             return null;
         }
 
-        Object progress = ((ExecutingCraftingJobAccessor) job).mekenergistics$getTasks().get(details);
+        Object progress = jobAccess.mekenergistics$getTasks().get(details);
         if (!(progress instanceof CraftingTaskProgressAccessor taskProgress)) {
             return null;
         }
@@ -143,25 +144,44 @@ public final class MeCraftingCpuBatching {
         return new Batch(copies, inputs, outputs, containerItems, power, taskProgress);
     }
 
-    private static void commitBatch(Batch batch, ExecutingCraftingJob job, IEnergyService energyService) {
-        ExecutingCraftingJobAccessor jobAccess = (ExecutingCraftingJobAccessor) job;
-        for (var output : batch.outputs()) {
-            jobAccess.mekenergistics$getWaitingFor().insert(
-                    output.getKey(), output.getLongValue(), Actionable.MODULATE);
+    static void commitBatch(Batch batch, ListCraftingInventory waitingFor,
+            ElapsedTimeTrackerAccessor timeTracker, IEnergyService energyService) {
+        long taskProgressBefore = batch.taskProgress().mekenergistics$getValue();
+        KeyCounter waitingForBefore = new KeyCounter();
+        waitingForBefore.addAll(waitingFor.list);
+        double powerBefore = energyService.getStoredPower();
+        try {
+            for (var output : batch.outputs()) {
+                waitingFor.insert(output.getKey(), output.getLongValue(), Actionable.MODULATE);
+            }
+            for (var containerItem : batch.containerItems()) {
+                waitingFor.insert(containerItem.getKey(), containerItem.getLongValue(), Actionable.MODULATE);
+                timeTracker.mekenergistics$addMaxItems(
+                        containerItem.getLongValue(), containerItem.getKey().getType());
+            }
+            batch.taskProgress().mekenergistics$setValue(taskProgressBefore - batch.extraCopies());
+            energyService.extractAEPower(batch.power(), Actionable.MODULATE, PowerMultiplier.CONFIG);
+        } catch (RuntimeException ex) {
+            batch.taskProgress().mekenergistics$setValue(taskProgressBefore);
+            restoreCounter(waitingFor.list, waitingForBefore);
+            double extracted = powerBefore - energyService.getStoredPower();
+            if (extracted > 0) {
+                try {
+                    energyService.injectPower(extracted, Actionable.MODULATE);
+                } catch (RuntimeException restoreEx) {
+                    MekEnergistics.LOGGER.warn("Unable to restore AE power after failed batch commit", restoreEx);
+                }
+            }
+            throw ex;
         }
-        ElapsedTimeTracker tracker = jobAccess.mekenergistics$getTimeTracker();
-        for (var containerItem : batch.containerItems()) {
-            jobAccess.mekenergistics$getWaitingFor().insert(
-                    containerItem.getKey(), containerItem.getLongValue(), Actionable.MODULATE);
-            ((ElapsedTimeTrackerAccessor) tracker).mekenergistics$addMaxItems(
-                    containerItem.getLongValue(), containerItem.getKey().getType());
-        }
-        batch.taskProgress().mekenergistics$setValue(
-                batch.taskProgress().mekenergistics$getValue() - batch.extraCopies());
-        energyService.extractAEPower(batch.power(), Actionable.MODULATE, PowerMultiplier.CONFIG);
     }
 
-    private static void rollbackBatch(Batch batch, KeyCounter[] baseInputs,
+    private static void restoreCounter(KeyCounter target, KeyCounter snapshot) {
+        target.clear();
+        target.addAll(snapshot);
+    }
+
+    static void rollbackBatch(Batch batch, KeyCounter[] baseInputs,
             ListCraftingInventory inventory) {
         unmergeInputs(baseInputs, batch.extraInputs());
         CraftingCpuHelper.reinjectPatternInputs(inventory, batch.extraInputs());
@@ -211,7 +231,7 @@ public final class MeCraftingCpuBatching {
         }
     }
 
-    private record Batch(long extraCopies, KeyCounter[] extraInputs,
+    record Batch(long extraCopies, KeyCounter[] extraInputs,
             KeyCounter outputs, KeyCounter containerItems, double power,
             CraftingTaskProgressAccessor taskProgress) {
     }

@@ -35,6 +35,7 @@ public final class MeSmartPatternMultiplication {
     private final Map<PendingKey, PendingPattern> pendingByKey = new HashMap<>();
     private final Map<AEKey, Set<PendingPattern>> pendingByInputKey = new HashMap<>();
     private final List<PendingPattern> hotPendingPatterns = new ArrayList<>();
+    private final MePendingPatternStore pendingStore = new MePendingPatternStore();
     private boolean enabled = true;
     private int nextPendingScanIndex;
 
@@ -296,55 +297,82 @@ public final class MeSmartPatternMultiplication {
     }
 
     public void savePending(CompoundTag tag, HolderLookup.Provider registries) {
-        if (this.pendingPatterns.isEmpty()) {
+        if (this.pendingPatterns.isEmpty() && this.pendingStore.quarantinedCount() == 0) {
             tag.remove(TAG_PENDING);
+            this.pendingStore.saveQuarantined(tag);
             return;
         }
-        ListTag pending = new ListTag();
-        for (PendingPattern pendingPattern : this.pendingPatterns) {
-            CompoundTag pendingTag = new CompoundTag();
-            pendingTag.putLong(TAG_REMAINING, pendingPattern.remaining);
-            pendingTag.put(TAG_DEFINITION, GenericStack.writeTag(registries, new GenericStack(pendingPattern.definition, 1)));
-            ListTag inputs = new ListTag();
-            for (GenericStack input : pendingPattern.inputs) {
-                CompoundTag inputTag = new CompoundTag();
-                inputTag.put(TAG_INPUT, GenericStack.writeTag(registries, input));
-                inputs.add(inputTag);
+        if (this.pendingPatterns.isEmpty()) {
+            tag.remove(TAG_PENDING);
+        } else {
+            ListTag pending = new ListTag();
+            for (PendingPattern pendingPattern : this.pendingPatterns) {
+                CompoundTag pendingTag = new CompoundTag();
+                pendingTag.putLong(TAG_REMAINING, pendingPattern.remaining);
+                pendingTag.put(TAG_DEFINITION, GenericStack.writeTag(registries, new GenericStack(pendingPattern.definition, 1)));
+                ListTag inputs = new ListTag();
+                for (GenericStack input : pendingPattern.inputs) {
+                    CompoundTag inputTag = new CompoundTag();
+                    inputTag.put(TAG_INPUT, GenericStack.writeTag(registries, input));
+                    inputs.add(inputTag);
+                }
+                pendingTag.put(TAG_INPUTS, inputs);
+                pending.add(pendingTag);
             }
-            pendingTag.put(TAG_INPUTS, inputs);
-            pending.add(pendingTag);
+            tag.put(TAG_PENDING, pending);
         }
-        tag.put(TAG_PENDING, pending);
+        this.pendingStore.saveQuarantined(tag);
     }
 
     public void loadPending(CompoundTag tag, HolderLookup.Provider registries) {
+        loadPending(tag, registries, null);
+    }
+
+    public void loadPending(CompoundTag tag, HolderLookup.Provider registries,
+            @Nullable MePendingPatternStore.PendingBalanceRefund refund) {
         this.pendingPatterns.clear();
         this.pendingSet.clear();
         this.pendingByKey.clear();
         this.pendingByInputKey.clear();
         this.hotPendingPatterns.clear();
+        this.pendingStore.loadQuarantined(tag);
         ListTag pending = tag.getList(TAG_PENDING, CompoundTag.TAG_COMPOUND);
         for (int i = 0; i < pending.size(); i++) {
             CompoundTag pendingTag = pending.getCompound(i);
             long remaining = pendingTag.getLong(TAG_REMAINING);
             if (remaining <= 0) {
+                MePendingPatternStore.logDroppedPending(i, "non-positive remaining " + remaining);
                 continue;
             }
-            GenericStack definition = GenericStack.readTag(registries, pendingTag.getCompound(TAG_DEFINITION));
-            if (definition == null || !(definition.what() instanceof AEItemKey definitionKey)) {
-                continue;
-            }
-            ListTag inputs = pendingTag.getList(TAG_INPUTS, CompoundTag.TAG_COMPOUND);
-            List<GenericStack> stacks = new ArrayList<>(inputs.size());
-            for (int j = 0; j < inputs.size(); j++) {
-                GenericStack stack = GenericStack.readTag(registries, inputs.getCompound(j).getCompound(TAG_INPUT));
-                if (stack != null && stack.amount() > 0) {
-                    stacks.add(stack);
+            String reason = null;
+            List<GenericStack> decodedInputs = List.of();
+            try {
+                ListTag inputTags = pendingTag.getList(TAG_INPUTS, CompoundTag.TAG_COMPOUND);
+                decodedInputs = inputTags.isEmpty() ? List.of() : MePendingPatternStore.decodeInputs(registries, inputTags);
+                GenericStack definition = GenericStack.readTag(registries, pendingTag.getCompound(TAG_DEFINITION));
+                if (definition == null) {
+                    reason = "undecodable definition";
+                } else if (!(definition.what() instanceof AEItemKey definitionKey)) {
+                    reason = "definition is not an item key: " + definition.what();
+                } else if (inputTags.isEmpty()) {
+                    reason = "no inputs listed";
+                } else if (decodedInputs.isEmpty()) {
+                    reason = "no usable inputs";
+                } else if (decodedInputs.size() < inputTags.size()) {
+                    reason = "only " + decodedInputs.size() + " of " + inputTags.size() + " inputs decoded";
+                } else {
+                    addLoadedPending(new PendingPattern(definitionKey, decodedInputs, remaining));
+                    continue;
                 }
+            } catch (RuntimeException ex) {
+                reason = "decode failed: " + ex.getMessage();
             }
-            if (!stacks.isEmpty()) {
-                addLoadedPending(new PendingPattern(definitionKey, stacks, remaining));
+            MePendingPatternStore.logDroppedPending(i, reason);
+            long balance = MePendingPatternStore.refundableBalance(decodedInputs, remaining);
+            if (balance > 0 && refund != null && refund.refund(decodedInputs, remaining) >= balance) {
+                continue;
             }
+            this.pendingStore.quarantine(i, reason, pendingTag);
         }
     }
 
@@ -359,6 +387,10 @@ public final class MeSmartPatternMultiplication {
         this.pendingSet.add(pendingPattern);
         this.pendingByKey.putIfAbsent(pendingPattern.key(), pendingPattern);
         indexPendingInputs(pendingPattern);
+    }
+
+    public int quarantinedPendingCount() {
+        return this.pendingStore.quarantinedCount();
     }
 
     public interface Feeder {
@@ -521,13 +553,7 @@ public final class MeSmartPatternMultiplication {
         }
 
         private static long multiplyClamped(long amount, long copies) {
-            if (amount <= 0 || copies <= 0) {
-                return 0;
-            }
-            if (amount > Long.MAX_VALUE / copies) {
-                return Long.MAX_VALUE;
-            }
-            return amount * copies;
+            return MePendingPatternStore.scaleAmountClamped(amount, copies);
         }
 
         private long maxAcceptedBy(Feeder feeder) {

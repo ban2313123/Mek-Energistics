@@ -175,6 +175,33 @@ class MekEnergisticsHardeningTest {
     }
 
     /**
+     * The Data and Omni counted-crafting bridges gate on the real resolved ABI classes and must
+     * degrade loudly when the mod is present but that ABI is missing. The mixin plugin does not run
+     * in unit tests, so the contract is asserted against the gate source: probing every ABI class,
+     * never falling back to a removed API, and routing the warning through the shared gate helpers.
+     */
+    @Test
+    void optionalBridgeGatesProbeTheResolvedAbiAndReportWarnings() throws IOException {
+        String plugin = Files.readString(MIXIN_PLUGIN);
+        assertFalse(plugin.contains("com.atir.molecularmanipulator.api.crafting.OmniBatchCraftingProvider"),
+                "Omni gate must not reference the removed v1 batch API");
+        assertTrue(plugin.contains("com.atir.molecularmanipulator.integration.ae2.MolecularBatchCraftingProvider"),
+                "Omni gate must reference the current MolecularBatchCraftingProvider entry point");
+        assertTrue(plugin.contains("com.atir.molecularmanipulator.blockentity.OmniComputationCoreBlockEntity"),
+                "Omni CPU guard must reference the omni-core ownership probe");
+        assertTrue(plugin.contains(
+                "com.fish_dan_.data_energistics.api.crafting.dispatch.CountedCraftingAdmission"),
+                "Data gate must reference the resolved CountedCraftingAdmission ABI");
+        assertTrue(plugin.contains(
+                "com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingProvider"),
+                "Data gate must reference the resolved CountedCraftingProvider ABI");
+        assertTrue(plugin.contains("DataAbiGate.countedBridgeWarning"),
+                "the plugin must emit the retrievable Data ABI warning");
+        assertTrue(plugin.contains("OmniBatchCompat.bridgeWarning"),
+                "the plugin must emit the retrievable Omni ABI warning");
+    }
+
+    /**
      * Registering against BlockEntity/Block makes Jade run these providers for every block in the
      * game just to fail an instanceof check.
      */

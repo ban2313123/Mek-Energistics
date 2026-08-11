@@ -1,4 +1,4 @@
-package com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider;
+package com.fish_dan_.data_energistics.api.crafting.dispatch;
 
 import appeng.api.stacks.KeyCounter;
 

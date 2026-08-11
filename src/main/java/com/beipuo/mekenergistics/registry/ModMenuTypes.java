@@ -23,7 +23,6 @@ import com.beipuo.mekenergistics.blockentity.machine.chemical.MePigmentMixerBloc
 import com.beipuo.mekenergistics.blockentity.machine.process.MePrecisionSawmillBlockEntity;
 import com.beipuo.mekenergistics.blockentity.machine.chemical.MePressurizedReactionChamberBlockEntity;
 import com.beipuo.mekenergistics.blockentity.machine.chemical.MeRotaryCondensentratorBlockEntity;
-import com.beipuo.mekenergistics.blockentity.machine.utility.MeSeismicVibratorBlockEntity;
 import com.beipuo.mekenergistics.blockentity.machine.chemical.MeSolarNeutronActivatorBlockEntity;
 import com.beipuo.mekenergistics.menu.MePatternFormulaicAssemblicatorContainer;
 import com.beipuo.mekenergistics.menu.MePatternMachineContainer;
@@ -58,8 +57,6 @@ public final class ModMenuTypes {
             registerPatternContainer("me_combiner", MeCombinerBlockEntity.class);
     public static final ContainerTypeRegistryObject<MePatternMachineContainer<MePrecisionSawmillBlockEntity>> ME_PRECISION_SAWMILL =
             registerPatternContainer("me_precision_sawmill", MePrecisionSawmillBlockEntity.class);
-    public static final ContainerTypeRegistryObject<MekanismTileContainer<MeSeismicVibratorBlockEntity>> ME_SEISMIC_VIBRATOR =
-            registerPatternTileContainer("me_seismic_vibrator", MeSeismicVibratorBlockEntity.class);
     public static final ContainerTypeRegistryObject<MePatternFormulaicAssemblicatorContainer> ME_FORMULAIC_ASSEMBLICATOR =
             registerFormulaicAssemblicatorContainer();
     public static final ContainerTypeRegistryObject<MekanismTileContainer<MePressurizedReactionChamberBlockEntity>> ME_PRESSURIZED_REACTION_CHAMBER =
@@ -200,7 +197,6 @@ public final class ModMenuTypes {
         containers.put(MeMekanismMachine.METALLURGIC_INFUSER, ME_METALLURGIC_INFUSER);
         containers.put(MeMekanismMachine.COMBINER, ME_COMBINER);
         containers.put(MeMekanismMachine.PRECISION_SAWMILL, ME_PRECISION_SAWMILL);
-        containers.put(MeMekanismMachine.SEISMIC_VIBRATOR, ME_SEISMIC_VIBRATOR);
         containers.put(MeMekanismMachine.FORMULAIC_ASSEMBLICATOR, ME_FORMULAIC_ASSEMBLICATOR);
         containers.put(MeMekanismMachine.PRESSURIZED_REACTION_CHAMBER, ME_PRESSURIZED_REACTION_CHAMBER);
         containers.put(MeMekanismMachine.CHEMICAL_CRYSTALLIZER, ME_CHEMICAL_CRYSTALLIZER);

@@ -8,7 +8,7 @@ import com.beipuo.mekenergistics.compat.dataenergistics.DataCraftingAdmission;
 
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.stacks.KeyCounter;
-import com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingAdmission;
+import com.fish_dan_.data_energistics.api.crafting.dispatch.CountedCraftingAdmission;
 import com.fish_dan_.data_energistics.common.crafting.trinity.dispatch.provider.CountedCraftingProvider;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;

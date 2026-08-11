@@ -1,108 +1,50 @@
 package com.beipuo.mekenergistics.compat.omnisequence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
-import com.atir.molecularmanipulator.api.crafting.OmniBatchProbe;
-import com.atir.molecularmanipulator.api.crafting.OmniBatchRequest;
-import com.beipuo.mekenergistics.testfixture.FakeKey;
-import java.util.List;
-import java.util.UUID;
-import net.minecraft.world.level.Level;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class OmniBatchCompatTest {
-    private static final AEKey IRON = new FakeKey("iron");
-    private static final AEKey COPPER = new FakeKey("copper");
-    private static final AEKey OUTPUT = new FakeKey("output");
 
+    /**
+     * The no-double-batch contract: exactly one engine owns batch dispatch on a CPU. OmniSequence
+     * only batches on CPUs its omni computation core owns, so Mek-Energistics' own CPU batching
+     * must stay in charge whenever the mod is absent or the core does not own the CPU.
+     */
     @Test
-    void probePreservesSlotsAndMultipleSubstitutedKeys() {
-        TestPattern pattern = new TestPattern(2);
-        var counters = OmniBatchCompat.toCounters(pattern, List.of(
-                new OmniBatchProbe.Input(0, IRON, 2),
-                new OmniBatchProbe.Input(0, COPPER, 3),
-                new OmniBatchProbe.Input(1, IRON, 5)));
-
-        assertEquals(2, counters.length);
-        assertEquals(2, counters[0].get(IRON));
-        assertEquals(3, counters[0].get(COPPER));
-        assertEquals(5, counters[1].get(IRON));
+    void presentAndAbsentMatricesNeverRunBothBatchingEngines() {
+        assertFalse(OmniBatchCompat.isOmniManagedCpu(false, true),
+                "Omni absent: Mek-Energistics batching owns the CPU");
+        assertFalse(OmniBatchCompat.isOmniManagedCpu(true, false),
+                "core does not own the CPU: Mek-Energistics batching owns it");
+        assertTrue(OmniBatchCompat.isOmniManagedCpu(true, true),
+                "core owns the CPU: Omni owns dispatch and our batching defers");
     }
 
     @Test
-    void deliveryUsesAuthoritativeTotalsInsteadOfMultiplyingTheProbe() {
-        TestPattern pattern = new TestPattern(1);
-        OmniBatchRequest request = new OmniBatchRequest(
-                UUID.randomUUID(), UUID.randomUUID(), pattern, 10,
-                List.of(new OmniBatchRequest.Input(0, COPPER, 37)),
-                List.of(new GenericStack(OUTPUT, 10)));
-
-        var counters = OmniBatchCompat.toCounters(pattern, request);
-
-        assertEquals(37, counters[0].get(COPPER));
-        assertEquals(0, counters[0].get(IRON));
+    void absentOmniProducesNoBridgeWarning() {
+        assertEquals(Optional.empty(), OmniBatchCompat.bridgeWarning(false, false, false));
     }
 
     @Test
-    void malformedOrIncompleteSlotLayoutsAreRejected() {
-        TestPattern pattern = new TestPattern(2);
-
-        assertNull(OmniBatchCompat.toCounters(pattern,
-                List.of(new OmniBatchProbe.Input(0, IRON, 1))));
-        assertNull(OmniBatchCompat.toCounters(pattern,
-                List.of(new OmniBatchProbe.Input(2, IRON, 1),
-                        new OmniBatchProbe.Input(1, COPPER, 1))));
+    void presentAbiProducesNoBridgeWarning() {
+        assertEquals(Optional.empty(), OmniBatchCompat.bridgeWarning(true, true, true));
     }
 
-    private static final class TestPattern implements IPatternDetails {
-        private final IInput[] inputs;
-
-        private TestPattern(int slots) {
-            this.inputs = new IInput[slots];
-            for (int i = 0; i < slots; i++) {
-                this.inputs[i] = new TestInput();
-            }
-        }
-
-        @Override
-        public appeng.api.stacks.AEItemKey getDefinition() {
-            return null;
-        }
-
-        @Override
-        public IInput[] getInputs() {
-            return inputs;
-        }
-
-        @Override
-        public List<GenericStack> getOutputs() {
-            return List.of(new GenericStack(OUTPUT, 1));
-        }
+    @Test
+    void missingProviderIsNamedInTheWarning() {
+        Optional<String> warning = OmniBatchCompat.bridgeWarning(true, false, true);
+        assertTrue(warning.isPresent());
+        assertTrue(warning.get().contains("MolecularBatchCraftingProvider"), warning.get());
     }
 
-    private static final class TestInput implements IPatternDetails.IInput {
-        @Override
-        public GenericStack[] getPossibleInputs() {
-            return new GenericStack[] {new GenericStack(IRON, 1), new GenericStack(COPPER, 1)};
-        }
-
-        @Override
-        public long getMultiplier() {
-            return 1;
-        }
-
-        @Override
-        public boolean isValid(AEKey input, Level level) {
-            return IRON.equals(input) || COPPER.equals(input);
-        }
-
-        @Override
-        public AEKey getRemainingKey(AEKey template) {
-            return null;
-        }
+    @Test
+    void missingCoreIsNamedInTheWarning() {
+        Optional<String> warning = OmniBatchCompat.bridgeWarning(true, true, false);
+        assertTrue(warning.isPresent());
+        assertTrue(warning.get().contains("OmniComputationCoreBlockEntity"), warning.get());
     }
 }

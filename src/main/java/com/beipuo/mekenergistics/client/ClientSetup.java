@@ -27,15 +27,10 @@ import com.beipuo.mekenergistics.blockentity.machine.process.MeAdvancedElectricM
 import com.beipuo.mekenergistics.menu.MePatternMachineContainer;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
 import mekanism.client.gui.machine.GuiFormulaicAssemblicator;
-import mekanism.client.gui.machine.GuiSeismicVibrator;
-import mekanism.common.inventory.container.tile.MekanismTileContainer;
-import mekanism.common.tile.machine.TileEntitySeismicVibrator;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.world.inventory.MenuType;
 
 public final class ClientSetup {
     private ClientSetup() {
@@ -55,19 +50,6 @@ public final class ClientSetup {
         CompatMachineClientProviders.available().forEach(provider -> provider.registerRenderers(event));
     }
 
-    /**
-     * The only screen registration that needs a cast: Mekanism's own {@link GuiSeismicVibrator} is
-     * typed to {@link TileEntitySeismicVibrator} while our menu carries the ME subclass, and
-     * generics are invariant. Isolated so the suppression does not cover the whole registration
-     * list, where every other entry is type-correct as written.
-     */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static void registerSeismicVibratorScreen(RegisterMenuScreensEvent event) {
-        event.register((MenuType) ModMenuTypes.ME_SEISMIC_VIBRATOR.get(),
-                (MenuScreens.ScreenConstructor) (menu, inv, title) ->
-                        new GuiSeismicVibrator((MekanismTileContainer<TileEntitySeismicVibrator>) (MekanismTileContainer<?>) menu, inv, title));
-    }
-
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.ME_ELECTRIC_MACHINE.get(), MeElectricMachineScreen::new);
         event.register(ModMenuTypes.ME_GENERIC_MACHINE.get(), MeGenericMachineScreen::new);
@@ -77,7 +59,6 @@ public final class ClientSetup {
         event.register(ModMenuTypes.ME_METALLURGIC_INFUSER.get(), MeGuiMetallurgicInfuser::new);
         event.register(ModMenuTypes.ME_COMBINER.get(), MeGuiCombiner::new);
         event.register(ModMenuTypes.ME_PRECISION_SAWMILL.get(), MeGuiPrecisionSawmill::new);
-        registerSeismicVibratorScreen(event);
         event.register(ModMenuTypes.ME_FORMULAIC_ASSEMBLICATOR.get(), GuiFormulaicAssemblicator::new);
         event.register(ModMenuTypes.ME_PRESSURIZED_REACTION_CHAMBER.get(), MeGuiPRC::new);
         event.register(ModMenuTypes.ME_CHEMICAL_CRYSTALLIZER.get(), MeGuiChemicalCrystallizer::new);

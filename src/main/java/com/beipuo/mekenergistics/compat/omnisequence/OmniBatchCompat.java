@@ -1,165 +1,115 @@
 package com.beipuo.mekenergistics.compat.omnisequence;
 
 import appeng.api.crafting.IPatternDetails;
-import appeng.api.stacks.AEKey;
+import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import com.atir.molecularmanipulator.api.crafting.OmniBatchAdmission;
-import com.atir.molecularmanipulator.api.crafting.OmniBatchCraftingApi;
-import com.atir.molecularmanipulator.api.crafting.OmniBatchDelivery;
-import com.atir.molecularmanipulator.api.crafting.OmniBatchProbe;
-import com.atir.molecularmanipulator.api.crafting.OmniBatchRequest;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
-import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
-/** Optional OmniSequence v1 provider bridge. Loaded only while its API is present. */
+/**
+ * OmniSequence Transfinite {@code MolecularBatchCraftingProvider} bridge decisions.
+ *
+ * <p>OmniSequence's CPU mixin owns batch dispatch on CPUs linked to an omni computation core and
+ * treats any {@code ICraftingProvider} implementing its batch interface as a scaled-push target.
+ * This class answers the two interface questions for ME machines and never references OmniSequence
+ * classes, so it stays loadable while the mod is absent.</p>
+ */
 public final class OmniBatchCompat {
-    private static final int SUPPORTED_API_VERSION = 1;
-
     private OmniBatchCompat() {
     }
 
-    @Nullable
-    public static OmniBatchAdmission prepare(AbstractMeAeSupport<?> support, OmniBatchProbe probe) {
-        if (OmniBatchCraftingApi.apiVersion() != SUPPORTED_API_VERSION
-                || support == null || probe == null || probe.pattern() == null
-                || probe.requestedMaxCrafts() < 2 || support.isPatternBusy()
-                || !support.hasRegisteredPattern(probe.pattern())) {
-            return null;
-        }
+    /**
+     * Whether an ME machine can accept one physical push carrying several identical crafts. Only
+     * processing patterns can be pushed as bulk inputs; the machine must hold the pattern, must not
+     * be mid-batch, and must physically fit at least two copies, otherwise claiming batch support
+     * would make OmniSequence extract more than the machine can ever consume.
+     */
+    public static boolean supportsBatching(AbstractMeAeSupport<?> support, IPatternDetails pattern) {
+        return support != null && pattern != null
+                && pattern.supportsPushInputsToExternalInventory()
+                && !support.isPatternBusy()
+                && support.hasRegisteredPattern(pattern)
+                && getBatchLimit(support, pattern) >= 2;
+    }
 
-        KeyCounter[] prototype = toCounters(probe.pattern(), probe.oneCraftInputs());
-        if (prototype == null || hasRemainingInputs(probe.pattern(), prototype)) {
-            return null;
+    /**
+     * Physical batch limit for the machine and pattern, derived from the first possible input of
+     * every slot. OmniSequence's adaptive controller treats this as the maximum window and halves
+     * on rejection, so an over-estimate converges safely and an under-estimate only shrinks the
+     * batch.
+     */
+    public static long getBatchLimit(AbstractMeAeSupport<?> support, IPatternDetails pattern) {
+        KeyCounter[] oneCraftPrototype = oneCraftPrototype(pattern);
+        if (support == null || oneCraftPrototype == null) {
+            return 0;
         }
-        long capacity = Math.min(probe.requestedMaxCrafts(), support.maxAcceptedCopies(prototype));
-        return capacity < 2 ? null : new Admission(support, probe.pattern(), capacity);
+        return Math.max(0, support.maxAcceptedCopies(oneCraftPrototype));
+    }
+
+    /**
+     * Single batch owner for ME machines. OmniSequence dispatches CPUs it owns; everywhere else
+     * Mek-Energistics' own CPU batching is the owner. The guard mixin uses this on every CPU, so
+     * the present/absent matrices never run both batching engines over the same push.
+     */
+    public static boolean isOmniManagedCpu(boolean omniBatchIntegrationLoaded, boolean coreOwnsCpu) {
+        return omniBatchIntegrationLoaded && coreOwnsCpu;
+    }
+
+    /**
+     * Retrievable warning when the mod is loaded but the ABI the bridge compiles against is not
+     * present, so the bridge is explicitly disabled instead of silently skipping.
+     */
+    public static Optional<String> bridgeWarning(boolean omniLoaded,
+            boolean batchProviderPresent, boolean corePresent) {
+        if (!omniLoaded || (batchProviderPresent && corePresent)) {
+            return Optional.empty();
+        }
+        String missing = !batchProviderPresent
+                ? "MolecularBatchCraftingProvider"
+                : "OmniComputationCoreBlockEntity";
+        return Optional.of("OmniSequence batch bridge disabled: expected ABI class missing from the"
+                + " loaded mod: " + missing);
     }
 
     @Nullable
-    static KeyCounter[] toCounters(IPatternDetails pattern, List<? extends OmniBatchProbe.Input> inputs) {
-        if (pattern == null || inputs == null) {
+    private static KeyCounter[] oneCraftPrototype(IPatternDetails pattern) {
+        if (pattern == null) {
             return null;
         }
-        KeyCounter[] counters = emptyCounters(pattern.getInputs().length);
-        for (OmniBatchProbe.Input input : inputs) {
-            if (!add(counters, input.slot(), input.key(), input.amount())) {
+        IPatternDetails.IInput[] inputs = pattern.getInputs();
+        if (inputs == null || inputs.length == 0) {
+            return null;
+        }
+        KeyCounter[] prototype = new KeyCounter[inputs.length];
+        for (int slot = 0; slot < inputs.length; slot++) {
+            prototype[slot] = new KeyCounter();
+            GenericStack first = firstPossibleInput(inputs[slot]);
+            if (first == null) {
                 return null;
             }
+            long multiplier = Math.max(1, inputs[slot].getMultiplier());
+            long amount = first.amount() > Long.MAX_VALUE / multiplier
+                    ? Long.MAX_VALUE
+                    : first.amount() * multiplier;
+            if (amount <= 0) {
+                return null;
+            }
+            prototype[slot].add(first.what(), amount);
         }
-        return allPopulated(counters) ? counters : null;
+        return prototype;
     }
 
     @Nullable
-    static KeyCounter[] toCounters(IPatternDetails pattern, OmniBatchRequest request) {
-        if (pattern == null || request == null || request.inputs() == null) {
+    private static GenericStack firstPossibleInput(IPatternDetails.IInput input) {
+        if (input == null) {
             return null;
         }
-        KeyCounter[] counters = emptyCounters(pattern.getInputs().length);
-        for (OmniBatchRequest.Input input : request.inputs()) {
-            if (!add(counters, input.slot(), input.key(), input.amount())) {
-                return null;
+        for (GenericStack possible : input.getPossibleInputs()) {
+            if (possible != null && possible.what() != null && possible.amount() > 0) {
+                return possible;
             }
         }
-        return allPopulated(counters) ? counters : null;
-    }
-
-    private static KeyCounter[] emptyCounters(int size) {
-        KeyCounter[] counters = new KeyCounter[size];
-        for (int i = 0; i < size; i++) {
-            counters[i] = new KeyCounter();
-        }
-        return counters;
-    }
-
-    private static boolean add(KeyCounter[] counters, int slot, AEKey key, long amount) {
-        if (slot < 0 || slot >= counters.length || key == null || amount <= 0) {
-            return false;
-        }
-        long existing = counters[slot].get(key);
-        if (existing > Long.MAX_VALUE - amount) {
-            return false;
-        }
-        counters[slot].add(key, amount);
-        return true;
-    }
-
-    private static boolean allPopulated(KeyCounter[] counters) {
-        if (counters.length == 0) {
-            return false;
-        }
-        for (KeyCounter counter : counters) {
-            if (counter.isEmpty()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean hasRemainingInputs(IPatternDetails pattern, KeyCounter[] inputs) {
-        IPatternDetails.IInput[] declared = pattern.getInputs();
-        for (int slot = 0; slot < declared.length; slot++) {
-            for (var entry : inputs[slot]) {
-                if (declared[slot].getRemainingKey(entry.getKey()) != null) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static boolean samePattern(IPatternDetails expected, IPatternDetails actual) {
-        return expected == actual || expected != null && actual != null
-                && Objects.equals(expected.getDefinition(), actual.getDefinition());
-    }
-
-    private static final class Admission implements OmniBatchAdmission {
-        private final AbstractMeAeSupport<?> support;
-        private final IPatternDetails pattern;
-        private final long maxCrafts;
-        private boolean committed;
-
-        private Admission(AbstractMeAeSupport<?> support, IPatternDetails pattern, long maxCrafts) {
-            this.support = support;
-            this.pattern = pattern;
-            this.maxCrafts = maxCrafts;
-        }
-
-        @Override
-        public long maxCrafts() {
-            return this.maxCrafts;
-        }
-
-        @Override
-        public void commit(OmniBatchDelivery delivery) {
-            if (this.committed) {
-                delivery.reject(new OmniBatchDelivery.Rejection(
-                        OmniBatchDelivery.RejectReason.INTERNAL_ERROR));
-                return;
-            }
-            this.committed = true;
-            OmniBatchRequest request = delivery.request();
-            if (request == null || request.craftCount() < 2 || request.craftCount() > this.maxCrafts
-                    || !samePattern(this.pattern, request.pattern())) {
-                delivery.reject(new OmniBatchDelivery.Rejection(
-                        OmniBatchDelivery.RejectReason.PATTERN_UNAVAILABLE));
-                return;
-            }
-            KeyCounter[] delivered = toCounters(this.pattern, request);
-            if (delivered == null || hasRemainingInputs(this.pattern, delivered)) {
-                delivery.reject(new OmniBatchDelivery.Rejection(
-                        OmniBatchDelivery.RejectReason.UNSUPPORTED_INPUT));
-                return;
-            }
-            if (!this.support.routeDataPatternInputs(delivered)) {
-                delivery.reject(new OmniBatchDelivery.Rejection(
-                        OmniBatchDelivery.RejectReason.CAPACITY_CHANGED));
-                return;
-            }
-            delivery.accept(new OmniBatchDelivery.Receipt(
-                    OmniBatchDelivery.Ownership.TRANSFERRED_TO_DURABLE_TARGET,
-                    OmniBatchDelivery.Backpressure.RECHECK_NEXT_TICK));
-        }
+        return null;
     }
 }
