@@ -27,6 +27,8 @@ public final class ModCreativeTabs {
                         }
                         output.accept(ModItems.ME_FACTORY_INSTALLER.get());
                         output.accept(ModItems.ME_PATTERN_PROVIDER_UPGRADE.get());
+                        output.accept(ModItems.ME_PASSIVE_CRAFTING_UPGRADE.get());
+                        output.accept(ModItems.ME_OUTPUT_INTERFACE_UPGRADE.get());
                     })
                     .build()
     );
@@ -38,3 +40,4 @@ public final class ModCreativeTabs {
         CREATIVE_TABS.register(eventBus);
     }
 }
+

@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics;
 
 import com.beipuo.mekenergistics.registry.ModBlockEntities;
 import com.beipuo.mekenergistics.registry.ModBlocks;
+import com.beipuo.mekenergistics.registry.ModDataComponents;
 import com.beipuo.mekenergistics.registry.ModCreativeTabs;
 import com.beipuo.mekenergistics.registry.ModItems;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
@@ -28,6 +29,7 @@ public final class MekEnergistics {
         ModCreativeTabs.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModBlockEntities.register(modEventBus);
+        ModDataComponents.register(modEventBus);
         modEventBus.addListener(ModNetwork::register);
         modEventBus.addListener(MePatternProviderUpgrade::commonSetup);
         modEventBus.addListener(MePassiveCraftingUpgrade::commonSetup);
@@ -35,3 +37,4 @@ public final class MekEnergistics {
         LOGGER.info("Loading Mek Energistics");
     }
 }
+

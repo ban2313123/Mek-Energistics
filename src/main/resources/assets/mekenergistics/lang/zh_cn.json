@@ -839,5 +839,15 @@
   "upgrade.mekenergistics.me_pattern_provider.description": "为支持的通用机械机器添加 ME 样板供应功能。",
   "item.mekenergistics.upgrade_me_passive_crafting": "ME 被动合成升级",
   "upgrade.mekenergistics.me_passive_crafting": "ME 被动合成",
-  "upgrade.mekenergistics.me_passive_crafting.description": "按设定间隔直接从 ME 网络提交已安装样板，不占用合成 CPU。"
+  "upgrade.mekenergistics.me_passive_crafting.description": "按设定间隔直接从 ME 网络提交已安装样板，不占用合成 CPU。",
+  "item.mekenergistics.upgrade_me_output_interface": "ME 接口升级",
+  "item.mekenergistics.upgrade_me_output_interface.tooltip": "不能与 ME 样板供应器升级或 ME 被动合成升级同时安装。",
+  "item.mekenergistics.upgrade_me_pattern_provider.tooltip": "不能与 ME 接口升级同时安装。",
+  "item.mekenergistics.upgrade_me_passive_crafting.tooltip": "不能与 ME 接口升级同时安装。",
+  "message.mekenergistics.upgrade_install_failed.conflict": "ME 升级安装被拒绝：与已安装的升级冲突。",
+  "message.mekenergistics.upgrade_install_failed.unsupported": "ME 升级安装被拒绝：该机器不支持此升级。",
+  "message.mekenergistics.upgrade_install_failed.missing_prerequisite": "ME 升级安装被拒绝：请先安装 ME 样板供应升级。",
+  "message.mekenergistics.upgrade_install_failed.limit_reached": "ME 升级安装被拒绝：已达到数量上限。",
+  "message.mekenergistics.upgrade_install_failed.blocked": "ME 升级安装被拒绝。",
+  "message.mekenergistics.upgrade_install_failed.none": "ME 升级安装被拒绝。",
 }

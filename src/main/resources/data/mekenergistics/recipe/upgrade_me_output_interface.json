@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "ae2:capacity_card"
+    },
+    "B": {
+      "item": "ae2:interface"
+    },
+    "C": {
+      "item": "mekanism:alloy_reinforced"
+    }
+  },
+  "pattern": [
+    "AAA",
+    "ABA",
+    "ACA"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mekenergistics:upgrade_me_output_interface"
+  }
+}
