@@ -3,6 +3,7 @@ package com.beipuo.mekenergistics.upgrade;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import mekanism.common.tile.component.TileComponentUpgrade;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,11 +19,17 @@ public final class MeUpgradeStateOwnerSupport implements MeUpgradeStateOwner {
 
     public MeUpgradeStateOwnerSupport(@NotNull BooleanSupplier nativePatternProvider,
             @NotNull Supplier<Boolean> patternInventoryEmpty, @NotNull Runnable onChange) {
+        this(nativePatternProvider, patternInventoryEmpty, onChange, () -> null);
+    }
+
+    public MeUpgradeStateOwnerSupport(@NotNull BooleanSupplier nativePatternProvider,
+            @NotNull Supplier<Boolean> patternInventoryEmpty, @NotNull Runnable onChange,
+            @NotNull Supplier<TileComponentUpgrade> nativeComponent) {
         this.nativePatternProvider = Objects.requireNonNull(nativePatternProvider, "nativePatternProvider");
         this.patternInventoryEmpty = Objects.requireNonNull(patternInventoryEmpty, "patternInventoryEmpty");
         this.onChange = Objects.requireNonNull(onChange, "onChange");
         this.container = new MeUpgradeContainer(this, () -> {
-        });
+        }, nativeComponent);
     }
 
     @Override

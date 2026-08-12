@@ -274,7 +274,7 @@ class MekanismFactoryUpgradeContractTest {
     }
 
     @Test
-    void meUpgradeStateIsContainerOnlyAndEmpoweredFree() throws IOException {
+    void meUpgradeStateUsesNativeMekanismComponentsAndRemainsEmpoweredFree() throws IOException {
         List<String> removedBackendSymbols = List.of(
                 "MePatternProviderUpgrade",
                 "MePassiveCraftingUpgrade",
@@ -300,17 +300,24 @@ class MekanismFactoryUpgradeContractTest {
         }
 
         String mixins = Files.readString(Path.of("src/main/resources/mekenergistics.mixins.json"));
-        assertFalse(mixins.contains("upgrade.UpgradeMixin"));
-        assertFalse(mixins.contains("upgrade.UpgradeUtilsMixin"));
-        assertFalse(mixins.contains("upgrade.UpgradeEmpoweredCompatibilityMixin"));
+        assertTrue(mixins.contains("UpgradeMixin"));
+        assertTrue(mixins.contains("UpgradeUtilsMixin"));
+        assertTrue(mixins.contains("TileComponentUpgradeMixin"));
+
+        String item = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/item/MeUpgradeItem.java"));
+        assertTrue(item.contains("extends ItemUpgrade"));
+        String support = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeSupportRegistrar.java"));
+        assertTrue(support.contains("AttributeUpgradeSupport.create"));
 
         assertFalse(Files.exists(Path.of(
                 "src/main/resources/META-INF/services/dev.lapis256.mekanism_empowered.core.api.upgrade.IAdditionalUpgrades")),
                 "Empowered service file must be gone");
 
         String build = Files.readString(Path.of("build.gradle"));
-        assertFalse(build.contains("compileOnly \"curse.maven:mekanism-empowered-core"),
-                "build.gradle must not declare the Empowered Core compile dependency");
+        assertFalse(build.contains("mekanism-empowered"),
+                "build.gradle must not declare Mekanism Empowered or Empowered Core dependencies");
     }
 
     @Test

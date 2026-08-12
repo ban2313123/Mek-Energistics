@@ -840,6 +840,8 @@
   "item.mekenergistics.upgrade_me_passive_crafting": "ME Passive Crafting Upgrade",
   "upgrade.mekenergistics.me_passive_crafting": "ME Passive Crafting",
   "upgrade.mekenergistics.me_passive_crafting.description": "Periodically submits installed patterns directly from ME storage without using a crafting CPU.",
+  "upgrade.mekenergistics.me_output_interface": "ME Output Interface",
+  "upgrade.mekenergistics.me_output_interface.description": "Keeps configured items stocked in the machine from ME storage.",
   "item.mekenergistics.upgrade_me_output_interface": "ME Output Interface Upgrade",
   "item.mekenergistics.upgrade_me_output_interface.tooltip": "Cannot be installed together with the ME Pattern Provider upgrade or the ME Passive Crafting upgrade.",
   "item.mekenergistics.upgrade_me_pattern_provider.tooltip": "Cannot be installed together with the ME Output Interface upgrade.",

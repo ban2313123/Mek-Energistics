@@ -122,12 +122,13 @@ public final class MeFactoryUpgradeGameTests {
                     helper.assertTrue(container.isInstalled(MeUpgradeType.PATTERN_PROVIDER),
                             "saving removed the live ME upgrade");
                     CompoundTag saved = tile.saveWithFullMetadata(helper.getLevel().registryAccess());
-                    MeUpgradeDataMigration.MeUpgradeMigrationResult migrated =
-                            MeUpgradeDataMigration.migrate(saved);
-                    helper.assertTrue(migrated.data().count(MeUpgradeType.PATTERN_PROVIDER) == 1,
-                            "saved NBT omitted the ME upgrade");
-                    helper.assertTrue(migrated.data().count(MeUpgradeType.PASSIVE_CRAFTING) == 1,
-                            "saved NBT omitted the passive crafting upgrade");
+                    CompoundTag nativeUpgrades = saved.getCompound(
+                            mekanism.api.SerializationConstants.COMPONENT_UPGRADE)
+                            .getCompound("mekenergistics:native_upgrades");
+                    helper.assertTrue(nativeUpgrades.getInt("me_pattern_provider") == 1,
+                            "native Mekanism component omitted the ME upgrade");
+                    helper.assertTrue(nativeUpgrades.getInt("me_passive_crafting") == 1,
+                            "native Mekanism component omitted the passive crafting upgrade");
                     BlockEntity loaded = BlockEntity.loadStatic(position, tile.getBlockState(), saved,
                             helper.getLevel().registryAccess());
                     helper.assertTrue(loaded instanceof TileEntityMekanism,

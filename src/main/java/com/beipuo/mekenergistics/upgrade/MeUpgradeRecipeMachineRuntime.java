@@ -58,7 +58,8 @@ public final class MeUpgradeRecipeMachineRuntime {
         this.machine = (MeUpgradeableMachine) tile;
         this.support = new MeRecipeMachineAeSupport(tile);
         this.defaultOutputMode = defaultOutputMode;
-        this.upgrades = new MeUpgradeContainer(this.upgradeStateOwner, this::markUpgradeDirty);
+        this.upgrades = new MeUpgradeContainer(this.upgradeStateOwner, this::markUpgradeDirty,
+                () -> this.tile.supportsUpgrades() ? this.tile.getComponent() : null);
     }
 
     public MeRecipeMachineAeSupport<?> support() {
@@ -178,7 +179,6 @@ public final class MeUpgradeRecipeMachineRuntime {
     }
 
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
-        MeUpgradePersistence.save(tag, this.upgrades().data());
         this.support.saveAeState(tag, registries, outputMode());
     }
 

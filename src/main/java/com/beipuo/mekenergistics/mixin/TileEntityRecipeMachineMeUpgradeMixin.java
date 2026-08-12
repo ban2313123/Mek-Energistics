@@ -9,7 +9,6 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeDataMigration;
-import com.beipuo.mekenergistics.upgrade.MeUpgradePersistence;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwnerSupport;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeType;
@@ -71,7 +70,8 @@ public abstract class TileEntityRecipeMachineMeUpgradeMixin implements MeUpgrade
                     () -> false,
                     () -> mekenergistics$support().getPatternSlots().stream()
                             .allMatch(slot -> slot.getStack().isEmpty()),
-                    this::mekenergistics$onMeUpgradeStateChanged);
+                    this::mekenergistics$onMeUpgradeStateChanged,
+                    () -> mekenergistics$tile().supportsUpgrades() ? mekenergistics$tile().getComponent() : null);
         }
         return this.mekenergistics$upgradeOwner;
     }
@@ -271,7 +271,6 @@ public abstract class TileEntityRecipeMachineMeUpgradeMixin implements MeUpgrade
 
     @Override
     public void saveMeState(CompoundTag tag, HolderLookup.Provider registries) {
-        MeUpgradePersistence.save(tag, getMeUpgradeContainer().data());
         if (this.mekenergistics$aeSupport != null) {
             this.mekenergistics$aeSupport.saveAeState(tag, registries, getAeOutputMode());
         }
@@ -281,6 +280,7 @@ public abstract class TileEntityRecipeMachineMeUpgradeMixin implements MeUpgrade
     public void loadMeState(CompoundTag tag, HolderLookup.Provider registries) {
         if (isMeUpgradeTarget()) {
             getMeUpgradeContainer().setData(MeUpgradeDataMigration.migrate(tag).data());
+            getMeUpgradeContainer().migrateToNativeComponent();
             AeOutputMode loaded = mekenergistics$support().loadAeState(tag, registries);
             this.mekenergistics$aeOutputMode = tag.contains("AeOutputMode") ? loaded : mekenergistics$defaultOutputMode();
         }

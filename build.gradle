@@ -67,9 +67,6 @@ base {
 def debugRuns = providers.gradleProperty('mekenergistics.debugRuns')
         .map { it.toBoolean() }
         .orElse(false)
-def empoweredRuntime = providers.gradleProperty('mekenergistics.enableEmpoweredRuntime')
-        .map { it.toBoolean() }
-        .orElse(true)
 
 // Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -187,10 +184,6 @@ dependencies {
 
     localRuntime "curse.maven:guideme-1173950:8420861"                  // GuideME 21.1.x, local test runtime
     localRuntime "curse.maven:kotlin-for-forge-351264:8335665"          // Kotlin for Forge, bundles Kotlin 2.4.0
-    if (empoweredRuntime.get()) {
-        localRuntime "curse.maven:mekanism-empowered-1256390:8064666"       // mekanism_empowered 21.1-1.2.2
-        localRuntime "curse.maven:mekanism-empowered-core-1256399:8064667"  // mekanism_empowered_core 21.1-1.2.2
-    }
     localRuntime "curse.maven:mekanism-generators-268566:7904061"       // mekanismgenerators 10.7.19
     localRuntime "curse.maven:jei-238222:7391682"                       // jei 19.27.0.336
     localRuntime "curse.maven:ae2-jei-integration-1074338:7727898"      // ae2jeiintegration 1.2.1
@@ -202,7 +195,6 @@ dependencies {
     localRuntime "curse.maven:productivebees-377897:8022994"            // productivebees 1.21.1-13.13.5
     localRuntime "curse.maven:jade-324717:7545219"                      // jade 15.10.5+neoforge
     localRuntime "curse.maven:building-gadgets-298187:6850515"          // buildinggadgets2 1.3.9
-    // Mekanism Unleashed conflicts with Mekanism Empowered; enable only one.
     // localRuntime "curse.maven:mekanism-unleashed-1072209:7801278"    // mekanism_unleashed 1.21.1-0.3.4
     localRuntime "curse.maven:advancedae-1084104:7849217"               // advanced_ae 1.6.11-1.21.1
     localRuntime "curse.maven:omni-cells-1359517:8050965"               // ae2omnicells 1.1.6

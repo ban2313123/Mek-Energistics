@@ -1,6 +1,8 @@
 package com.beipuo.mekenergistics.upgrade;
 
 import java.util.Objects;
+import java.util.function.Supplier;
+import mekanism.common.tile.component.TileComponentUpgrade;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -14,10 +16,17 @@ public final class MeUpgradeContainer {
     private MeUpgradeData data;
     private final MeUpgradeStateOwner owner;
     private final Runnable changeNotifier;
+    private final Supplier<TileComponentUpgrade> nativeComponent;
 
     public MeUpgradeContainer(@NotNull MeUpgradeStateOwner owner, @NotNull Runnable changeNotifier) {
+        this(owner, changeNotifier, () -> null);
+    }
+
+    public MeUpgradeContainer(@NotNull MeUpgradeStateOwner owner, @NotNull Runnable changeNotifier,
+            @NotNull Supplier<TileComponentUpgrade> nativeComponent) {
         this.owner = Objects.requireNonNull(owner, "owner");
         this.changeNotifier = Objects.requireNonNull(changeNotifier, "changeNotifier");
+        this.nativeComponent = Objects.requireNonNull(nativeComponent, "nativeComponent");
         this.data = MeUpgradeData.EMPTY;
     }
 
@@ -26,23 +35,32 @@ public final class MeUpgradeContainer {
     }
 
     public int count(MeUpgradeType type) {
+        TileComponentUpgrade component = nativeComponent();
+        if (component != null) {
+            return component.getUpgrades(MeMekanismUpgrades.forType(type));
+        }
         return this.data.count(type);
     }
 
     public boolean isInstalled(MeUpgradeType type) {
-        return this.data.isInstalled(type);
+        return count(type) > 0;
     }
 
     public boolean isEmpty() {
-        return this.data.isEmpty();
+        for (MeUpgradeType type : MeUpgradeType.values()) {
+            if (isInstalled(type)) {
+                return false;
+            }
+        }
+        return this.data.preserved().isEmpty();
     }
 
     /** Derives the machine running mode from the installed upgrades. */
     public MeMachineMode mode() {
-        if (this.data.isInstalled(MeUpgradeType.OUTPUT_INTERFACE)) {
+        if (isInstalled(MeUpgradeType.OUTPUT_INTERFACE)) {
             return MeMachineMode.OUTPUT_INTERFACE;
         }
-        if (this.data.isInstalled(MeUpgradeType.PATTERN_PROVIDER)) {
+        if (isInstalled(MeUpgradeType.PATTERN_PROVIDER)) {
             return MeMachineMode.PATTERN_PROVIDER;
         }
         return MeMachineMode.NONE;
@@ -62,6 +80,12 @@ public final class MeUpgradeContainer {
         if (!precheck.successful()) {
             return precheck;
         }
+        TileComponentUpgrade component = nativeComponent();
+        if (component != null) {
+            int added = component.addUpgrades(MeMekanismUpgrades.forType(type), amount);
+            return added == amount ? MeUpgradeConflictPolicy.Result.ok()
+                    : MeUpgradeConflictPolicy.Result.blocked();
+        }
         this.data = this.data.with(type, this.data.count(type) + amount);
         notifyChanged();
         return MeUpgradeConflictPolicy.Result.ok();
@@ -75,16 +99,20 @@ public final class MeUpgradeContainer {
         if (!this.owner.supportsUpgrade(type)) {
             return MeUpgradeConflictPolicy.Result.unsupported();
         }
-        int target = this.data.count(type) + amount;
+        int target = count(type) + amount;
         if (target > type.getMaxCount()) {
             return MeUpgradeConflictPolicy.Result.limitReached();
         }
-        MeUpgradeType conflict = MeUpgradeConflictPolicy.conflictWith(type, this.data).orElse(null);
-        if (conflict != null) {
-            return MeUpgradeConflictPolicy.Result.conflict(conflict);
+        // Native Mekanism components deliberately keep their standard independent-upgrade model.
+        // Retain the old policy only for legacy/in-memory containers used during migration.
+        if (nativeComponent() == null) {
+            MeUpgradeType conflict = MeUpgradeConflictPolicy.conflictWith(type, this.data).orElse(null);
+            if (conflict != null) {
+                return MeUpgradeConflictPolicy.Result.conflict(conflict);
+            }
         }
         if (type == MeUpgradeType.PASSIVE_CRAFTING && !this.owner.supportsNativePatternProvider()
-                && !this.data.isInstalled(MeUpgradeType.PATTERN_PROVIDER)) {
+                && !isInstalled(MeUpgradeType.PATTERN_PROVIDER)) {
             return MeUpgradeConflictPolicy.Result.missingPrerequisite();
         }
         return MeUpgradeConflictPolicy.Result.ok();
@@ -96,16 +124,24 @@ public final class MeUpgradeContainer {
     }
 
     public boolean uninstall(MeUpgradeType type, int amount) {
-        if (type == null || amount <= 0 || !this.data.isInstalled(type)) {
+        if (type == null || amount <= 0 || !isInstalled(type)) {
             return false;
         }
         if (type == MeUpgradeType.PATTERN_PROVIDER) {
             if (!this.owner.isPatternInventoryEmpty()) {
                 return false;
             }
-            if (this.data.isInstalled(MeUpgradeType.PASSIVE_CRAFTING)) {
+            if (isInstalled(MeUpgradeType.PASSIVE_CRAFTING)) {
                 return false;
             }
+        }
+        TileComponentUpgrade component = nativeComponent();
+        if (component != null) {
+            int before = component.getUpgrades(MeMekanismUpgrades.forType(type));
+            for (int i = 0; i < Math.min(amount, before); i++) {
+                component.removeUpgrade(MeMekanismUpgrades.forType(type), false);
+            }
+            return component.getUpgrades(MeMekanismUpgrades.forType(type)) < before;
         }
         this.data = this.data.with(type, this.data.count(type) - amount);
         notifyChanged();
@@ -128,6 +164,26 @@ public final class MeUpgradeContainer {
 
     public void refreshOnWorldLoad() {
         this.owner.onMeUpgradeStateChanged();
+    }
+
+    /** Moves pre-native save data into Mekanism's component once, then clears the legacy counts. */
+    public void migrateToNativeComponent() {
+        TileComponentUpgrade component = nativeComponent();
+        if (component == null || this.data.counts().isEmpty()) {
+            return;
+        }
+        for (MeUpgradeType type : MeUpgradeType.values()) {
+            int missing = this.data.count(type) - component.getUpgrades(MeMekanismUpgrades.forType(type));
+            if (missing > 0 && component.supports(MeMekanismUpgrades.forType(type))) {
+                component.addUpgrades(MeMekanismUpgrades.forType(type), missing);
+            }
+        }
+        this.data = new MeUpgradeData(java.util.Map.of(), this.data.preserved());
+        notifyChanged();
+    }
+
+    private TileComponentUpgrade nativeComponent() {
+        return this.nativeComponent.get();
     }
 
     private void notifyChanged() {

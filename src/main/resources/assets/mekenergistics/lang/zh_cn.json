@@ -840,6 +840,8 @@
   "item.mekenergistics.upgrade_me_passive_crafting": "ME 被动合成升级",
   "upgrade.mekenergistics.me_passive_crafting": "ME 被动合成",
   "upgrade.mekenergistics.me_passive_crafting.description": "按设定间隔直接从 ME 网络提交已安装样板，不占用合成 CPU。",
+  "upgrade.mekenergistics.me_output_interface": "ME 接口",
+  "upgrade.mekenergistics.me_output_interface.description": "从 ME 网络向机器持续补充已配置的物品。",
   "item.mekenergistics.upgrade_me_output_interface": "ME 接口升级",
   "item.mekenergistics.upgrade_me_output_interface.tooltip": "不能与 ME 样板供应器升级或 ME 被动合成升级同时安装。",
   "item.mekenergistics.upgrade_me_pattern_provider.tooltip": "不能与 ME 接口升级同时安装。",

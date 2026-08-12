@@ -10,7 +10,6 @@ import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeDataMigration;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfiles;
-import com.beipuo.mekenergistics.upgrade.MeUpgradePersistence;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeRuntimeState;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwnerSupport;
@@ -58,7 +57,11 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
                     () -> false,
                     () -> mekenergistics$support().getPatternSlots().stream()
                             .allMatch(slot -> slot.getStack().isEmpty()),
-                    this::mekenergistics$onMeUpgradeStateChanged);
+                    this::mekenergistics$onMeUpgradeStateChanged,
+                    () -> {
+                        TileEntityElectricMachine tile = (TileEntityElectricMachine) (Object) this;
+                        return tile.supportsUpgrades() ? tile.getComponent() : null;
+                    });
         }
         return this.mekenergistics$upgradeOwner;
     }
@@ -260,7 +263,6 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
     @Override
     public void saveMeState(net.minecraft.nbt.CompoundTag tag,
           net.minecraft.core.HolderLookup.Provider registries) {
-        MeUpgradePersistence.save(tag, getMeUpgradeContainer().data());
         if (this.mekenergistics$aeSupport != null) {
             this.mekenergistics$aeSupport.saveAeState(tag, registries, this.mekenergistics$aeOutputMode);
         }
@@ -272,6 +274,7 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
           net.minecraft.core.HolderLookup.Provider registries) {
         if (isMeUpgradeTarget()) {
             getMeUpgradeContainer().setData(MeUpgradeDataMigration.migrate(tag).data());
+            getMeUpgradeContainer().migrateToNativeComponent();
             this.mekenergistics$aeOutputMode = mekenergistics$support().loadAeState(tag, registries);
         }
     }

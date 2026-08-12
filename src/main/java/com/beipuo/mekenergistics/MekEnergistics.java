@@ -8,6 +8,7 @@ import com.beipuo.mekenergistics.registry.ModItems;
 import com.beipuo.mekenergistics.registry.ModMenuTypes;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.network.ModNetwork;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeSupportRegistrar;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -28,6 +29,7 @@ public final class MekEnergistics {
         ModBlockEntities.register(modEventBus);
         ModDataComponents.register(modEventBus);
         modEventBus.addListener(ModNetwork::register);
+        modEventBus.addListener(MeUpgradeSupportRegistrar::onCommonSetup);
 
         LOGGER.info("Loading Mek Energistics");
     }

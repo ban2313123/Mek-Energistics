@@ -3,6 +3,7 @@ package com.beipuo.mekenergistics.mixin;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.block.MeMekanismMachineBlock;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.util.AECableType;
@@ -85,6 +86,9 @@ public abstract class TileEntityMekanismMeUpgradeLifecycleMixin {
     private void mekenergistics$loadMeState(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {
         if ((Object) this instanceof MeUpgradeableMachine machine) {
             machine.loadMeState(tag, registries);
+            if (machine instanceof MeUpgradeStateOwner owner) {
+                owner.getMeUpgradeContainer().migrateToNativeComponent();
+            }
         }
     }
 }

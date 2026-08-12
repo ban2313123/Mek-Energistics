@@ -2,7 +2,6 @@ package com.beipuo.mekenergistics.client.jei;
 
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.client.overlay.MePatternWindowOverlay;
-import com.beipuo.mekenergistics.client.overlay.MeUpgradeWindowOverlay;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
@@ -170,9 +169,6 @@ public class MekEnergisticsJeiPlugin implements IModPlugin {
             List<Rect2i> areas = new ArrayList<>();
             if (MePatternWindowOverlay.hasPatternTarget(gui)) {
                 areas.add(MePatternWindowOverlay.jeiButtonArea(gui));
-            }
-            if (MeUpgradeWindowOverlay.shouldShowTab(gui)) {
-                areas.add(MeUpgradeWindowOverlay.jeiButtonArea(gui));
             }
             return areas;
         }

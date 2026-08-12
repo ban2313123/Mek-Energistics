@@ -4,6 +4,10 @@
   "plugin": "com.beipuo.mekenergistics.mixin.MekEnergisticsMixinPlugin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "UpgradeMixin",
+    "UpgradeUtilsMixin",
+    "UpgradePersistenceMixin",
+    "TileComponentUpgradeMixin",
     "TileEntityElectricMachineAccessor",
     "TileEntityCombiningFactoryAccessor",
     "TileEntityAdvancedElectricMachineAccessor",

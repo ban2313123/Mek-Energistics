@@ -2,9 +2,7 @@ package com.beipuo.mekenergistics.client;
 
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.client.overlay.MeInterfaceWindowOverlay;
-import com.beipuo.mekenergistics.client.overlay.MeUpgradeWindowOverlay;
 import com.beipuo.mekenergistics.network.packet.InterfaceConfigSyncPacket;
-import com.beipuo.mekenergistics.network.packet.UpgradeStateSyncPacket;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -24,7 +22,5 @@ public final class MekEnergisticsClient {
     private static void registerClientPayloads(RegisterPayloadHandlersEvent event) {
         event.registrar("1").playToClient(InterfaceConfigSyncPacket.TYPE,
                 InterfaceConfigSyncPacket.STREAM_CODEC, MeInterfaceWindowOverlay::handleConfigSync);
-        event.registrar("1").playToClient(UpgradeStateSyncPacket.TYPE,
-                UpgradeStateSyncPacket.STREAM_CODEC, MeUpgradeWindowOverlay::handleStateSync);
     }
 }

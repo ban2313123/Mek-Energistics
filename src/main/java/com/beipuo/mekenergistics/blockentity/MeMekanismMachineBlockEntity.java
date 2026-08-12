@@ -22,7 +22,6 @@ import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeDataMigration;
-import com.beipuo.mekenergistics.upgrade.MeUpgradePersistence;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwnerSupport;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -103,7 +102,8 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     private final MeUpgradeStateOwnerSupport meUpgradeOwner = new MeUpgradeStateOwnerSupport(
             () -> true,
             () -> getAeSupport().getPatternSlots().stream().allMatch(slot -> slot.getStack().isEmpty()),
-            this::onMeUpgradeStateChangedInternal);
+            this::onMeUpgradeStateChangedInternal,
+            () -> supportsUpgrades() ? getComponent() : null);
     private final MeMachineRecipeProcessor recipeProcessor = new MeMachineRecipeProcessor(this);
 
     public MeMekanismMachineBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
@@ -453,7 +453,6 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     @Override
     public void saveAdditional(CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.saveAdditional(tag, registries);
-        MeUpgradePersistence.save(tag, getMeUpgradeContainer().data());
         tag.putInt(TAG_AE_OUTPUT_MODE, this.aeOutputMode.ordinal());
         tag.putInt(SerializationConstants.PROGRESS, this.operatingTicks);
         getAeSupport().saveAeState(tag, registries, this.aeOutputMode);
@@ -463,6 +462,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     public void loadAdditional(CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.loadAdditional(tag, registries);
         getMeUpgradeContainer().setData(MeUpgradeDataMigration.migrate(tag).data());
+        getMeUpgradeContainer().migrateToNativeComponent();
         if (tag.contains(TAG_CHEMICAL) && this.chemicalTank != null && this.chemicalTank.isEmpty()) {
             this.chemicalTank.setStack(ChemicalStack.parseOptional(registries, tag.getCompound(TAG_CHEMICAL)));
         }

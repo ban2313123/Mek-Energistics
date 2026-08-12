@@ -1,5 +1,6 @@
 package com.beipuo.mekenergistics.upgrade;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -8,7 +9,7 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Static source-scan contracts for the self-owned ME upgrade uninstall flow (plan 3.1). */
+/** Static contracts for the native Mekanism upgrade install and removal flow. */
 class MeUpgradeUninstallContractTest {
     private static final Path MOD_NETWORK = Path.of(
             "src/main/java/com/beipuo/mekenergistics/network/ModNetwork.java");
@@ -16,54 +17,52 @@ class MeUpgradeUninstallContractTest {
             "src/main/java/com/beipuo/mekenergistics/client/MekEnergisticsClient.java");
     private static final Path CONTAINER = Path.of(
             "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeContainer.java");
+    private static final List<Path> LEGACY_UPGRADE_FLOW = List.of(
+            Path.of("src/main/java/com/beipuo/mekenergistics/client/overlay/MeUpgradeWindowOverlay.java"),
+            Path.of("src/main/java/com/beipuo/mekenergistics/item/MeUpgradeInteractionHandler.java"),
+            Path.of("src/main/java/com/beipuo/mekenergistics/network/packet/RequestUpgradeStatePacket.java"),
+            Path.of("src/main/java/com/beipuo/mekenergistics/network/packet/UpgradeStateSyncPacket.java"),
+            Path.of("src/main/java/com/beipuo/mekenergistics/network/packet/UninstallMeUpgradePacket.java"));
     private static final List<String> LANG_FILES = List.of(
             "src/main/resources/assets/mekenergistics/lang/en_us.json",
             "src/main/resources/assets/mekenergistics/lang/zh_cn.json",
             "src/main/resources/assets/mekenergistics/lang/ru_ru.json");
-    private static final List<String> LANG_KEYS = List.of(
-            "gui.mekenergistics.me_upgrades.title",
-            "gui.mekenergistics.me_upgrades.button",
-            "gui.mekenergistics.me_upgrades.uninstall",
-            "gui.mekenergistics.me_upgrades.empty",
-            "message.mekenergistics.upgrade_uninstall_failed.not_installed",
-            "message.mekenergistics.upgrade_uninstall_failed.guards");
-
     @Test
-    void uninstallPacketsAreRegisteredOnTheServerSide() throws IOException {
+    void legacyUninstallPacketsAreNotRegisteredOnTheServerSide() throws IOException {
         String source = Files.readString(MOD_NETWORK);
-        assertTrue(source.contains("UninstallMeUpgradePacket.TYPE"),
-                "ModNetwork does not register the uninstall packet");
-        assertTrue(source.contains("RequestUpgradeStatePacket.TYPE"),
-                "ModNetwork does not register the upgrade-state request packet");
-        assertTrue(source.contains("UninstallMeUpgradePacket::handle"),
-                "ModNetwork does not wire the uninstall handler");
+        assertFalse(source.contains("UninstallMeUpgradePacket"));
+        assertFalse(source.contains("RequestUpgradeStatePacket"));
     }
 
     @Test
-    void upgradeStateSyncIsRegisteredOnTheClientSide() throws IOException {
+    void legacyUpgradeOverlayIsNotRegisteredOnTheClientSide() throws IOException {
         String source = Files.readString(CLIENT_ENTRY);
-        assertTrue(source.contains("UpgradeStateSyncPacket.TYPE"),
-                "client entry does not register the upgrade-state sync packet");
-        assertTrue(source.contains("MeUpgradeWindowOverlay::handleStateSync"),
-                "client entry does not wire the upgrade-state sync handler");
+        assertFalse(source.contains("UpgradeStateSyncPacket"));
+        assertFalse(source.contains("MeUpgradeWindowOverlay"));
     }
 
     @Test
-    void everyLanguageFileContainsTheUninstallKeys() throws IOException {
-        for (String file : LANG_FILES) {
-            String source = Files.readString(Path.of(file));
-            for (String key : LANG_KEYS) {
-                assertTrue(source.contains(key), file + " is missing " + key);
-            }
+    void legacyCustomUpgradeFlowIsRemoved() {
+        for (Path source : LEGACY_UPGRADE_FLOW) {
+            assertFalse(Files.exists(source), () -> source + " must not remain reachable beside Mekanism's native upgrade flow");
         }
     }
 
     @Test
-    void containerKeepsThePatternInventoryAndPassiveFirstUninstallGuards() throws IOException {
+    void everyLanguageFileContainsNativeUpgradeNamesAndDescriptions() throws IOException {
+        for (String file : LANG_FILES) {
+            String source = Files.readString(Path.of(file));
+            assertTrue(source.contains("upgrade.mekenergistics.me_pattern_provider"));
+            assertTrue(source.contains("upgrade.mekenergistics.me_passive_crafting"));
+            assertTrue(source.contains("upgrade.mekenergistics.me_output_interface"));
+        }
+    }
+
+    @Test
+    void containerReadsAndRemovesThroughNativeComponent() throws IOException {
         String source = Files.readString(CONTAINER);
-        assertTrue(source.contains("isPatternInventoryEmpty()"),
-                "uninstall no longer guards the pattern inventory");
-        assertTrue(source.contains("PASSIVE_CRAFTING"),
-                "uninstall no longer requires passive crafting to be removed first");
+        assertTrue(source.contains("component.getUpgrades"));
+        assertTrue(source.contains("component.removeUpgrade"));
+        assertTrue(source.contains("migrateToNativeComponent"));
     }
 }
