@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.0.2
+
+### English
+
+#### Fix
+
+- Fixed a server crash in supported chemical recipe machines where energy wrapping could cast a Solar Neutron Activator to a Rotary Condensentrator. Energy containers are now resolved from the machine's registered containers.
+
+### 中文
+
+#### 修复
+
+- 修复受支持化学配方机器在包装能量时，将太阳能中子活化器错误强转为回转式冷凝机而导致服务端崩溃的问题。现在会从机器已注册的能源容器中解析实际能源容器。
+
 ## 3.0.1
 
 ### English

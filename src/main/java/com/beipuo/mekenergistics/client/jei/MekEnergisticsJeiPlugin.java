@@ -147,6 +147,7 @@ public class MekEnergisticsJeiPlugin implements IModPlugin {
 
     private static List<ItemStack> hiddenStacks() {
         List<ItemStack> stacks = new ArrayList<>();
+        stacks.add(ModItems.ME_OUTPUT_INTERFACE_UPGRADE.get().getDefaultInstance());
         addHiddenStack(stacks, MeMekanismMachine.SEISMIC_VIBRATOR);
         CompatMachineCatalog.available()
                 .filter(spec -> spec.kind() != CompatMachineKind.MACHINE)

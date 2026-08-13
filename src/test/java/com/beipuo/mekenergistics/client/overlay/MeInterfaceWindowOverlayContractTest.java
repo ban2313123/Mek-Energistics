@@ -49,5 +49,6 @@ class MeInterfaceWindowOverlayContractTest {
 
         assertTrue(jei.contains("MeInterfaceWindowOverlay.isInterfaceMachine(gui)"));
         assertTrue(jei.contains("areas.add(MeInterfaceWindowOverlay.jeiButtonArea(gui));"));
+        assertTrue(jei.contains("ModItems.ME_OUTPUT_INTERFACE_UPGRADE.get().getDefaultInstance()"));
     }
 }
