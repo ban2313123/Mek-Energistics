@@ -52,6 +52,7 @@ public final class MePassiveCraftingSettings {
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putInt("PassiveCraftingInterval", intervalTicks);
         tag.putLong("PassiveCraftingMultiplier", multiplier);
+        tag.putInt("PassiveCraftingScanCursor", patternScanCursor);
         if (this.recoveryBuffer.isEmpty()) {
             tag.remove(TAG_RECOVERY_BUFFER);
             return;
@@ -68,6 +69,7 @@ public final class MePassiveCraftingSettings {
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
         set(tag.contains("PassiveCraftingInterval") ? tag.getInt("PassiveCraftingInterval") : DEFAULT_INTERVAL_TICKS,
                 tag.contains("PassiveCraftingMultiplier") ? tag.getLong("PassiveCraftingMultiplier") : 1);
+        this.patternScanCursor = tag.contains("PassiveCraftingScanCursor") ? tag.getInt("PassiveCraftingScanCursor") : 0;
         this.recoveryBuffer.clear();
         ListTag buffer = tag.getList(TAG_RECOVERY_BUFFER, CompoundTag.TAG_COMPOUND);
         for (int i = 0; i < buffer.size(); i++) {

@@ -1,5 +1,6 @@
 package com.beipuo.mekenergistics.upgrade;
 
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.util.ConfigInventory;
@@ -56,7 +57,7 @@ public final class MeInterfaceConfig {
     public boolean hasConfiguredSlots() {
         for (int i = 0; i < this.inventory.size(); i++) {
             GenericStack stack = this.inventory.getStack(i);
-            if (stack != null && stack.what() != null && stack.amount() > 0) {
+            if (stack != null && stack.what() != null && stack.amount() > 0 && stack.what() instanceof AEItemKey) {
                 return true;
             }
         }

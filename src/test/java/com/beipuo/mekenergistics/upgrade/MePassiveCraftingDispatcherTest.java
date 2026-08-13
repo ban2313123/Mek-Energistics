@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.Test;
@@ -103,6 +105,17 @@ class MePassiveCraftingDispatcherTest {
         assertEquals(16, settings.patternScanCursor(), "cursor must continue where it stopped");
         assertEquals(16, settings.patternScanCursor());
         assertEquals(16, submitter.submittedAmounts().size());
+    }
+
+    @Test
+    void cursorPersistsThroughSaveLoad() {
+        MePassiveCraftingSettings settings = new MePassiveCraftingSettings();
+        settings.setPatternScanCursor(17);
+        CompoundTag tag = new CompoundTag();
+        settings.save(tag, RegistryAccess.EMPTY);
+        MePassiveCraftingSettings loaded = new MePassiveCraftingSettings();
+        loaded.load(tag, RegistryAccess.EMPTY);
+        assertEquals(17, loaded.patternScanCursor());
     }
 
     @Test
