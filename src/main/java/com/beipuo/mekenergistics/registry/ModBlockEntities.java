@@ -97,6 +97,8 @@ public final class ModBlockEntities {
                             return null;
                         }
                         if (bounding.getMainTile(pos) instanceof MeAeMachine machine
+                                && (!(machine instanceof MeUpgradeableMachine upgrade)
+                                        || upgrade.getMeUpgradeProfile() != null)
                                 && machine.getMachine().isMekmmLargeMachine()) {
                             // Callers may hold on to the host, and the position they hand us is often a
                             // shared mutable one that the caller re-targets between sides.
