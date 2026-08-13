@@ -51,6 +51,20 @@ class MeUpgradeableMachineContractTest {
     }
 
     @Test
+    void largeMachineBoundingBlockPreservesRegisteredMeHostWhileRejectingUnsupportedUpgradeHost() throws IOException {
+        String capabilities = Files.readString(CAPABILITIES).replaceAll("\\s+", " ");
+
+        assertTrue(capabilities.contains(
+                "bounding.getMainTile(pos) instanceof MeAeMachine machine "
+                        + "&& (!(machine instanceof MeUpgradeableMachine upgradeable) "
+                        + "|| isMachineBlockEntity(machine.getAeOwnerTile().getType()) "
+                        + "|| upgradeable.isMeUpgradeTarget()) "
+                        + "&& machine.getMachine().isMekmmLargeMachine()"),
+                "MEKLM bounding-block capability must preserve registered ME hosts while rejecting unsupported "
+                        + "upgrade hosts before getMachine()");
+    }
+
+    @Test
     void mainContainerSynchronizesInstalledUpgradeStateToTheClient() throws IOException {
         String source = Files.readString(ELECTRIC_MIXIN);
 

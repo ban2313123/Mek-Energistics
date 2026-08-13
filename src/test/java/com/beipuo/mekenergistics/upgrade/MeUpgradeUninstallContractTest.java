@@ -17,6 +17,12 @@ class MeUpgradeUninstallContractTest {
             "src/main/java/com/beipuo/mekenergistics/client/MekEnergisticsClient.java");
     private static final Path CONTAINER = Path.of(
             "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeContainer.java");
+    private static final Path NATIVE_UPGRADE_MIXIN = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/mixin/TileComponentUpgradeMixin.java");
+    private static final Path OWNER_SUPPORT = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeStateOwnerSupport.java");
+    private static final Path RECIPE_RUNTIME = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeRecipeMachineRuntime.java");
     private static final List<Path> LEGACY_UPGRADE_FLOW = List.of(
             Path.of("src/main/java/com/beipuo/mekenergistics/client/overlay/MeUpgradeWindowOverlay.java"),
             Path.of("src/main/java/com/beipuo/mekenergistics/item/MeUpgradeInteractionHandler.java"),
@@ -64,5 +70,38 @@ class MeUpgradeUninstallContractTest {
         assertTrue(source.contains("component.getUpgrades"));
         assertTrue(source.contains("component.removeUpgrade"));
         assertTrue(source.contains("migrateToNativeComponent"));
+    }
+
+    @Test
+    void stockedInterfaceItemsBlockBothContainerAndNativeRemovalPaths() throws IOException {
+        String container = Files.readString(CONTAINER);
+        String mixin = Files.readString(NATIVE_UPGRADE_MIXIN);
+
+        assertTrue(container.contains("!this.owner.isInterfaceInventoryEmpty()"));
+        assertTrue(mixin.contains("!owner.isInterfaceInventoryEmpty()"));
+        assertTrue(mixin.contains("cancellable = true"));
+        assertTrue(mixin.contains("ci.cancel()"));
+        assertTrue(mixin.contains("MeUpgradeConflictPolicy.blocksNativeInstall"));
+        assertTrue(mixin.contains("cir.setReturnValue(0)"));
+    }
+
+    @Test
+    void recoveryBufferBlocksInterfaceRemoval() throws IOException {
+        String support = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/blockentity/support/AbstractMeAeSupport.java"));
+        String owner = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/upgrade/MeUpgradeStateOwner.java"));
+        assertTrue(support.contains("return this.interfaceInventory.isEmpty() && !hasInterfaceRecovery();"));
+        assertTrue(owner.contains("machine.getRecipeAeSupport().canRemoveInterfaceUpgrade()"));
+    }
+
+    @Test
+    void proxyOwnersDelegateTheInterfaceInventoryGuardToTheirSupport() throws IOException {
+        String ownerSupport = Files.readString(OWNER_SUPPORT);
+        String runtime = Files.readString(RECIPE_RUNTIME);
+
+        assertTrue(ownerSupport.contains("private final Supplier<Boolean> interfaceInventoryEmpty;"));
+        assertTrue(ownerSupport.contains("return Boolean.TRUE.equals(this.interfaceInventoryEmpty.get());"));
+        assertTrue(runtime.contains("return MeUpgradeRecipeMachineRuntime.this.support.canRemoveInterfaceUpgrade();"));
     }
 }

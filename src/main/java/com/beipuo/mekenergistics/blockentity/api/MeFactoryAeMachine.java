@@ -144,6 +144,8 @@ public interface MeFactoryAeMachine extends MeAeMachine {
     default void addAeOutputModeTracker(MekanismContainer container) {
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(this::hasPassiveCraftingUpgrade,
                 getAeSupport()::setClientPassiveCraftingEnabled));
+        container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(
+                getAeSupport()::isInterfaceMode, getAeSupport()::setClientInterfaceMode));
         container.track(SyncableInt.create(() -> getAeOutputMode().ordinal(),
                 mode -> getAeSupport().setAeOutputMode(AeOutputMode.byId(mode))));
         container.track(mekanism.common.inventory.container.sync.SyncableBoolean.create(

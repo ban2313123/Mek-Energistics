@@ -3,8 +3,6 @@ package com.beipuo.mekenergistics.network.packet;
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
-import com.beipuo.mekenergistics.upgrade.MeInterfaceConfig;
-import appeng.api.stacks.GenericStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -39,8 +37,8 @@ public record RequestInterfaceConfigPacket(BlockPos pos) implements CustomPacket
                     return;
                 }
                 AbstractMeAeSupport<?> support = machine.getRecipeAeSupport();
-                MeInterfaceConfig config = support.getInterfaceConfig();
-                PacketDistributor.sendToPlayer(player, new InterfaceConfigSyncPacket(this.pos, config.toList()));
+                PacketDistributor.sendToPlayer(player, new InterfaceConfigSyncPacket(this.pos,
+                        support.getInterfaceConfig().toList(), support.getInterfaceInventory().toList()));
             });
         });
     }

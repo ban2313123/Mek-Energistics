@@ -11,7 +11,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 /** Server-to-client snapshot of one machine's ME output interface config. */
-public record InterfaceConfigSyncPacket(BlockPos pos, List<GenericStack> config)
+public record InterfaceConfigSyncPacket(BlockPos pos, List<GenericStack> config, List<GenericStack> inventory)
         implements CustomPacketPayload {
     public static final Type<InterfaceConfigSyncPacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(MekEnergistics.MODID, "interface_config_sync"));
@@ -25,6 +25,10 @@ public record InterfaceConfigSyncPacket(BlockPos pos, List<GenericStack> config)
         for (GenericStack stack : packet.config) {
             GenericStack.writeBuffer(stack, buffer);
         }
+        buffer.writeVarInt(packet.inventory.size());
+        for (GenericStack stack : packet.inventory) {
+            GenericStack.writeBuffer(stack, buffer);
+        }
     }
 
     private static InterfaceConfigSyncPacket read(RegistryFriendlyByteBuf buffer) {
@@ -34,7 +38,12 @@ public record InterfaceConfigSyncPacket(BlockPos pos, List<GenericStack> config)
         for (int i = 0; i < size; i++) {
             config.add(GenericStack.readBuffer(buffer));
         }
-        return new InterfaceConfigSyncPacket(pos, config);
+        int inventorySize = buffer.readVarInt();
+        List<GenericStack> inventory = new ArrayList<>(inventorySize);
+        for (int i = 0; i < inventorySize; i++) {
+            inventory.add(GenericStack.readBuffer(buffer));
+        }
+        return new InterfaceConfigSyncPacket(pos, config, inventory);
     }
 
     @Override

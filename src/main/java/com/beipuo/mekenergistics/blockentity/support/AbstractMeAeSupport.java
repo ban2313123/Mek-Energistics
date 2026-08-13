@@ -28,6 +28,7 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.blockentity.support.io.MePatternIoAdapter;
 import com.beipuo.mekenergistics.config.MekEnergisticsConfig;
 import com.beipuo.mekenergistics.upgrade.MeInterfaceConfig;
+import com.beipuo.mekenergistics.upgrade.MeInterfaceInventory;
 import com.beipuo.mekenergistics.upgrade.MeMachineMode;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingDispatcher;
 import com.beipuo.mekenergistics.upgrade.MePassiveCraftingSettings;
@@ -66,6 +67,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     private final MePassiveCraftingSettings passiveCraftingSettings = new MePassiveCraftingSettings();
     private Boolean clientPassiveCraftingEnabled;
     private final MeInterfaceConfig interfaceConfig;
+    private final MeInterfaceInventory interfaceInventory;
     private final List<GenericStack> interfaceRecoveryBuffer = new ArrayList<>();
     private Boolean clientInterfaceMode;
 
@@ -92,6 +94,10 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         }
         this.patternSlotsView = Collections.unmodifiableList(this.patternSlots);
         this.interfaceConfig = new MeInterfaceConfig(() -> {
+            this.owner.saveChanges();
+            alertAeTicker();
+        });
+        this.interfaceInventory = new MeInterfaceInventory(() -> {
             this.owner.saveChanges();
             alertAeTicker();
         });
@@ -432,8 +438,17 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return this.interfaceConfig;
     }
 
+    public final MeInterfaceInventory getInterfaceInventory() {
+        return this.interfaceInventory;
+    }
+
     public final boolean hasInterfaceRecovery() {
         return !this.interfaceRecoveryBuffer.isEmpty();
+    }
+
+    /** True when uninstalling the interface upgrade cannot orphan stocked or buffered items. */
+    public final boolean canRemoveInterfaceUpgrade() {
+        return this.interfaceInventory.isEmpty() && !hasInterfaceRecovery();
     }
 
     /** Interface mode has work when there is an output backlog, buffered remainders, or any
@@ -441,12 +456,13 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     public final boolean hasInterfaceWork() {
         return isInterfaceMode() && (hasInterfaceRecovery()
                 || this.interfaceConfig.hasConfiguredSlots()
+                || !this.interfaceInventory.isEmpty()
                 || hasPatternOutputBacklog(com.beipuo.mekenergistics.blockentity.api.AeOutputMode.ALL));
     }
 
     /**
-     * Runs one interface-mode tick: retry buffered remainders, push configured fixed batches into
-     * the machine inputs, then return every machine output to the AE network under {@code ALL}.
+     * Runs one interface-mode tick: retry buffered remainders, move the stocked interface row into
+     * machine inputs, refill that row to its configured targets, then return machine outputs to ME.
      */
     public final boolean processInterfaceMode() {
         if (!isInterfaceMode()) {
@@ -454,12 +470,13 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         }
         boolean changed = false;
         changed |= flushInterfaceRecovery();
-        changed |= supplyInterfaceSlots();
+        changed |= drainInterfaceInventoryToMachine();
+        changed |= restockInterfaceInventory();
         changed |= drainPatternOutputs(com.beipuo.mekenergistics.blockentity.api.AeOutputMode.ALL);
         return changed;
     }
 
-    private boolean supplyInterfaceSlots() {
+    private boolean drainInterfaceInventoryToMachine() {
         if (this.ownerTile.getLevel() == null || this.ownerTile.getLevel().isClientSide) {
             return false;
         }
@@ -467,49 +484,87 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         if (layout.isEmpty()) {
             return false;
         }
-        IGrid grid = getGrid();
-        MEStorage storage = getNetworkStorage(grid);
-        if (grid == null || storage == null) {
-            return false;
-        }
         boolean changed = false;
-        for (int i = 0; i < this.interfaceConfig.size(); i++) {
+        for (int i = 0; i < this.interfaceInventory.size(); i++) {
             GenericStack configured = this.interfaceConfig.getStack(i);
-            if (configured == null || !(configured.what() instanceof AEItemKey key) || configured.amount() <= 0) {
+            GenericStack stocked = this.interfaceInventory.getStack(i);
+            if (stocked == null || !(stocked.what() instanceof AEItemKey key) || stocked.amount() <= 0) {
                 continue;
             }
-            long requested = configured.amount();
-            long accepted = simulateAccepted(key, requested, layout);
+            if (configured == null || !configured.what().equals(key)) {
+                long removed = this.interfaceInventory.extract(i, key, stocked.amount(), Actionable.MODULATE);
+                refundToNetworkOrBuffer(key, removed);
+                changed |= removed > 0;
+                continue;
+            }
+            long accepted = simulateAccepted(key, stocked.amount(), layout);
             if (accepted <= 0) {
                 continue;
             }
-            long available = storage.extract(key, accepted, Actionable.SIMULATE, this.actionSource);
-            if (available <= 0) {
-                continue;
-            }
-            long toExtract = Math.min(accepted, available);
-            long extracted = StorageHelper.poweredExtraction(grid.getEnergyService(), storage, key, toExtract, this.actionSource);
+            long extracted = this.interfaceInventory.extract(i, key, accepted, Actionable.MODULATE);
             if (extracted <= 0) {
                 continue;
             }
-            KeyCounter[] batch = new KeyCounter[]{new KeyCounter()};
-            batch[0].add(key, extracted);
-            if (layout.route(batch)) {
+            if (layout.routeInterface(key, extracted)) {
                 changed = true;
             } else {
-                refundToNetworkOrBuffer(key, extracted);
+                long restored = this.interfaceInventory.insert(i, key, extracted, Actionable.MODULATE);
+                if (restored < extracted) {
+                    refundToNetworkOrBuffer(key, extracted - restored);
+                }
                 changed = true;
             }
         }
         return changed;
     }
 
+    private boolean restockInterfaceInventory() {
+        IGrid grid = getGrid();
+        MEStorage network = getNetworkStorage(grid);
+        if (this.ownerTile.getLevel() == null || this.ownerTile.getLevel().isClientSide
+                || grid == null || network == null) {
+            return false;
+        }
+        boolean changed = false;
+        for (int i = 0; i < this.interfaceConfig.size(); i++) {
+            GenericStack configured = this.interfaceConfig.getStack(i);
+            GenericStack stocked = this.interfaceInventory.getStack(i);
+            if (configured == null || !(configured.what() instanceof AEItemKey key) || configured.amount() <= 0) {
+                if (stocked != null && stocked.amount() > 0) {
+                    long removed = this.interfaceInventory.extract(i, stocked.what(), stocked.amount(), Actionable.MODULATE);
+                    refundToNetworkOrBuffer(stocked.what(), removed);
+                    changed |= removed > 0;
+                }
+                continue;
+            }
+            if (stocked != null && !stocked.what().equals(key)) {
+                long removed = this.interfaceInventory.extract(i, stocked.what(), stocked.amount(), Actionable.MODULATE);
+                refundToNetworkOrBuffer(stocked.what(), removed);
+                changed |= removed > 0;
+                stocked = null;
+            }
+            long current = stocked == null ? 0 : stocked.amount();
+            long missing = Math.max(0, configured.amount() - current);
+            long capacity = this.interfaceInventory.insert(i, key, missing, Actionable.SIMULATE);
+            if (capacity <= 0) {
+                continue;
+            }
+            long extracted = StorageHelper.poweredExtraction(grid.getEnergyService(), network, key, capacity, this.actionSource);
+            if (extracted <= 0) {
+                continue;
+            }
+            long inserted = this.interfaceInventory.insert(i, key, extracted, Actionable.MODULATE);
+            if (inserted < extracted) {
+                refundToNetworkOrBuffer(key, extracted - inserted);
+            }
+            changed = true;
+        }
+        return changed;
+    }
+
     /** Returns how many units of {@code key} the machine input layout accepts for one request. */
     private static long simulateAccepted(AEKey key, long requested, MeInputLayout layout) {
-        KeyCounter[] probe = new KeyCounter[]{new KeyCounter()};
-        probe[0].add(key, 1);
-        long capacity = layout.maxAcceptedCopies(probe);
-        return Math.min(requested, Math.max(0, capacity));
+        return Math.max(0, layout.maxAcceptedInterfaceAmount(key, requested));
     }
 
     /** Returns unexpected interface supplies to the AE network; buffers what the network rejects. */
@@ -555,14 +610,16 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         for (GenericStack entry : this.interfaceRecoveryBuffer) {
             long inserted = storage.insert(entry.what(), entry.amount(), Actionable.MODULATE, this.actionSource);
             long leftover = entry.amount() - inserted;
+            changed |= inserted > 0;
             if (leftover > 0) {
                 remaining.add(new GenericStack(entry.what(), leftover));
-            } else {
-                changed = true;
             }
         }
         this.interfaceRecoveryBuffer.clear();
         this.interfaceRecoveryBuffer.addAll(remaining);
+        if (changed) {
+            this.owner.saveChanges();
+        }
         return changed;
     }
 
@@ -769,6 +826,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         this.smartPatternMultiplication.saveConfig(tag);
         this.passiveCraftingSettings.save(tag, registries);
         this.interfaceConfig.save(tag, registries);
+        this.interfaceInventory.save(tag, registries);
         saveInterfaceRecovery(tag, registries);
         tag.putBoolean(TAG_TERMINAL_VISIBLE, this.visibleInPatternAccessTerminal);
         tag.remove(TAG_PATTERN_TERMINAL_NAME);
@@ -793,6 +851,7 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         this.smartPatternMultiplication.loadConfig(tag);
         this.passiveCraftingSettings.load(tag, registries);
         this.interfaceConfig.load(tag, registries);
+        this.interfaceInventory.load(tag, registries);
         loadInterfaceRecovery(tag, registries);
         this.visibleInPatternAccessTerminal = !tag.contains(TAG_TERMINAL_VISIBLE) || tag.getBoolean(TAG_TERMINAL_VISIBLE);
         this.patternTerminalName = MePatternTerminalNames.migrateLegacy(this.ownerTile, tag.getString(TAG_PATTERN_TERMINAL_NAME));

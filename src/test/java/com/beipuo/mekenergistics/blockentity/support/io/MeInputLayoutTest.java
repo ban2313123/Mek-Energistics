@@ -97,6 +97,26 @@ class MeInputLayoutTest {
     }
 
     @Test
+    void anInterfaceResourceCanEnterAnyCompatibleLane() {
+        FakeInputPort first = new FakeInputPort(new FakeKey("gold"), 8);
+        FakeInputPort second = new FakeInputPort(IRON, 8);
+        MeInputLayout layout = MeInputLayout.lanes(List.of(List.of(first), List.of(second)));
+
+        assertEquals(6, layout.maxAcceptedInterfaceAmount(IRON, 6));
+        assertTrue(layout.routeInterface(IRON, 6));
+        assertEquals(0, first.amount());
+        assertEquals(6, second.amount());
+    }
+
+    @Test
+    void aPortSharedByLanesIsOnlyCountedOnceForInterfaceStocking() {
+        FakeInputPort shared = new FakeInputPort(IRON, 8);
+        MeInputLayout layout = MeInputLayout.lanes(List.of(List.of(shared), List.of(shared)));
+
+        assertEquals(8, layout.maxAcceptedInterfaceAmount(IRON, 16));
+    }
+
+    @Test
     void whicheverHalfIsPopulatedIsUsedByBothRoutingAndSizing() {
         FakeInputPort port = new FakeInputPort(IRON, 12);
 

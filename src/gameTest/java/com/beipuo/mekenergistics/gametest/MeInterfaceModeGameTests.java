@@ -59,11 +59,13 @@ public final class MeInterfaceModeGameTests {
                             .setStack(0, new GenericStack(AEItemKey.of(Items.IRON_ORE), 64));
                 })
                 .thenExecuteAfter(3 * SharedConstants.TICKS_PER_SECOND, () -> {
-                    helper.assertTrue(networkCount(helper, Items.IRON_ORE) == 90,
-                            "AE did not decrease by exactly 10 when the machine could only accept 10: "
-                                    + networkCount(helper, Items.IRON_ORE));
                     helper.assertTrue(inputSlot(helper).getCount() == 64,
                             "machine input was not filled to 64: " + inputSlot(helper).getCount());
+                    helper.assertTrue(interfaceStock(helper, 0) == 64,
+                            "interface buffer was not restocked to 64: " + interfaceStock(helper, 0));
+                    helper.assertTrue(networkCount(helper, Items.IRON_ORE) == 26,
+                            "AE should lose the 10 accepted by the machine plus the 64 kept in the buffer: "
+                                    + networkCount(helper, Items.IRON_ORE));
                 })
                 .thenSucceed();
     }
@@ -80,11 +82,14 @@ public final class MeInterfaceModeGameTests {
                             .setStack(0, new GenericStack(AEItemKey.of(Items.IRON_ORE), 64));
                 })
                 .thenExecuteAfter(3 * SharedConstants.TICKS_PER_SECOND, () -> {
-                    helper.assertTrue(networkCount(helper, Items.IRON_ORE) == 100,
-                            "AE changed while the machine could not receive anything: "
-                                    + networkCount(helper, Items.IRON_ORE));
                     helper.assertTrue(inputSlot(helper).getCount() == 64,
                             "machine input changed while full: " + inputSlot(helper).getCount());
+                    helper.assertTrue(interfaceStock(helper, 0) == 64,
+                            "interface buffer was not stocked to 64 while the machine was full: "
+                                    + interfaceStock(helper, 0));
+                    helper.assertTrue(networkCount(helper, Items.IRON_ORE) == 36,
+                            "AE should only decrease by the 64 kept in the interface buffer: "
+                                    + networkCount(helper, Items.IRON_ORE));
                 })
                 .thenSucceed();
     }
@@ -122,8 +127,10 @@ public final class MeInterfaceModeGameTests {
                 .thenExecuteAfter(3 * SharedConstants.TICKS_PER_SECOND, () -> {
                     helper.assertTrue(inputSlot(helper).getCount() == 64,
                             "machine input did not reach one full batch: " + inputSlot(helper).getCount());
-                    helper.assertTrue(networkCount(helper, Items.IRON_ORE) == 136,
-                            "AE loss was not exactly the accepted batch (64) with the rest refunded: "
+                    helper.assertTrue(interfaceStock(helper, 0) == 64 && interfaceStock(helper, 1) == 64,
+                            "both interface columns should stay stocked at 64");
+                    helper.assertTrue(networkCount(helper, Items.IRON_ORE) == 8,
+                            "AE should lose one machine batch plus two stocked columns: "
                                     + networkCount(helper, Items.IRON_ORE));
                 })
                 .thenSucceed();
@@ -215,17 +222,25 @@ public final class MeInterfaceModeGameTests {
                 .thenExecuteAfter(1, () -> installInterfaceUpgrade(helper))
                 .thenExecuteAfter(2 * SharedConstants.TICKS_PER_SECOND, () -> {
                     MeAeMachine machine = machine(helper);
-                    machine.getRecipeAeSupport().getInterfaceConfig()
+                    AbstractMeAeSupport<?> support = machine.getRecipeAeSupport();
+                    support.getInterfaceConfig()
                             .setStack(0, new GenericStack(AEItemKey.of(Items.IRON_ORE), 64));
+                    support.getInterfaceInventory()
+                            .insert(0, AEItemKey.of(Items.IRON_ORE), 32, Actionable.MODULATE);
                     CompoundTag saved = new CompoundTag();
-                    machine.getRecipeAeSupport().saveSlots(saved, helper.getLevel().registryAccess());
-                    machine.getRecipeAeSupport().loadSlots(saved, helper.getLevel().registryAccess());
-                    var stack = machine.getRecipeAeSupport().getInterfaceConfig().getStack(0);
-                    helper.assertTrue(stack != null && stack.amount() == 64,
-                            "interface config did not survive a slot save/load cycle");
+                    support.save(saved, helper.getLevel().registryAccess());
+                    support.getInterfaceConfig().setStack(0, null);
+                    support.getInterfaceInventory().extract(0, AEItemKey.of(Items.IRON_ORE), 32, Actionable.MODULATE);
+                    support.load(saved, helper.getLevel().registryAccess());
+                    var configured = support.getInterfaceConfig().getStack(0);
+                    var stocked = support.getInterfaceInventory().getStack(0);
+                    helper.assertTrue(configured != null && configured.amount() == 64,
+                            "interface config did not survive save/load");
+                    helper.assertTrue(stocked != null && stocked.amount() == 32,
+                            "interface inventory did not survive save/load");
                     MeUpgradeStateOwner owner = (MeUpgradeStateOwner) helper.getBlockEntity(MACHINE);
                     helper.assertTrue(owner.getMeUpgradeContainer().isInstalled(MeUpgradeType.OUTPUT_INTERFACE),
-                            "interface upgrade did not survive a slot save/load cycle");
+                            "interface upgrade did not survive save/load");
                 })
                 .thenSucceed();
     }
@@ -266,6 +281,11 @@ public final class MeInterfaceModeGameTests {
         if (inserted != amount) {
             throw new GameTestAssertException("seeded " + inserted + " of " + amount + " iron ore");
         }
+    }
+
+    private static long interfaceStock(GameTestHelper helper, int slot) {
+        var stack = machine(helper).getRecipeAeSupport().getInterfaceInventory().getStack(slot);
+        return stack == null ? 0 : stack.amount();
     }
 
     private static long networkCount(GameTestHelper helper, net.minecraft.world.level.ItemLike item) {

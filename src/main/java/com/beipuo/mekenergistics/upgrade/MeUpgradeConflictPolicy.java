@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.upgrade;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -22,22 +23,37 @@ public final class MeUpgradeConflictPolicy {
      * </ul>
      */
     public static Optional<MeUpgradeType> conflictWith(MeUpgradeType toInstall, MeUpgradeData current) {
-        if (toInstall == null || current == null) {
+        return conflictWith(toInstall, current == null ? type -> false : current::isInstalled);
+    }
+
+    public static Optional<MeUpgradeType> conflictWith(MeUpgradeType toInstall,
+            Predicate<MeUpgradeType> installed) {
+        if (toInstall == null || installed == null) {
             return Optional.empty();
         }
         if (toInstall == MeUpgradeType.OUTPUT_INTERFACE) {
-            if (current.isInstalled(MeUpgradeType.PATTERN_PROVIDER)) {
+            if (installed.test(MeUpgradeType.PATTERN_PROVIDER)) {
                 return Optional.of(MeUpgradeType.PATTERN_PROVIDER);
             }
-            if (current.isInstalled(MeUpgradeType.PASSIVE_CRAFTING)) {
+            if (installed.test(MeUpgradeType.PASSIVE_CRAFTING)) {
                 return Optional.of(MeUpgradeType.PASSIVE_CRAFTING);
             }
             return Optional.empty();
         }
-        if (current.isInstalled(MeUpgradeType.OUTPUT_INTERFACE)) {
+        if (installed.test(MeUpgradeType.OUTPUT_INTERFACE)) {
             return Optional.of(MeUpgradeType.OUTPUT_INTERFACE);
         }
         return Optional.empty();
+    }
+
+    /**
+     * True when Mekanism's native {@code addUpgrades} must return 0 so the item is not consumed.
+     */
+    public static boolean blocksNativeInstall(MeUpgradeType toInstall, MeUpgradeStateOwner owner) {
+        if (toInstall == null || owner == null || owner.getMeUpgradeContainer() == null) {
+            return false;
+        }
+        return conflictWith(toInstall, owner.getMeUpgradeContainer()::isInstalled).isPresent();
     }
 
     /** True when {@code toInstall} may coexist with every installed upgrade. */

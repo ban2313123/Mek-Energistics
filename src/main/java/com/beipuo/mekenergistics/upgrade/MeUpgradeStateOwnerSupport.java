@@ -15,18 +15,27 @@ public final class MeUpgradeStateOwnerSupport implements MeUpgradeStateOwner {
     private final MeUpgradeContainer container;
     private final BooleanSupplier nativePatternProvider;
     private final Supplier<Boolean> patternInventoryEmpty;
+    private final Supplier<Boolean> interfaceInventoryEmpty;
     private final Runnable onChange;
 
     public MeUpgradeStateOwnerSupport(@NotNull BooleanSupplier nativePatternProvider,
             @NotNull Supplier<Boolean> patternInventoryEmpty, @NotNull Runnable onChange) {
-        this(nativePatternProvider, patternInventoryEmpty, onChange, () -> null);
+        this(nativePatternProvider, patternInventoryEmpty, () -> true, onChange, () -> null);
     }
 
     public MeUpgradeStateOwnerSupport(@NotNull BooleanSupplier nativePatternProvider,
             @NotNull Supplier<Boolean> patternInventoryEmpty, @NotNull Runnable onChange,
             @NotNull Supplier<TileComponentUpgrade> nativeComponent) {
+        this(nativePatternProvider, patternInventoryEmpty, () -> true, onChange, nativeComponent);
+    }
+
+    public MeUpgradeStateOwnerSupport(@NotNull BooleanSupplier nativePatternProvider,
+            @NotNull Supplier<Boolean> patternInventoryEmpty,
+            @NotNull Supplier<Boolean> interfaceInventoryEmpty, @NotNull Runnable onChange,
+            @NotNull Supplier<TileComponentUpgrade> nativeComponent) {
         this.nativePatternProvider = Objects.requireNonNull(nativePatternProvider, "nativePatternProvider");
         this.patternInventoryEmpty = Objects.requireNonNull(patternInventoryEmpty, "patternInventoryEmpty");
+        this.interfaceInventoryEmpty = Objects.requireNonNull(interfaceInventoryEmpty, "interfaceInventoryEmpty");
         this.onChange = Objects.requireNonNull(onChange, "onChange");
         this.container = new MeUpgradeContainer(this, () -> {
         }, nativeComponent);
@@ -45,6 +54,11 @@ public final class MeUpgradeStateOwnerSupport implements MeUpgradeStateOwner {
     @Override
     public boolean isPatternInventoryEmpty() {
         return Boolean.TRUE.equals(this.patternInventoryEmpty.get());
+    }
+
+    @Override
+    public boolean isInterfaceInventoryEmpty() {
+        return Boolean.TRUE.equals(this.interfaceInventoryEmpty.get());
     }
 
     @Override

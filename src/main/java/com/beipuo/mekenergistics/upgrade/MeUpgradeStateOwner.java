@@ -1,5 +1,7 @@
 package com.beipuo.mekenergistics.upgrade;
 
+import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
+
 /**
  * A machine that holds ME upgrade state through a single {@link MeUpgradeContainer}. Install,
  * uninstall, migration and runtime activation all read and write this container; no other
@@ -30,6 +32,12 @@ public interface MeUpgradeStateOwner {
      * uninstalling the pattern provider upgrade. */
     default boolean isPatternInventoryEmpty() {
         return true;
+    }
+
+    /** True when removing the interface upgrade cannot orphan stocked ME items. */
+    default boolean isInterfaceInventoryEmpty() {
+        return !(this instanceof MeAeMachine machine)
+                || machine.getRecipeAeSupport().canRemoveInterfaceUpgrade();
     }
 
     /** Called after any container mutation that changed the effective machine mode. */

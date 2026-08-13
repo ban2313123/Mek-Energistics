@@ -57,6 +57,7 @@ public abstract class TileEntityElectricMachineMeUpgradeMixin implements MeUpgra
                     () -> false,
                     () -> mekenergistics$support().getPatternSlots().stream()
                             .allMatch(slot -> slot.getStack().isEmpty()),
+                    () -> mekenergistics$support().canRemoveInterfaceUpgrade(),
                     this::mekenergistics$onMeUpgradeStateChanged,
                     () -> {
                         TileEntityElectricMachine tile = (TileEntityElectricMachine) (Object) this;

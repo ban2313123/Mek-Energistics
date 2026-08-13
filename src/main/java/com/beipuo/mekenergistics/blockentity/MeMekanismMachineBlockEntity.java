@@ -102,6 +102,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
     private final MeUpgradeStateOwnerSupport meUpgradeOwner = new MeUpgradeStateOwnerSupport(
             () -> true,
             () -> getAeSupport().getPatternSlots().stream().allMatch(slot -> slot.getStack().isEmpty()),
+            () -> getAeSupport().canRemoveInterfaceUpgrade(),
             this::onMeUpgradeStateChangedInternal,
             () -> supportsUpgrades() ? getComponent() : null);
     private final MeMachineRecipeProcessor recipeProcessor = new MeMachineRecipeProcessor(this);

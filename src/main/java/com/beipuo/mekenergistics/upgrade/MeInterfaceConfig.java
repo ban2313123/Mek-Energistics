@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.upgrade;
 
 import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.util.ConfigInventory;
@@ -11,12 +12,11 @@ import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Virtual 36-slot item configuration for the ME output interface upgrade. Each slot holds an
- * {@link AEKey} and a fixed batch amount; slots are pure configuration and never consume or hold
- * real items. Same item may appear in multiple slots, each slot schedules independently.
+ * Virtual nine-slot item configuration for the ME output interface upgrade. Each column holds an
+ * item key and the amount that should be stocked in the matching interface inventory slot.
  */
 public final class MeInterfaceConfig {
-    public static final int SLOT_COUNT = 36;
+    public static final int SLOT_COUNT = 9;
     private static final String TAG_CONFIG = "MeInterfaceConfig";
 
     private final ConfigInventory inventory;
@@ -42,7 +42,21 @@ public final class MeInterfaceConfig {
         if (slot < 0 || slot >= this.inventory.size()) {
             return;
         }
-        this.inventory.setStack(slot, stack);
+        this.inventory.setStack(slot, normalize(stack));
+    }
+
+    /** Clears non-item keys and non-positive amounts. Overstacked item amounts are kept. */
+    @Nullable
+    public static GenericStack normalize(@Nullable GenericStack stack) {
+        return stack == null ? null : normalize(stack.what(), stack.amount());
+    }
+
+    @Nullable
+    public static GenericStack normalize(@Nullable AEKey key, long amount) {
+        if (!(key instanceof AEItemKey) || amount <= 0) {
+            return null;
+        }
+        return new GenericStack(key, amount);
     }
 
     public List<GenericStack> toList() {
@@ -70,6 +84,8 @@ public final class MeInterfaceConfig {
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
         if (tag.contains(TAG_CONFIG)) {
+            // ConfigInventory reads only as many entries as it owns. This preserves the first nine
+            // columns from the short-lived 36-slot format without needing a separate data fixer.
             this.inventory.readFromChildTag(tag, TAG_CONFIG, registries);
         }
     }

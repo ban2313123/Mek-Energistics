@@ -44,7 +44,10 @@ public final class MeRecipeMachineAeSupport<TILE extends TileEntityMekanism & Me
     /** Drains declared outputs before allowing another smart batch into the machine. */
     public boolean processPatternIo(AeOutputMode mode, boolean sendUpdatePacket) {
         if (isInterfaceMode()) {
-            return processInterfaceMode() || sendUpdatePacket;
+            if (hasInterfaceWork()) {
+                alertAeTicker();
+            }
+            return sendUpdatePacket;
         }
         boolean changed = drainPatternOutputs(mode) || sendUpdatePacket;
         if (!hasPatternOutputBacklog(mode)) {

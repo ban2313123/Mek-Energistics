@@ -47,15 +47,15 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * Client overlay for the ME output interface upgrade. When a machine runs in interface mode the
- * pattern tab is replaced by an interface tab that opens a 36-slot virtual configuration window.
- * Left-click marks the carried item with its natural stack size, right-click clears a slot and
- * middle-click edits the fixed batch amount.
+ * pattern tab is replaced by a nine-column interface window. Each column contains an amount
+ * button, a virtual configuration slot, and a read-only stocked inventory slot.
  */
 @EventBusSubscriber(modid = MekEnergistics.MODID, value = Dist.CLIENT)
 public final class MeInterfaceWindowOverlay {
     private static final Component INTERFACE_BUTTON_TOOLTIP = Component.translatable("gui.mekenergistics.me_interface.button");
     private static final Component INTERFACE_WINDOW_TITLE = Component.translatable("gui.mekenergistics.me_interface.title");
     private static final Component INTERFACE_SLOT_HINT = Component.translatable("gui.mekenergistics.me_interface.slot_hint");
+    private static final Component INTERFACE_AMOUNT_TOOLTIP = Component.translatable("gui.mekenergistics.me_interface.amount");
     private static final int TAB_X = 0;
     private static final int TAB_Y = 62;
     private static final int TAB_SIZE = 26;
@@ -65,10 +65,12 @@ public final class MeInterfaceWindowOverlay {
     private static final int WINDOW_WIDTH = 178;
     private static final int WINDOW_HEIGHT = 118;
     private static final int SLOT_COLUMNS = MekEnergisticsConfig.PATTERN_SLOT_COLUMNS;
-    private static final int SLOT_ROWS = MekEnergisticsConfig.PATTERN_SLOT_ROWS;
-    private static final int SLOTS_PER_PAGE = MekEnergisticsConfig.PATTERN_SLOTS_PER_PAGE;
     private static final int CONFIG_SLOTS = MeInterfaceConfig.SLOT_COUNT;
     private static final int NAME_FIELD_HEIGHT = 12;
+    private static final int ROW_Y = 18;
+    private static final int CONFIG_ROW_Y = ROW_Y + 18;
+    private static final int INVENTORY_ROW_Y = CONFIG_ROW_Y + 18;
+    private static final int AMOUNT_FIELD_Y = 96;
     private static final ResourceLocation HOLDER_RIGHT = MekanismUtils.getResource(ResourceType.GUI, "holder_right.png");
     private static final ResourceLocation BUTTON = MekanismUtils.getResource(ResourceType.GUI, "button.png");
     private static final ResourceLocation LEFT_BUTTON = MekanismUtils.getResource(ResourceType.GUI_BUTTON, "left.png");
@@ -77,6 +79,7 @@ public final class MeInterfaceWindowOverlay {
             MekEnergistics.MODID, "textures/item/upgrade_me_output_interface.png");
     private static final ResourceLocation EMPTY_INTERFACE_ICON = ResourceLocation.fromNamespaceAndPath(
             MekEnergistics.MODID, "textures/gui/slot/pattern_empty.png");
+    private static final ResourceLocation AE2_STATES = ResourceLocation.fromNamespaceAndPath("ae2", "textures/guis/states.png");
 
     private MeInterfaceWindowOverlay() {
     }
@@ -90,7 +93,7 @@ public final class MeInterfaceWindowOverlay {
             }
             for (GuiWindow window : gui.getWindows()) {
                 if (window instanceof MeInterfaceWindow interfaceWindow && interfaceWindow.matches(packet.pos())) {
-                    interfaceWindow.applyConfig(packet.config());
+                    interfaceWindow.applyState(packet.config(), packet.inventory());
                     return;
                 }
             }
@@ -211,7 +214,9 @@ public final class MeInterfaceWindowOverlay {
     private static final class MeInterfaceWindow extends GuiWindow {
         private final Target target;
         private final List<GenericStack> config = new ArrayList<>();
+        private final List<GenericStack> inventory = new ArrayList<>();
         private int editingSlot = -1;
+        private int refreshTicks;
         private final GuiTextField amountField;
 
         private MeInterfaceWindow(IGuiWrapper gui, int x, int y, Target target) {
@@ -220,24 +225,41 @@ public final class MeInterfaceWindowOverlay {
             interactionStrategy = InteractionStrategy.ALL;
             for (int i = 0; i < CONFIG_SLOTS; i++) {
                 this.config.add(null);
+                this.inventory.add(null);
             }
-            this.amountField = addChild(new GuiTextField(gui, this, relativeX + 60, relativeY + 96, 60, NAME_FIELD_HEIGHT));
+            this.amountField = addChild(new GuiTextField(gui, this, relativeX + 60,
+                    relativeY + AMOUNT_FIELD_Y, 60, NAME_FIELD_HEIGHT));
             this.amountField.setMaxLength(12);
             this.amountField.setInputValidator(value -> value >= '0' && value <= '9');
             this.amountField.setEnterHandler(this::commitAmount);
             this.amountField.setVisible(false);
-            PacketDistributor.sendToServer(new RequestInterfaceConfigPacket(
-                    this.target.machine().getAeOwnerTile().getBlockPos()));
+            requestState();
         }
 
         private boolean matches(net.minecraft.core.BlockPos pos) {
             return this.target.machine().getAeOwnerTile().getBlockPos().equals(pos);
         }
 
-        private void applyConfig(List<GenericStack> stacks) {
+        private void applyState(List<GenericStack> configuredStacks, List<GenericStack> inventoryStacks) {
             this.config.clear();
+            this.inventory.clear();
             for (int i = 0; i < CONFIG_SLOTS; i++) {
-                this.config.add(i < stacks.size() ? stacks.get(i) : null);
+                this.config.add(i < configuredStacks.size() ? configuredStacks.get(i) : null);
+                this.inventory.add(i < inventoryStacks.size() ? inventoryStacks.get(i) : null);
+            }
+        }
+
+        private void requestState() {
+            PacketDistributor.sendToServer(new RequestInterfaceConfigPacket(
+                    this.target.machine().getAeOwnerTile().getBlockPos()));
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            if (++this.refreshTicks >= 10) {
+                this.refreshTicks = 0;
+                requestState();
             }
         }
 
@@ -252,6 +274,9 @@ public final class MeInterfaceWindowOverlay {
         }
 
         private boolean markSlot(int slot) {
+            if (Minecraft.getInstance().player == null) {
+                return false;
+            }
             ItemStack carried = Minecraft.getInstance().player.containerMenu.getCarried();
             if (carried.isEmpty()) {
                 return false;
@@ -308,23 +333,30 @@ public final class MeInterfaceWindowOverlay {
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            int slot = slotAt(mouseX, mouseY);
-            if (this.editingSlot >= 0 && slot != this.editingSlot) {
+            int configSlot = configSlotAt(mouseX, mouseY);
+            int amountColumn = columnAt(mouseX, mouseY, ROW_Y, 18);
+            int amountSlot = amountButtonAt(mouseX, mouseY);
+            int inventorySlot = columnAt(mouseX, mouseY, INVENTORY_ROW_Y, 18);
+            if (this.editingSlot >= 0 && configSlot != this.editingSlot && amountSlot != this.editingSlot) {
                 commitAmount();
             }
-            if (slot >= 0) {
+            if (amountSlot >= 0 && button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                return startEditing(amountSlot);
+            }
+            if (configSlot >= 0) {
                 if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                    return markSlot(slot);
+                    markSlot(configSlot);
+                    return true;
                 }
                 if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                    return clearSlot(slot);
-                }
-                if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
-                    return startEditing(slot);
+                    return clearSlot(configSlot);
                 }
             }
             if (this.editingSlot >= 0 && button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                 return cancelEditing();
+            }
+            if (amountColumn >= 0 || configSlot >= 0 || inventorySlot >= 0) {
+                return true;
             }
             return super.mouseClicked(mouseX, mouseY, button);
         }
@@ -345,42 +377,60 @@ public final class MeInterfaceWindowOverlay {
             drawScrollingString(guiGraphics, INTERFACE_WINDOW_TITLE, titleX, 6, TextAlignment.LEFT,
                     titleTextColor(), titleWidth, 0, false);
             Minecraft minecraft = Minecraft.getInstance();
-            for (int row = 0; row < SLOT_ROWS; row++) {
-                for (int column = 0; column < SLOT_COLUMNS; column++) {
-                    int index = row * SLOT_COLUMNS + column;
-                    int slotX = relativeX + 8 + column * 18;
-                    int slotY = relativeY + 18 + row * 18;
-                    int slotWidth = SlotType.NORMAL.getWidth();
-                    int slotHeight = SlotType.NORMAL.getHeight();
-                    guiGraphics.blit(SlotType.NORMAL.getTexture(), slotX, slotY, 0, 0, slotWidth, slotHeight, slotWidth, slotHeight);
-                    if (index >= this.config.size()) {
-                        continue;
-                    }
-                    GenericStack stack = this.config.get(index);
-                    if (stack == null || stack.what() == null) {
-                        continue;
-                    }
-                    AEKeyRendering.drawInGui(minecraft, guiGraphics, slotX + 1, slotY + 1, stack.what());
-                    if (stack.amount() > 0) {
-                        String amountText = stack.what().formatAmount(stack.amount(), AmountFormat.SLOT);
-                        StackSizeRenderer.renderSizeLabel(guiGraphics, minecraft.font, slotX + 1, slotY + 1, amountText, false);
-                    }
+            int slotWidth = SlotType.NORMAL.getWidth();
+            int slotHeight = SlotType.NORMAL.getHeight();
+            for (int column = 0; column < SLOT_COLUMNS; column++) {
+                int slotX = relativeX + 8 + column * 18;
+                GenericStack configured = this.config.get(column);
+                boolean buttonHovered = amountButtonAt(mouseX, mouseY) == column;
+                if (configured != null && configured.what() != null) {
+                    guiGraphics.blit(AE2_STATES, slotX + 1, relativeY + ROW_Y + 1,
+                            buttonHovered ? 32 : 48, 64, 16, 16, 256, 256);
                 }
+                drawSlot(guiGraphics, minecraft, slotX, relativeY + CONFIG_ROW_Y,
+                        slotWidth, slotHeight, configured, true);
+                drawSlot(guiGraphics, minecraft, slotX, relativeY + INVENTORY_ROW_Y,
+                        slotWidth, slotHeight, this.inventory.get(column), false);
+            }
+            if (amountButtonAt(mouseX, mouseY) >= 0) {
+                guiGraphics.renderTooltip(font(), INTERFACE_AMOUNT_TOOLTIP, mouseX - getGuiLeft(), mouseY - getGuiTop());
             }
             drawScrollingString(guiGraphics, INTERFACE_SLOT_HINT, 8, 110, TextAlignment.LEFT,
                     titleTextColor(), width - 16, 0, false);
         }
 
-        private int slotAt(double mouseX, double mouseY) {
-            int slotX = (int) mouseX - (relativeX + 8);
-            int slotY = (int) mouseY - (relativeY + 18);
-            if (slotX < 0 || slotY < 0 || slotX >= SLOT_COLUMNS * 18 || slotY >= SLOT_ROWS * 18) {
+        private void drawSlot(GuiGraphics guiGraphics, Minecraft minecraft, int slotX, int slotY,
+                int slotWidth, int slotHeight, @Nullable GenericStack stack, boolean showConfiguredAmount) {
+            guiGraphics.blit(SlotType.NORMAL.getTexture(), slotX, slotY, 0, 0,
+                    slotWidth, slotHeight, slotWidth, slotHeight);
+            if (stack == null || stack.what() == null) {
+                return;
+            }
+            AEKeyRendering.drawInGui(minecraft, guiGraphics, slotX + 1, slotY + 1, stack.what());
+            if (stack.amount() > 0 && (showConfiguredAmount || stack.amount() > 1)) {
+                String amountText = stack.what().formatAmount(stack.amount(), AmountFormat.SLOT);
+                StackSizeRenderer.renderSizeLabel(guiGraphics, minecraft.font,
+                        slotX + 1, slotY + 1, amountText, false);
+            }
+        }
+
+        private int configSlotAt(double mouseX, double mouseY) {
+            return columnAt(mouseX, mouseY, CONFIG_ROW_Y, 18);
+        }
+
+        private int amountButtonAt(double mouseX, double mouseY) {
+            int column = columnAt(mouseX, mouseY, ROW_Y, 18);
+            return column >= 0 && this.config.get(column) != null ? column : -1;
+        }
+
+        private int columnAt(double mouseX, double mouseY, int rowY, int rowHeight) {
+            int slotX = (int) mouseX - (getX() + 8);
+            int slotY = (int) mouseY - (getY() + rowY);
+            if (slotX < 0 || slotY < 0 || slotX >= SLOT_COLUMNS * 18 || slotY >= rowHeight) {
                 return -1;
             }
             int column = slotX / 18;
-            int row = slotY / 18;
-            int index = row * SLOT_COLUMNS + column;
-            return index < CONFIG_SLOTS ? index : -1;
+            return column < CONFIG_SLOTS ? column : -1;
         }
 
         private static long parseLong(String value, long fallback) {

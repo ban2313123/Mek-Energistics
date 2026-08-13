@@ -4,9 +4,7 @@ import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.upgrade.MeInterfaceConfig;
-import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -52,14 +50,7 @@ public record SetInterfaceConfigPacket(BlockPos pos, int slot, @Nullable AEKey k
                 if (this.slot < 0 || this.slot >= config.size()) {
                     return;
                 }
-                if (this.key == null || this.amount <= 0) {
-                    config.setStack(this.slot, null);
-                    return;
-                }
-                if (!(this.key instanceof AEItemKey)) {
-                    return;
-                }
-                config.setStack(this.slot, new GenericStack(this.key, this.amount));
+                config.setStack(this.slot, MeInterfaceConfig.normalize(this.key, this.amount));
             });
         });
     }

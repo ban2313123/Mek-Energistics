@@ -50,6 +50,12 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
     /** Processes all I/O declared by the factory owner through the common adapter. */
     public boolean processPatternIo(boolean sendUpdatePacket) {
+        if (isInterfaceMode()) {
+            if (hasInterfaceWork()) {
+                alertAeTicker();
+            }
+            return sendUpdatePacket;
+        }
         AeOutputMode mode = this.aeOutputMode;
         boolean changed = drainPatternOutputs(mode) || sendUpdatePacket;
         if (!hasPatternOutputBacklog(mode)) {
@@ -100,6 +106,9 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
     @Override
     protected boolean hasAeOutputWork() {
+        if (isInterfaceMode()) {
+            return hasInterfaceWork();
+        }
         if (hasPatternOutputBacklog(this.aeOutputMode)) {
             return true;
         }
@@ -108,6 +117,15 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
     @Override
     protected boolean processAeOutputWork() {
+        if (isInterfaceMode()) {
+            boolean hadWork = hasInterfaceWork();
+            processInterfaceMode();
+            boolean hasWork = hasInterfaceWork();
+            if (hasWork) {
+                alertAeTicker();
+            }
+            return hadWork && !hasWork;
+        }
         boolean hadWork = hasAeOutputWork();
         drainPatternOutputs(this.aeOutputMode);
         if (!hasPatternOutputBacklog(this.aeOutputMode)) {

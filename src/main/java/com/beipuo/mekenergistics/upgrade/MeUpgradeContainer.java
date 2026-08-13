@@ -103,13 +103,9 @@ public final class MeUpgradeContainer {
         if (target > type.getMaxCount()) {
             return MeUpgradeConflictPolicy.Result.limitReached();
         }
-        // Native Mekanism components deliberately keep their standard independent-upgrade model.
-        // Retain the old policy only for legacy/in-memory containers used during migration.
-        if (nativeComponent() == null) {
-            MeUpgradeType conflict = MeUpgradeConflictPolicy.conflictWith(type, this.data).orElse(null);
-            if (conflict != null) {
-                return MeUpgradeConflictPolicy.Result.conflict(conflict);
-            }
+        MeUpgradeType conflict = MeUpgradeConflictPolicy.conflictWith(type, this::isInstalled).orElse(null);
+        if (conflict != null) {
+            return MeUpgradeConflictPolicy.Result.conflict(conflict);
         }
         if (type == MeUpgradeType.PASSIVE_CRAFTING && !this.owner.supportsNativePatternProvider()
                 && !isInstalled(MeUpgradeType.PATTERN_PROVIDER)) {
@@ -134,6 +130,9 @@ public final class MeUpgradeContainer {
             if (isInstalled(MeUpgradeType.PASSIVE_CRAFTING)) {
                 return false;
             }
+        }
+        if (type == MeUpgradeType.OUTPUT_INTERFACE && !this.owner.isInterfaceInventoryEmpty()) {
+            return false;
         }
         TileComponentUpgrade component = nativeComponent();
         if (component != null) {

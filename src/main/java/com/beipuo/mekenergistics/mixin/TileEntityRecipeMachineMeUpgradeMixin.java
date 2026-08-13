@@ -70,6 +70,7 @@ public abstract class TileEntityRecipeMachineMeUpgradeMixin implements MeUpgrade
                     () -> false,
                     () -> mekenergistics$support().getPatternSlots().stream()
                             .allMatch(slot -> slot.getStack().isEmpty()),
+                    () -> mekenergistics$support().canRemoveInterfaceUpgrade(),
                     this::mekenergistics$onMeUpgradeStateChanged,
                     () -> mekenergistics$tile().supportsUpgrades() ? mekenergistics$tile().getComponent() : null);
         }

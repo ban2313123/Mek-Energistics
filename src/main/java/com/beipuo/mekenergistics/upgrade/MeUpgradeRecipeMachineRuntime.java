@@ -47,6 +47,11 @@ public final class MeUpgradeRecipeMachineRuntime {
         }
 
         @Override
+        public boolean isInterfaceInventoryEmpty() {
+            return MeUpgradeRecipeMachineRuntime.this.support.canRemoveInterfaceUpgrade();
+        }
+
+        @Override
         public void onMeUpgradeStateChanged() {
             MeUpgradeRecipeMachineRuntime.this.onMeUpgradeStateChanged();
         }
