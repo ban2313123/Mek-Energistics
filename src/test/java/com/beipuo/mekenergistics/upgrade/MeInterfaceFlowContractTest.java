@@ -100,4 +100,16 @@ class MeInterfaceFlowContractTest {
         assertTrue(support.contains("this.owner.saveChanges()"));
         assertTrue(support.contains("flushInterfaceRecovery()"));
     }
+
+    @Test
+    void installerUpgradePreservesMeRuntimeState() throws IOException {
+        String installer = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/item/MeInstallerUpgradeHandler.java"));
+        String tierInstaller = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/item/MeTierInstallerItem.java"));
+        assertTrue(installer.contains("MePatternSlotTransfer.saveMeState"));
+        assertTrue(installer.contains("MePatternSlotTransfer.loadMeState"));
+        assertTrue(tierInstaller.contains("MePatternSlotTransfer.saveMeState"));
+        assertTrue(tierInstaller.contains("MePatternSlotTransfer.loadMeState"));
+    }
 }

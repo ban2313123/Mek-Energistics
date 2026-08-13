@@ -157,26 +157,20 @@ public abstract class MekanismChemicalRecipeMachineMeUpgradeMixin implements MeU
 
     @Unique
     private <RECIPE extends MekanismRecipe<?>> void mekenergistics$wrapEnergy(CallbackInfoReturnable<CachedRecipe<RECIPE>> cir) {
-        cir.setReturnValue(mekenergistics$runtime().wrapEnergy(mekenergistics$energyContainer(), cir.getReturnValue(), isMeUpgradeActive()));
+        MachineEnergyContainer<?> energyContainer = mekenergistics$energyContainer();
+        if (energyContainer != null) {
+            cir.setReturnValue(mekenergistics$runtime().wrapEnergy(energyContainer, cir.getReturnValue(), isMeUpgradeActive()));
+        }
     }
 
     @Unique
     private MachineEnergyContainer<?> mekenergistics$energyContainer() {
-        Object tile = this;
-        if (tile instanceof TileEntityAntiprotonicNucleosynthesizer value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityChemicalCrystallizer value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityChemicalDissolutionChamber value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityChemicalInfuser value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityChemicalOxidizer value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityChemicalWasher value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityElectrolyticSeparator value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityIsotopicCentrifuge value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityNutritionalLiquifier value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityPaintingMachine value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityPigmentExtractor value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityPigmentMixer value) return value.getEnergyContainer();
-        if (tile instanceof TileEntityPressurizedReactionChamber value) return value.getEnergyContainer();
-        return ((TileEntityRotaryCondensentrator) tile).getEnergyContainer();
+        for (var energyContainer : mekenergistics$tile().getEnergyContainers(null)) {
+            if (energyContainer instanceof MachineEnergyContainer<?> machineEnergyContainer) {
+                return machineEnergyContainer;
+            }
+        }
+        return null;
     }
 
     @Inject(method = "onUpdateServer", at = @At("RETURN"), cancellable = true)

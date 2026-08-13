@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.blockentity.support;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import java.util.List;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -43,6 +44,20 @@ public final class MePatternSlotTransfer {
             if (tag.contains(key)) {
                 patternSlots.get(i).deserializeNBT(registries, tag.getCompound(key));
             }
+        }
+    }
+
+    public static CompoundTag saveMeState(BlockEntity tile, HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        if (tile instanceof MeUpgradeableMachine machine) {
+            machine.saveMeState(tag, registries);
+        }
+        return tag;
+    }
+
+    public static void loadMeState(BlockEntity tile, HolderLookup.Provider registries, CompoundTag tag) {
+        if (tile instanceof MeUpgradeableMachine machine && !tag.isEmpty()) {
+            machine.loadMeState(tag, registries);
         }
     }
 

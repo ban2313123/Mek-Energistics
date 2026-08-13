@@ -106,6 +106,7 @@ public final class MeInstallerUpgradeHandler {
             return InteractionResult.PASS;
         }
         CompoundTag mePatternSlots = MePatternSlotTransfer.save(oldTile, level.registryAccess());
+        CompoundTag meState = MePatternSlotTransfer.saveMeState(oldTile, level.registryAccess());
         Block targetBlock = ModBlocks.getMachineBlock(target).get();
         BlockState upgradeState = BlockStateHelper.copyStateData(state, targetBlock.defaultBlockState());
         AttributeHasBounding upgradeBounding = Attribute.get(upgradeState, AttributeHasBounding.class);
@@ -140,6 +141,7 @@ public final class MeInstallerUpgradeHandler {
                 MePatternSlotTransfer.copyMekanismComponents(oldTile, upgradedTile, targetBlock);
             }
             MePatternSlotTransfer.load(upgradedTile, level.registryAccess(), mePatternSlots);
+            MePatternSlotTransfer.loadMeState(upgradedTile, level.registryAccess(), meState);
             refreshMeLifecycle(upgradedTile);
             if (player instanceof ServerPlayer serverPlayer) {
                 if (upgradedTile instanceof MeAeMachine machine) {

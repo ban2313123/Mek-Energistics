@@ -65,6 +65,16 @@ class MeUpgradeableMachineContractTest {
     }
 
     @Test
+    void chemicalRecipeEnergyLookupDoesNotAssumeRotaryCondensentrator() throws IOException {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/beipuo/mekenergistics/mixin/MekanismChemicalRecipeMachineMeUpgradeMixin.java"));
+
+        assertTrue(source.contains("getEnergyContainers(null)"));
+        assertTrue(source.contains("instanceof MachineEnergyContainer<?> machineEnergyContainer"));
+        assertFalse(source.contains("return ((TileEntityRotaryCondensentrator) tile).getEnergyContainer()"));
+    }
+
+    @Test
     void mainContainerSynchronizesInstalledUpgradeStateToTheClient() throws IOException {
         String source = Files.readString(ELECTRIC_MIXIN);
 
