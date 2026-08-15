@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.upgrade;
 
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInfusionModePolicy;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
@@ -90,7 +91,8 @@ public final class MekanismRecipeUpgradeProfiles {
     private static MeUpgradeMachineProfile<TileEntityMetallurgicInfuser> infuser(
             TileEntityMetallurgicInfuser tile, MeMekanismMachine machine) {
         return profile(tile, machine,
-                candidate -> ((MeAeMachine) candidate).getAeOutputMode().chemicals()
+                candidate -> MeInfusionModePolicy.isConversionMode(
+                                ((MeAeMachine) candidate).getAeOutputMode())
                         ? MeInputLayout.unordered(List.of(MeMachineIoAdapter.itemInput(
                                 ((TileEntityMetallurgicInfuserAccessor) candidate).mekenergistics$getInfusionSlot())))
                         : MeInputLayout.unordered(List.of(

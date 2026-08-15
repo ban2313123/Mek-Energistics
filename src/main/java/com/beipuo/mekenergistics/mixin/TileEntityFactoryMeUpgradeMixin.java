@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.mixin;
 
 import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInfusionModePolicy;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.upgrade.EvolvedAlloyingFactoryUpgradeAccess;
@@ -96,7 +97,7 @@ public abstract class TileEntityFactoryMeUpgradeMixin implements MeUpgradeRecipe
         List<com.beipuo.mekenergistics.blockentity.support.io.MeInputPort> inputs = new ArrayList<>();
         TileEntityFactory<?> tile = mekenergistics$factory();
         FactoryType type = tile.getFactoryType();
-        if (type == FactoryType.INFUSING && getAeOutputMode().chemicals()) {
+        if (type == FactoryType.INFUSING && MeInfusionModePolicy.isConversionMode(getAeOutputMode())) {
             inputs.add(MeMachineIoAdapter.manualItemInput(getExtraSlot()));
         } else {
             inputs.add(MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputSlots));

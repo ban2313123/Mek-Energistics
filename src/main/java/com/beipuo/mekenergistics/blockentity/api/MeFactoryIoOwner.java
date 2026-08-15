@@ -2,6 +2,7 @@ package com.beipuo.mekenergistics.blockentity.api;
 
 import java.util.List;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInfusionModePolicy;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import mekanism.api.inventory.IInventorySlot;
@@ -47,7 +48,7 @@ public interface MeFactoryIoOwner extends MeFactoryAeMachine {
         Objects.requireNonNull(chemicalTank, "chemicalTank");
         Objects.requireNonNull(extraSlot, "extraSlot");
         if (isInfusingFactory()) {
-            if (getAeOutputMode().chemicals()) {
+            if (MeInfusionModePolicy.isConversionMode(getAeOutputMode())) {
                 return MeInputLayout.unordered(List.of(MeMachineIoAdapter.manualItemInput(extraSlot)));
             }
             return MeInputLayout.unordered(List.of(

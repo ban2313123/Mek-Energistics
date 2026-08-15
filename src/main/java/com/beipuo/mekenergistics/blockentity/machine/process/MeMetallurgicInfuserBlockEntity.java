@@ -8,6 +8,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeSmartCableConnection;
 
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInfusionModePolicy;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import appeng.api.networking.crafting.ICraftingProvider;
@@ -72,7 +73,8 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
 
     @Override
     protected boolean onUpdateServer() {
-        return getRecipeAeSupport().processPatternIo(this.aeOutputMode, super.onUpdateServer());
+        return getRecipeAeSupport().processPatternIo(
+                MeInfusionModePolicy.effectiveOutputMode(this.aeOutputMode), super.onUpdateServer());
     }
 
     @NotNull
@@ -84,7 +86,7 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
 
     @Override
     public MeInputLayout getPatternInputLayout() {
-        if (this.aeOutputMode.chemicals()) {
+        if (MeInfusionModePolicy.isConversionMode(this.aeOutputMode)) {
             return MeInputLayout.unordered(java.util.List.of(MeMachineIoAdapter.itemInput(
                     ((TileEntityMetallurgicInfuserAccessor) this).mekenergistics$getInfusionSlot())));
         }
@@ -105,7 +107,11 @@ public class MeMetallurgicInfuserBlockEntity extends TileEntityMetallurgicInfuse
     @Override public MeMekanismMachine getMachine() { return MeMekanismMachine.METALLURGIC_INFUSER; }
     public appeng.api.networking.IManagedGridNode getMainNode() { return getRecipeAeSupport().getMainNode(); }
     @Override public AeOutputMode getAeOutputMode() { return this.aeOutputMode; }
-    @Override public void cycleAeOutputMode() { this.aeOutputMode = this.aeOutputMode.next(); setChanged(); }
+    @Override public void cycleAeOutputMode() {
+        this.aeOutputMode = this.aeOutputMode.next();
+        getRecipeAeSupport().invalidatePatternIoCache();
+        setChanged();
+    }
     @Override public void clearRemoved() { super.clearRemoved(); getRecipeAeSupport().createOnFirstTick(); }
     @Override public void setRemoved() { getRecipeAeSupport().destroyNode(); super.setRemoved(); }
     @Override public void onChunkUnloaded() { getRecipeAeSupport().destroyNode(); super.onChunkUnloaded(); }

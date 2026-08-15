@@ -5,6 +5,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInfusionModePolicy;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import java.util.List;
 import mekanism.api.IContentsListener;
@@ -15,6 +16,8 @@ import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.container.sync.SyncableBoolean;
 import mekanism.common.tile.base.TileEntityMekanism;
+import mekanism.common.tile.factory.TileEntityFactory;
+import mekanism.common.content.blocktype.FactoryType;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -147,7 +150,7 @@ public final class MeUpgradeRecipeMachineRuntime {
             case NONE -> {
             }
         }
-        return active ? this.support.processPatternIo(outputMode(), changed) : changed;
+        return active ? this.support.processPatternIo(effectiveOutputMode(), changed) : changed;
     }
 
     public void createNodeIfActive(boolean active) {
@@ -173,6 +176,13 @@ public final class MeUpgradeRecipeMachineRuntime {
         this.outputMode = outputMode().next();
         this.support.invalidatePatternIoCache();
         this.tile.setChanged();
+    }
+
+    private AeOutputMode effectiveOutputMode() {
+        return this.tile instanceof TileEntityFactory<?> factory
+                        && factory.getFactoryType() == FactoryType.INFUSING
+                ? MeInfusionModePolicy.effectiveOutputMode(outputMode())
+                : outputMode();
     }
 
     public void addTrackers(MekanismContainer container, boolean target) {

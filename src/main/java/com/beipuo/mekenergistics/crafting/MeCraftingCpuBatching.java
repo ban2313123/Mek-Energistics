@@ -38,8 +38,9 @@ public final class MeCraftingCpuBatching {
         }
 
         ExecutingCraftingJobAccessor jobAccess = (ExecutingCraftingJobAccessor) job;
-        long acceptedCopies = owner.maxAcceptedPatternCopies(baseInputs);
-        Batch batch = prepareBatch(details, baseInputs, inventory, jobAccess, energyService, level, acceptedCopies);
+        // Native AE2 CPUs can submit the whole extractable task balance to the persistent smart queue.
+        // Immediate physical capacity is only an admission limit for counted third-party provider APIs.
+        Batch batch = prepareBatch(details, baseInputs, inventory, jobAccess, energyService, level);
         if (batch == null) {
             return pusher.push(provider, details, baseInputs);
         }
@@ -62,7 +63,7 @@ public final class MeCraftingCpuBatching {
     @Nullable
     private static Batch prepareBatch(IPatternDetails details, KeyCounter[] baseInputs,
             ListCraftingInventory inventory, ExecutingCraftingJobAccessor jobAccess,
-            IEnergyService energyService, Level level, long acceptedCopies) {
+            IEnergyService energyService, Level level) {
         if (details == null || baseInputs == null || baseInputs.length == 0 || jobAccess == null) {
             return null;
         }
@@ -72,8 +73,7 @@ public final class MeCraftingCpuBatching {
             return null;
         }
         long remainingTasks = taskProgress.mekenergistics$getValue();
-        long maxExtraCopies = Math.min(maxAdditionalCopies(details, remainingTasks),
-                Math.max(0, acceptedCopies - 1));
+        long maxExtraCopies = maxAdditionalCopies(details, remainingTasks);
         if (maxExtraCopies <= 0) {
             return null;
         }

@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.0.3
+
+### English
+
+#### Fix
+
+- Fixed dedicated-server interface configuration synchronization by registering the server-to-client payload in the common network channel and dispatching it through the payload context, avoiding duplicate client-side registration.
+- Fixed native AE2 crafting CPU smart multiplication being limited to the machine's immediate empty input capacity. Native CPU submissions now batch the complete extractable task balance into the persistent smart queue, while counted third-party provider APIs retain their capacity negotiation.
+- Fixed Metallurgic Infuser reaction and conversion mode routing so item, chemical, and output paths remain consistent after changing the output mode, including the corresponding factory layouts.
+- Fixed cached ME pattern I/O layouts not being invalidated when factory or infuser output modes change.
+
+### 中文
+
+#### 修复
+
+- 修复专用服务端的接口配置同步问题：现在会在公共网络通道注册服务端到客户端的数据包，并通过 payload 上下文派发，避免客户端重复注册。
+- 修复原版 AE2 合成 CPU 的智能倍增被机器当前即时空余输入容量限制的问题。原版 CPU 现在会将当前可提取的完整任务批量提交到持久化智能队列，同时保留第三方计数供应器的容量协商逻辑。
+- 修复冶金灌注机反应模式与转换模式的投料和输出路由，使物品、化学品及产物路径在切换输出模式后保持一致，并同步修正对应工厂布局。
+- 修复工厂或灌注机切换输出模式后，缓存的 ME 样板输入输出布局未及时失效的问题。
+
 ## 3.0.2
 
 ### English

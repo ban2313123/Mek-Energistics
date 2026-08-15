@@ -9,6 +9,7 @@ import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEItemKey;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInfusionModePolicy;
 import com.beipuo.mekenergistics.blockentity.slot.PatternSlotInternalInventory;
 import com.beipuo.mekenergistics.registry.ModBlocks;
 import java.util.List;
@@ -56,7 +57,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             }
             return sendUpdatePacket;
         }
-        AeOutputMode mode = this.aeOutputMode;
+        AeOutputMode mode = effectiveOutputMode();
         boolean changed = drainPatternOutputs(mode) || sendUpdatePacket;
         if (!hasPatternOutputBacklog(mode)) {
             if (this.owner.hasPassiveCraftingUpgrade()) {
@@ -78,16 +79,19 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
 
     public void cycleAeOutputMode() {
         this.aeOutputMode = this.aeOutputMode.next();
+        invalidatePatternIoCache();
         this.owner.saveChanges();
     }
 
     public void cycleAeOutputMode(mekanism.common.lib.transmitter.TransmissionType type) {
         this.aeOutputMode = this.aeOutputMode.toggle(type);
+        invalidatePatternIoCache();
         this.owner.saveChanges();
     }
 
     public void setAeOutputMode(AeOutputMode aeOutputMode) {
         this.aeOutputMode = aeOutputMode;
+        invalidatePatternIoCache();
     }
 
     public InternalInventory getTerminalPatternInventory() {
@@ -109,7 +113,7 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
         if (isInterfaceMode()) {
             return hasInterfaceWork();
         }
-        if (hasPatternOutputBacklog(this.aeOutputMode)) {
+        if (hasPatternOutputBacklog(effectiveOutputMode())) {
             return true;
         }
         return this.smartPatternMultiplication.hasPendingWork();
@@ -127,8 +131,9 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             return hadWork && !hasWork;
         }
         boolean hadWork = hasAeOutputWork();
-        drainPatternOutputs(this.aeOutputMode);
-        if (!hasPatternOutputBacklog(this.aeOutputMode)) {
+        AeOutputMode mode = effectiveOutputMode();
+        drainPatternOutputs(mode);
+        if (!hasPatternOutputBacklog(mode)) {
             processSmartPatternViaAdapter();
         }
         boolean hasWork = hasAeOutputWork();
@@ -136,6 +141,12 @@ public final class MeFactoryAeSupport extends AbstractMeAeSupport<MeFactoryAeMac
             alertAeTicker();
         }
         return hadWork && !hasWork;
+    }
+
+    private AeOutputMode effectiveOutputMode() {
+        return this.owner instanceof MeFactoryIoOwner factory && factory.isInfusingFactory()
+                ? MeInfusionModePolicy.effectiveOutputMode(this.aeOutputMode)
+                : this.aeOutputMode;
     }
 
     @Override

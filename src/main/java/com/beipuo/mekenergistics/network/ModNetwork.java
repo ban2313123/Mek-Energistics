@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.network;
 
 import com.beipuo.mekenergistics.network.packet.CycleAeOutputModePacket;
+import com.beipuo.mekenergistics.network.packet.InterfaceConfigSyncPacket;
 import com.beipuo.mekenergistics.network.packet.RequestInterfaceConfigPacket;
 import com.beipuo.mekenergistics.network.packet.SetAeOutputModePacket;
 import com.beipuo.mekenergistics.network.packet.SetInterfaceConfigPacket;
@@ -20,6 +21,8 @@ public final class ModNetwork {
         registrar.playToServer(CycleAeOutputModePacket.TYPE, CycleAeOutputModePacket.STREAM_CODEC, CycleAeOutputModePacket::handle);
         registrar.playToServer(RequestInterfaceConfigPacket.TYPE, RequestInterfaceConfigPacket.STREAM_CODEC, RequestInterfaceConfigPacket::handle);
         registrar.playToServer(SetInterfaceConfigPacket.TYPE, SetInterfaceConfigPacket.STREAM_CODEC, SetInterfaceConfigPacket::handle);
+        registrar.playToClient(InterfaceConfigSyncPacket.TYPE, InterfaceConfigSyncPacket.STREAM_CODEC,
+                InterfaceConfigSyncPacket::handle);
         registrar.playToServer(SetAeOutputModePacket.TYPE, SetAeOutputModePacket.STREAM_CODEC, SetAeOutputModePacket::handle);
         registrar.playToServer(SetPatternTerminalNamePacket.TYPE, SetPatternTerminalNamePacket.STREAM_CODEC, SetPatternTerminalNamePacket::handle);
         registrar.playToServer(SetPassiveCraftingSettingsPacket.TYPE, SetPassiveCraftingSettingsPacket.STREAM_CODEC, SetPassiveCraftingSettingsPacket::handle);

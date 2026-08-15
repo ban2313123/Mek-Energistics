@@ -3,24 +3,54 @@ package com.beipuo.mekenergistics.crafting;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.crafting.IPatternDetails;
+import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.energy.IEnergyService;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import appeng.crafting.inv.ListCraftingInventory;
+import com.beipuo.mekenergistics.blockentity.api.MeAeSupportOwner;
 import com.beipuo.mekenergistics.mixin.ae2.CraftingTaskProgressAccessor;
 import com.beipuo.mekenergistics.mixin.ae2.ElapsedTimeTrackerAccessor;
 import com.beipuo.mekenergistics.testfixture.FakeKey;
+import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.Test;
 
 class MeCraftingCpuBatchingTest {
+    @Test
+    void nativeCpuBatchingDoesNotClampToImmediateMachineCapacity() {
+        AtomicBoolean pushed = new AtomicBoolean();
+        ICraftingProvider provider = (ICraftingProvider) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[] {MeAeSupportOwner.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "isSmartPatternMultiplicationEnabled" -> true;
+                    case "maxAcceptedPatternCopies" -> throw new AssertionError(
+                            "native CPU batching must not use the counted-provider capacity contract");
+                    case "toString" -> "native-cpu-test-provider";
+                    default -> defaultValue(method.getReturnType());
+                });
+
+        boolean accepted = MeCraftingCpuBatching.pushPattern(
+                provider, new TestPattern(1, 1), new KeyCounter[] {new KeyCounter()},
+                null, null, null, null,
+                (target, details, inputs) -> {
+                    pushed.set(true);
+                    return true;
+                });
+
+        assertTrue(accepted);
+        assertTrue(pushed.get());
+    }
+
     @Test
     void doesNotBatchTheOnlyRemainingTask() {
         TestPattern pattern = new TestPattern(2, 3);
@@ -200,6 +230,19 @@ class MeCraftingCpuBatchingTest {
         KeyCounter counter = new KeyCounter();
         counter.add(key, amount);
         return counter;
+    }
+
+    private static Object defaultValue(Class<?> type) {
+        if (!type.isPrimitive()) {
+            return null;
+        }
+        if (type == boolean.class) {
+            return false;
+        }
+        if (type == char.class) {
+            return '\0';
+        }
+        return 0;
     }
 
     private static KeyCounter emptyCounter() {

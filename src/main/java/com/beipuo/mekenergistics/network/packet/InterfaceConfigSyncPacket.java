@@ -9,6 +9,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Server-to-client snapshot of one machine's ME output interface config. */
 public record InterfaceConfigSyncPacket(BlockPos pos, List<GenericStack> config, List<GenericStack> inventory)
@@ -44,6 +45,16 @@ public record InterfaceConfigSyncPacket(BlockPos pos, List<GenericStack> config,
             inventory.add(GenericStack.readBuffer(buffer));
         }
         return new InterfaceConfigSyncPacket(pos, config, inventory);
+    }
+
+    public static void handle(InterfaceConfigSyncPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> ClientHandler.handle(packet, context));
+    }
+
+    private static final class ClientHandler {
+        private static void handle(InterfaceConfigSyncPacket packet, IPayloadContext context) {
+            com.beipuo.mekenergistics.client.overlay.MeInterfaceWindowOverlay.handleConfigSync(packet, context);
+        }
     }
 
     @Override

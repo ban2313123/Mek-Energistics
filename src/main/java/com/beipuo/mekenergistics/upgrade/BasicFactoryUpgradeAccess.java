@@ -1,6 +1,7 @@
 package com.beipuo.mekenergistics.upgrade;
 
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInfusionModePolicy;
 import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import java.util.ArrayList;
@@ -37,7 +38,8 @@ public interface BasicFactoryUpgradeAccess extends CatalogFactoryUpgradeAdapter 
         }
         IChemicalTank chemicalTank = meUpgradeChemicalTank();
         if (chemicalTank != null) {
-            if (getMachine().factoryType() == FactoryType.INFUSING && getAeOutputMode().chemicals()) {
+            if (getMachine().factoryType() == FactoryType.INFUSING
+                    && MeInfusionModePolicy.isConversionMode(getAeOutputMode())) {
                 return MeInputLayout.unordered(List.of(MeMachineIoAdapter.manualItemInput(extraSlot)));
             }
             return MeInputLayout.unordered(List.of(mainInput,

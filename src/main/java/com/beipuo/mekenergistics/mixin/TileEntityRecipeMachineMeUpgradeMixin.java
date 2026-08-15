@@ -5,6 +5,7 @@ import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.MeRecipeMachineAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
+import com.beipuo.mekenergistics.blockentity.support.io.MeInfusionModePolicy;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
@@ -157,6 +158,7 @@ public abstract class TileEntityRecipeMachineMeUpgradeMixin implements MeUpgrade
     @Override
     public void cycleAeOutputMode() {
         this.mekenergistics$aeOutputMode = getAeOutputMode().next();
+        mekenergistics$support().invalidatePatternIoCache();
         saveChanges();
     }
 
@@ -227,7 +229,10 @@ public abstract class TileEntityRecipeMachineMeUpgradeMixin implements MeUpgrade
             case NONE -> { }
         }
         if (active) {
-            cir.setReturnValue(mekenergistics$support().processPatternIo(getAeOutputMode(), cir.getReturnValue()));
+            AeOutputMode outputMode = mekenergistics$tile() instanceof TileEntityMetallurgicInfuser
+                    ? MeInfusionModePolicy.effectiveOutputMode(getAeOutputMode())
+                    : getAeOutputMode();
+            cir.setReturnValue(mekenergistics$support().processPatternIo(outputMode, cir.getReturnValue()));
         }
     }
 

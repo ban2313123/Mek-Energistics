@@ -41,7 +41,7 @@ class MekanismRecipeUpgradeContractTest {
     @Test
     void preservesInfuserDualItemChemicalMode() throws IOException {
         String source = Files.readString(PROFILES);
-        assertTrue(source.contains("getAeOutputMode().chemicals()"));
+        assertTrue(source.contains("MeInfusionModePolicy.isConversionMode("));
         assertTrue(source.contains("mekenergistics$getInfusionSlot()"));
         assertTrue(source.contains("chemicalInput(candidate.infusionTank)"));
         assertTrue(source.contains("chemicalOutput(candidate.infusionTank)"));

@@ -15,6 +15,8 @@ class MeInterfaceFlowContractTest {
             "src/main/java/com/beipuo/mekenergistics/network/packet/InterfaceConfigSyncPacket.java");
     private static final Path REQUEST = Path.of(
             "src/main/java/com/beipuo/mekenergistics/network/packet/RequestInterfaceConfigPacket.java");
+    private static final Path NETWORK = Path.of(
+            "src/main/java/com/beipuo/mekenergistics/network/ModNetwork.java");
     private static final Path FACTORY_SUPPORT = Path.of(
             "src/main/java/com/beipuo/mekenergistics/blockentity/support/MeFactoryAeSupport.java");
     private static final Path FACTORY_MACHINE = Path.of(
@@ -48,9 +50,11 @@ class MeInterfaceFlowContractTest {
     void serverSynchronizesBothConfigurationAndReadOnlyInventoryRows() throws IOException {
         String sync = Files.readString(SYNC);
         String request = Files.readString(REQUEST);
+        String network = Files.readString(NETWORK);
 
         assertTrue(sync.contains("List<GenericStack> config, List<GenericStack> inventory"));
         assertTrue(request.contains("support.getInterfaceConfig().toList(), support.getInterfaceInventory().toList()"));
+        assertTrue(network.contains("registrar.playToClient(InterfaceConfigSyncPacket.TYPE"));
     }
 
     @Test
