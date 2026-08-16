@@ -91,7 +91,7 @@ jobs:
       - name: Verify required dependency pins in build.gradle
         run: |
           grep -q 'data-energistics-1565514:8613673' build.gradle || { echo "::error::build.gradle is missing the data-energistics-1565514:8613673 pin"; exit 1; }
-          grep -q 'mekanism-more-machine-1275257:7919872' build.gradle || { echo "::error::build.gradle is missing the mekanism-more-machine-1275257:7919872 pin"; exit 1; }
+          grep -q 'mekanism-more-machine-1275257:8659501' build.gradle || { echo "::error::build.gradle is missing the mekanism-more-machine-1275257:8659501 pin"; exit 1; }
 
       - name: Publish to CurseForge
         uses: Kira-NT/mc-publish@v3.3
