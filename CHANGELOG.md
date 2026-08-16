@@ -1,5 +1,29 @@
 # Changelog
 
+## 3.0.4
+
+### English
+
+#### Change
+
+- Updated the Mekanism: MoreMachine compile and runtime dependency to CurseMaven file `8659501` (MekMM `1.4.0`) and raised the optional compatibility minimum to `1.4.0`.
+
+#### Fix
+
+- Adapted MekMM compatibility to its `1.4.0` API changes, including the renamed recipe-viewer type, two-parameter advanced factory generics, and BigStack inventory slots on the Large Antiprotonic Nucleosynthesizer.
+- Added version-gated compatibility for Mekanism Extras and Evolved Mekanism Extras so their `1.4.0` MekMM integrations do not initialize the unsupported Pressing factory path.
+
+### 中文
+
+#### 变更
+
+- 将 Mekanism: MoreMachine 的编译与运行依赖更新为 CurseMaven 文件 `8659501`（MekMM `1.4.0`），并将可选兼容最低版本提高至 `1.4.0`。
+
+#### 修复
+
+- 适配 MekMM `1.4.0` 的 API 变化，包括配方查看器类型重命名、高级工厂双泛型参数，以及大型反质子核合成机的 BigStack 物品槽位。
+- 为 Mekanism Extras 与 Evolved Mekanism Extras 增加按版本限定的兼容处理，避免其 MekMM `1.4.0` 集成初始化不受支持的 Pressing 工厂路径。
+
 ## 3.0.3
 
 ### English
