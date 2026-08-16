@@ -11,6 +11,6 @@ public final class MekanismMoreMachineAdvancedMenuTypes {
 
     public static void register(ContainerTypeDeferredRegister register) {
         register.registerMenu("me_advanced_factory", () -> MekanismContainerType.tile(TileEntityAdvancedFactoryBase.class,
-                (id, inv, tile) -> new MePatternAdvancedFactoryContainer(id, inv, (TileEntityAdvancedFactoryBase<?>) tile)));
+                (id, inv, tile) -> new MePatternAdvancedFactoryContainer(id, inv, (TileEntityAdvancedFactoryBase<?, ?>) tile)));
     }
 }

@@ -60,6 +60,8 @@
     "MekmmFactoryMeUpgradeEnergyMixin",
     "MekExtrasMoreMachineFactoryMeUpgradeMixin",
     "MekExtrasMoreMachineFactoryMeUpgradeEnergyMixin",
+    "MekanismExtrasMekmm140CompatMixin",
+    "EvolvedMekanismExtrasMekmm140CompatMixin",
     "EmExtrasAlloyingFactoryAccessor",
     "EmExtrasFactoryMeUpgradeMixin",
     "EmExtrasFactoryMeUpgradeEnergyMixin",

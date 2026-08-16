@@ -15,6 +15,6 @@ public final class MekanismMoreMachineAdvancedClientScreens {
     public static void register(RegisterMenuScreensEvent event) {
         event.register((MenuType) ModMenuTypes.ME_ADVANCED_FACTORY.get(),
                 (MenuScreens.ScreenConstructor) (menu, inv, title) ->
-                        new MeGuiAdvancedFactory((MekanismTileContainer<TileEntityAdvancedFactoryBase<?>>) (MekanismTileContainer<?>) menu, inv, title));
+                        new MeGuiAdvancedFactory((MekanismTileContainer<TileEntityAdvancedFactoryBase<?, ?>>) (MekanismTileContainer<?>) menu, inv, title));
     }
 }

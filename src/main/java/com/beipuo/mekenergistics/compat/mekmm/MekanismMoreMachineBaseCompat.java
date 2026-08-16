@@ -106,6 +106,7 @@ public final class MekanismMoreMachineBaseCompat {
             case PLANTING_STATION -> registrar.register(machine, MePlantingFactoryBlockEntity::new);
             case CNC_STAMPING -> registrar.register(machine, MeStampingFactoryBlockEntity::new);
             case CNC_LATHING, CNC_ROLLING_MILL -> registrar.register(machine, MeMoreMachineItemStackToItemStackFactoryBlockEntity::new);
+            case PRESSING -> throw new IllegalArgumentException("ME Pressing factories are not registered");
             case REPLICATING -> registrar.register(machine, MeReplicatingFactoryBlockEntity::new);
         };
         return (TileEntityTypeRegistryObject) registered;

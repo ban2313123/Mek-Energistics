@@ -2,7 +2,7 @@ package com.beipuo.mekenergistics.client.jei.compat;
 
 import com.beipuo.mekenergistics.client.jei.MekEnergisticsJeiPlugin;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
-import com.jerry.mekmm.client.recipe_viewer.MMRecipeViewerRecipeType;
+import com.jerry.mekmm.client.recipe_viewer.MoreMachineRecipeViewerRecipeType;
 import mekanism.client.recipe_viewer.type.RecipeViewerRecipeType;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 
@@ -24,16 +24,16 @@ public final class MekanismMoreMachineJeiCompat {
         MekEnergisticsJeiPlugin.registerMachines(registration, RecipeViewerRecipeType.NUCLEOSYNTHESIZING,
                 MeMekanismMachine.LARGE_ANTIPROTONIC_NUCLEOSYNTHESIZER);
         MekEnergisticsJeiPlugin.registerMoreMachineFactories(
-                registration, MMRecipeViewerRecipeType.RECYCLER, "recycling");
+                registration, MoreMachineRecipeViewerRecipeType.RECYCLER, "recycling");
         MekEnergisticsJeiPlugin.registerMoreMachineFactories(
-                registration, MMRecipeViewerRecipeType.PLANTING_STATION, "planting");
+                registration, MoreMachineRecipeViewerRecipeType.PLANTING_STATION, "planting");
         MekEnergisticsJeiPlugin.registerMoreMachineFactories(
-                registration, MMRecipeViewerRecipeType.STAMPING, "stamping");
+                registration, MoreMachineRecipeViewerRecipeType.STAMPING, "stamping");
         MekEnergisticsJeiPlugin.registerMoreMachineFactories(
-                registration, MMRecipeViewerRecipeType.LATHE, "lathing");
+                registration, MoreMachineRecipeViewerRecipeType.LATHE, "lathing");
         MekEnergisticsJeiPlugin.registerMoreMachineFactories(
-                registration, MMRecipeViewerRecipeType.ROLLING_MILL, "rolling_mill");
+                registration, MoreMachineRecipeViewerRecipeType.ROLLING_MILL, "rolling_mill");
         MekEnergisticsJeiPlugin.registerMoreMachineFactories(
-                registration, MMRecipeViewerRecipeType.REPLICATOR, "replicating");
+                registration, MoreMachineRecipeViewerRecipeType.REPLICATOR, "replicating");
     }
 }

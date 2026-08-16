@@ -36,6 +36,7 @@ public final class MekanismExtrasMoreMachineCompat {
             case PLANTING_STATION -> registrar.register(machine, MeExtraPlantingFactoryBlockEntity::new);
             case CNC_STAMPING -> registrar.register(machine, MeExtraStampingFactoryBlockEntity::new);
             case CNC_LATHING, CNC_ROLLING_MILL -> registrar.register(machine, MeExtraMoreMachineItemStackToItemStackFactoryBlockEntity::new);
+            case PRESSING -> throw new IllegalArgumentException("Mekanism Extras does not provide Pressing factories");
             case REPLICATING -> registrar.register(machine, MeExtraReplicatingFactoryBlockEntity::new);
         };
         return (TileEntityTypeRegistryObject) registered;

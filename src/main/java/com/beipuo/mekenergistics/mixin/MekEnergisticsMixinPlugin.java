@@ -101,6 +101,16 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
                     Gate.target("mekanism_extras", MEKEX_MEKMM_FACTORY + "TileEntityExtraMoreMachineFactory")),
             Map.entry(".MekExtrasMoreMachineFactoryMeUpgradeEnergyMixin",
                     Gate.target("mekanism_extras", MEKEX_MEKMM_FACTORY + "TileEntityExtraMoreMachineFactory")),
+            Map.entry(".MekanismExtrasMekmm140CompatMixin", new Gate(
+                    List.of("mekanism_extras", "mekmm"),
+                    List.of(
+                            "com.jerry.mekextras.common.integration.mekmm.registries.ExtraMoreMachineBlockTypes",
+                            "com.jerry.mekextras.common.integration.mekmm.registries.ExtraMoreMachineBlocks"))),
+            Map.entry(".EvolvedMekanismExtrasMekmm140CompatMixin", new Gate(
+                    List.of("emextras", "mekmm"),
+                    List.of(
+                            "io.github.masyumero.emextras.common.integration.mekmm.registries.EMExtraMoreMachineBlockTypes",
+                            "io.github.masyumero.emextras.common.integration.mekmm.registries.EMExtraMoreMachineBlocks"))),
             Map.entry(".EmExtrasAlloyingFactoryAccessor",
                     Gate.target("emextras", EMEX_FACTORY + "TileEntityEMExtraAlloyingFactory")),
             Map.entry(".EmExtrasFactoryMeUpgradeMixin",

@@ -60,7 +60,7 @@ config="${mod_id}.mixins.json"
 [[dependencies.${mod_id}]]
     modId="mekmm"
     type="optional"
-    versionRange="*"
+    versionRange="[1.4.0,)"
     ordering="AFTER"
     side="BOTH"
 
