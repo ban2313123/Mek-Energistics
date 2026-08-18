@@ -1,5 +1,33 @@
 # Changelog
 
+## 3.0.5
+
+### English
+
+#### Change
+
+- Updated the Mekanism Extras compile and runtime dependency to CurseMaven file `8677677` (Mekanism Extras `1.4.1`).
+- Added ME variants for the Absolute, Supreme, Cosmic, and Infinite Pressing factories.
+
+#### Fix
+
+- Adapted Mekanism Extras and Mekanism: MoreMachine compatibility to the `1.4.1` renamed factory classes and updated Mekanism: Advanced Factory signatures and generics.
+- Routed Pressing factory primary, secondary, and tertiary inputs through the AE2 pattern provider and wrapped `TripleItemToItemRecipe` energy handling.
+- Added runtime-gated Mixin accessors and GameTest coverage for the new factory registrations and three-lane input layout.
+
+### 中文
+
+#### 变更
+
+- 将 Mekanism Extras 的编译与运行依赖更新为 CurseMaven 文件 `8677677`（Mekanism Extras `1.4.1`）。
+- 新增 Absolute、Supreme、Cosmic 与 Infinite 四种压制工厂的 ME 变体。
+
+#### 修复
+
+- 适配 Mekanism Extras 与 Mekanism: MoreMachine `1.4.1` 的工厂类重命名，以及 Mekanism: Advanced Factory 构造器签名和泛型变化。
+- 将压制工厂的主输入、secondary 输入和 tertiary 输入接入 AE2 样板供应器，并补充 `TripleItemToItemRecipe` 能量处理包装。
+- 增加按运行时类存在性加载的 Mixin 访问器，并为新工厂注册和三路输入布局增加 GameTest 覆盖。
+
 ## 3.0.4
 
 ### English
