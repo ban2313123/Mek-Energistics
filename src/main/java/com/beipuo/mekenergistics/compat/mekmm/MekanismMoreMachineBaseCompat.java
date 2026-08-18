@@ -297,6 +297,7 @@ public final class MekanismMoreMachineBaseCompat {
             case "STAMPING" -> MoreMachineFactoryType.CNC_STAMPING;
             case "LATHING" -> MoreMachineFactoryType.CNC_LATHING;
             case "ROLLING_MILL" -> MoreMachineFactoryType.CNC_ROLLING_MILL;
+            case "PRESSING" -> MoreMachineFactoryType.PRESSING;
             case "REPLICATING" -> MoreMachineFactoryType.REPLICATING;
             default -> throw new IllegalStateException("Unknown MEKMM factory type: " + name);
         };

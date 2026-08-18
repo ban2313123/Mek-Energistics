@@ -7,6 +7,7 @@ import com.beipuo.mekenergistics.upgrade.BasicFactoryUpgradeAccess;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeRecipeMachineRuntime;
 import com.jerry.mekextras.common.integration.mekmm.tile.factory.TileEntityExtraMoreMachineFactory;
 import com.jerry.mekextras.common.integration.mekmm.tile.factory.TileEntityExtraPlantingFactory;
+import com.jerry.mekextras.common.integration.mekmm.tile.factory.TileEntityExtraPressingFactory;
 import com.jerry.mekextras.common.integration.mekmm.tile.factory.TileEntityExtraReplicatingFactory;
 import java.util.List;
 import mekanism.api.IContentsListener;
@@ -87,6 +88,13 @@ public abstract class MekExtrasMoreMachineFactoryMeUpgradeMixin implements Basic
 
     @Override
     public MeInputLayout mekenergistics$getFactoryInputLayout() {
+        if ((Object) this instanceof TileEntityExtraPressingFactory) {
+            TileEntityExtraPressingFactoryAccessor pressing = (TileEntityExtraPressingFactoryAccessor) (Object) this;
+            return MeInputLayout.lanes(List.of(
+                    List.of(MeMachineIoAdapter.autoSortedFactoryItemInput(this.inputSlots)),
+                    List.of(MeMachineIoAdapter.itemInput(pressing.mekenergistics$getSecondarySlot())),
+                    List.of(MeMachineIoAdapter.itemInput(pressing.mekenergistics$getTertiarySlot()))));
+        }
         IInventorySlot extraSlot = meUpgradeExtraSlot();
         if (extraSlot != null && "stamping".equals(getMachine().machineTypeId())) {
             return MeInputLayout.lanes(List.of(

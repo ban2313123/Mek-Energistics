@@ -4,7 +4,7 @@ import com.beipuo.mekenergistics.blockentity.support.MeFactoryAeSupport;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryIoOwner;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.registry.ModBlocks;
-import com.jerry.mekextras.common.integration.mekmm.tile.factory.TileEntityExtraItemStackToItemStackMoreMachineFactory;
+import com.jerry.mekextras.common.integration.mekmm.tile.factory.TileEntityExtraMoreMachineItemStackToItemStackFactory;
 import java.util.List;
 import mekanism.api.IContentsListener;
 import mekanism.api.inventory.IInventorySlot;
@@ -17,7 +17,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
-public class MeExtraMoreMachineItemStackToItemStackFactoryBlockEntity extends TileEntityExtraItemStackToItemStackMoreMachineFactory implements MeFactoryIoOwner {
+public class MeExtraMoreMachineItemStackToItemStackFactoryBlockEntity extends TileEntityExtraMoreMachineItemStackToItemStackFactory implements MeFactoryIoOwner {
     private final MeMekanismMachine machine;
     private MeFactoryAeSupport aeSupport;
 

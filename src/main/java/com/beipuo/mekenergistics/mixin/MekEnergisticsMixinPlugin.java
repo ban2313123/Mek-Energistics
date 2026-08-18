@@ -58,6 +58,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
     private static final String MEKMM_FACTORY = "com.jerry.mekmm.common.tile.factory.";
     private static final String MEKEX_MEKMM_FACTORY =
             "com.jerry.mekextras.common.integration.mekmm.tile.factory.";
+    private static final String MEKEX_PRESSING_FACTORY =
+            MEKEX_MEKMM_FACTORY + "TileEntityExtraPressingFactory";
     private static final String EMEX_FACTORY = "io.github.masyumero.emextras.common.tile.factory.";
     private static final String EMEX_MEKMM_FACTORY =
             "io.github.masyumero.emextras.common.integration.mekmm.tile.factory.";
@@ -101,6 +103,8 @@ public class MekEnergisticsMixinPlugin implements IMixinConfigPlugin {
                     Gate.target("mekanism_extras", MEKEX_MEKMM_FACTORY + "TileEntityExtraMoreMachineFactory")),
             Map.entry(".MekExtrasMoreMachineFactoryMeUpgradeEnergyMixin",
                     Gate.target("mekanism_extras", MEKEX_MEKMM_FACTORY + "TileEntityExtraMoreMachineFactory")),
+            Map.entry(".TileEntityExtraPressingFactoryAccessor",
+                    Gate.target("mekanism_extras", MEKEX_PRESSING_FACTORY)),
             Map.entry(".MekanismExtrasMekmm140CompatMixin", new Gate(
                     List.of("mekanism_extras", "mekmm"),
                     List.of(

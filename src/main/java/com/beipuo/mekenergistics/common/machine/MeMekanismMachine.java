@@ -95,6 +95,8 @@ public final class MeMekanismMachine implements Comparable<MeMekanismMachine> {
             customType("lathing", "Lathing"),
             customType("rolling_mill", "Rolling Mill"),
             customType("replicating", "Replicating"));
+    private static final List<FactoryTypeSpec> MEKE_PRESSING_TYPE = List.of(
+            customType("pressing", "Pressing"));
     private static final List<FactoryTypeSpec> MEKMM_ADVANCED_TYPES = List.of(
             customType("oxidizing", "Oxidizing"),
             customType("dissolving", "Dissolving"),
@@ -155,6 +157,8 @@ public final class MeMekanismMachine implements Comparable<MeMekanismMachine> {
                 CompatMachineFamily.MEKMM_ADVANCED_FACTORY);
         generateFactories(EXTRA_TIERS, MEKMM_ADVANCED_TYPES,
                 CompatMachineFamily.MEKE_MEKMM_ADVANCED_FACTORY);
+        // Append newly introduced Extras factories so existing machine ordinals remain stable.
+        generateFactories(EXTRA_TIERS, MEKE_PRESSING_TYPE, CompatMachineFamily.MEKE_MEKMM_FACTORY);
     }
 
     private final String name;

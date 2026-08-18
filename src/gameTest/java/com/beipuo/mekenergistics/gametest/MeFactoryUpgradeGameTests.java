@@ -82,6 +82,24 @@ public final class MeFactoryUpgradeGameTests {
     }
 
     @GameTest(template = "empty_3x3x3", timeoutTicks = 4 * SharedConstants.TICKS_PER_SECOND)
+    public static void mekExtrasPressingFactoryUsesThreePatternLanes(GameTestHelper helper) {
+        List<String> roots = List.of("mekanism_extras:absolute_pressing_factory");
+        helper.setBlock(position(0), requiredBlock(roots.getFirst()));
+
+        helper.startSequence()
+                .thenExecuteAfter(1, () -> installUpgrade(helper, roots, roots.getFirst()))
+                .thenExecuteAfter(SharedConstants.TICKS_PER_SECOND + 2, () -> {
+                    TileEntityMekanism tile = requiredTile(helper, roots, roots.getFirst());
+                    MeUpgradeStateOwner owner = (MeUpgradeStateOwner) tile;
+                    helper.assertTrue(owner.getMeUpgradeContainer().isInstalled(MeUpgradeType.PATTERN_PROVIDER),
+                            "pressing factory did not retain the ME upgrade");
+                    helper.assertTrue(((MeUpgradeableMachine) tile).getPatternInputLayout().lanes().size() == 3,
+                            "pressing factory must route primary, secondary and tertiary inputs separately");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty_3x3x3", timeoutTicks = 4 * SharedConstants.TICKS_PER_SECOND)
     public static void combinedMoreMachineFactoriesActivateFromMeUpgradeContainer(GameTestHelper helper) {
         for (int index = 0; index < EMEKE_MORE_MACHINE_FACTORIES.size(); index++) {
             helper.setBlock(position(index), requiredBlock(EMEKE_MORE_MACHINE_FACTORIES.get(index)));

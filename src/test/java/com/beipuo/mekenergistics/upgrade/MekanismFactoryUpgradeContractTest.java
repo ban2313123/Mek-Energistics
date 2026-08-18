@@ -59,7 +59,7 @@ class MekanismFactoryUpgradeContractTest {
         var factories = CompatMachineCatalog.all()
                 .filter(spec -> spec.kind() != CompatMachineKind.MACHINE)
                 .toList();
-        assertEquals(350, factories.size(), "factory coverage changed; update the runtime matrix deliberately");
+        assertEquals(354, factories.size(), "factory coverage changed; update the runtime matrix deliberately");
 
         Set<CompatMachineFamily> catalogFamilies = new HashSet<>();
         factories.forEach(spec -> catalogFamilies.add(spec.family()));

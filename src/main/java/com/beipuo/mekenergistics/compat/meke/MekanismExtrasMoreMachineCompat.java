@@ -5,6 +5,7 @@ import com.beipuo.mekenergistics.block.attribute.MeUpgradeableAttribute;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
 import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraMoreMachineItemStackToItemStackFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraPlantingFactoryBlockEntity;
+import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraPressingFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraRecyclingFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraReplicatingFactoryBlockEntity;
 import com.beipuo.mekenergistics.blockentity.compat.meke.factory.MeExtraStampingFactoryBlockEntity;
@@ -36,7 +37,7 @@ public final class MekanismExtrasMoreMachineCompat {
             case PLANTING_STATION -> registrar.register(machine, MeExtraPlantingFactoryBlockEntity::new);
             case CNC_STAMPING -> registrar.register(machine, MeExtraStampingFactoryBlockEntity::new);
             case CNC_LATHING, CNC_ROLLING_MILL -> registrar.register(machine, MeExtraMoreMachineItemStackToItemStackFactoryBlockEntity::new);
-            case PRESSING -> throw new IllegalArgumentException("Mekanism Extras does not provide Pressing factories");
+            case PRESSING -> registrar.register(machine, MeExtraPressingFactoryBlockEntity::new);
             case REPLICATING -> registrar.register(machine, MeExtraReplicatingFactoryBlockEntity::new);
         };
         return (TileEntityTypeRegistryObject) registered;

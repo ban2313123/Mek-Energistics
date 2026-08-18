@@ -22,7 +22,7 @@ public abstract class MekExtrasAdvancedFactoryMeUpgradeMixin implements Advanced
 
     @Override public TileEntityMekanism meUpgradeTile() { return (TileEntityMekanism) (Object) this; }
     @Override public mekanism.common.capabilities.energy.MachineEnergyContainer<?> meUpgradeEnergyContainer() {
-        return ((TileEntityExtraAdvancedFactoryBase<?>) (Object) this).getEnergyContainer();
+        return ((TileEntityExtraAdvancedFactoryBase<?, ?>) (Object) this).getEnergyContainer();
     }
 
     @Override

@@ -78,6 +78,20 @@ class CompatMachineCatalogTest {
     }
 
     @Test
+    void mekanismExtras141PressingFactoriesUseTheMoreMachineRoute() {
+        CompatMachineSpec pressing = CompatMachineCatalog.get(
+                MeMekanismMachine.valueOf("ABSOLUTE_PRESSING_FACTORY"));
+        assertEquals(CompatMachineFamily.MEKE_MEKMM_FACTORY, pressing.family());
+        assertEquals(CompatRegistrationRoute.MEKE_MEKMM_FACTORY, pressing.route());
+        assertEquals("pressing", pressing.machineTypeId());
+        assertEquals(ResourceLocation.fromNamespaceAndPath(
+                "mekanism_extras", "absolute_pressing_factory"), pressing.sourceBlockId());
+        assertEquals(Set.of(CompatRequirement.MEKE, CompatRequirement.MEKMM,
+                        CompatRequirement.MEKE_MEKMM_FACTORIES),
+                pressing.requirements());
+    }
+
+    @Test
     void providerFamiliesUseOnlyTheirDeclaredRoutes() {
         assertRoutes(CompatMod.MEKANISM, CompatRegistrationRoute.MEKANISM_MACHINE,
                 CompatRegistrationRoute.MEKANISM_FACTORY);

@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public class MePatternExtraAdvancedFactoryContainer extends ExtraAdvancedFactoryContainer implements MePatternQuickMoveContainer {
-    public MePatternExtraAdvancedFactoryContainer(int id, Inventory inv, TileEntityExtraAdvancedFactoryBase<?> tile) {
+    public MePatternExtraAdvancedFactoryContainer(int id, Inventory inv, TileEntityExtraAdvancedFactoryBase<?, ?> tile) {
         super(id, inv, tile);
     }
 

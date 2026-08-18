@@ -172,7 +172,7 @@ dependencies {
     compileOnly "curse.maven:iglee-library-541199:7000755"              // igleelib 1.21.1-1.2.7
     compileOnly "curse.maven:evolved-mekanism-1230085:7599592"          // evolvedmekanism 1.2.1-fix3
     compileOnly "curse.maven:evolved-mekanism-extras-1268159:8118026"   // emextras 1.2.1
-    compileOnly "curse.maven:mekanism-extras-1026040:7921191"           // mekanism_extras 1.4.0
+    compileOnly "curse.maven:mekanism-extras-1026040:8677677"           // mekanism_extras 1.4.1
     compileOnly "curse.maven:mekanism-more-machine-1275257:8659501"     // mekmm 1.4.0, also ships the meklm large machines
     compileOnly "curse.maven:jade-324717:7545219"                       // jade 15.10.5+neoforge
     compileOnly "curse.maven:glodium-957920:5821676"                    // glodium 1.21-2.2-neoforge
@@ -190,7 +190,7 @@ dependencies {
     localRuntime "curse.maven:iglee-library-541199:7000755"             // igleelib 1.21.1-1.2.7
     localRuntime "curse.maven:evolved-mekanism-1230085:7599592"         // evolvedmekanism 1.2.1-fix3
     localRuntime "curse.maven:evolved-mekanism-extras-1268159:8118026"  // emextras 1.2.1
-    localRuntime "curse.maven:mekanism-extras-1026040:7921191"          // mekanism_extras 1.4.0
+    localRuntime "curse.maven:mekanism-extras-1026040:8677677"          // mekanism_extras 1.4.1
     localRuntime "curse.maven:mekanism-more-machine-1275257:8659501"    // mekmm 1.4.0
     localRuntime "curse.maven:productivebees-377897:8022994"            // productivebees 1.21.1-13.13.5
     localRuntime "curse.maven:jade-324717:7545219"                      // jade 15.10.5+neoforge

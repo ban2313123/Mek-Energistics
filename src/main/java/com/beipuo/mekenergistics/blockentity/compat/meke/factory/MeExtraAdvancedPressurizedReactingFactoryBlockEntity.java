@@ -22,7 +22,8 @@ public class MeExtraAdvancedPressurizedReactingFactoryBlockEntity extends TileEn
     private MeFactoryAeSupport aeSupport;
 
     public MeExtraAdvancedPressurizedReactingFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
-        super(ModBlocks.getMachineBlock(machine), pos, state);
+        super(ModBlocks.getMachineBlock(machine), pos, state,
+                com.beipuo.mekenergistics.compat.mekmm.MekanismMoreMachineAdvancedCompat.advancedFactoryType(machine));
         this.machine = machine;
     }
 

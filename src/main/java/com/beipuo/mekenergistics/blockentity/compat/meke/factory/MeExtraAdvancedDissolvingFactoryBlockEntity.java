@@ -25,7 +25,8 @@ public class MeExtraAdvancedDissolvingFactoryBlockEntity extends TileEntityExtra
     private MeFactoryAeSupport aeSupport;
 
     public MeExtraAdvancedDissolvingFactoryBlockEntity(MeMekanismMachine machine, BlockPos pos, BlockState state) {
-        super(ModBlocks.getMachineBlock(machine), pos, state);
+        super(ModBlocks.getMachineBlock(machine), pos, state,
+                com.beipuo.mekenergistics.compat.mekmm.MekanismMoreMachineAdvancedCompat.advancedFactoryType(machine));
         this.machine = machine;
     }
 

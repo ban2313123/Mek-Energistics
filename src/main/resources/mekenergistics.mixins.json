@@ -23,6 +23,7 @@
     "TileEntityMetallurgicInfuserAccessor",
     "TileEntityItemStackChemicalToItemStackFactoryAccessor",
     "TileEntityExtraDissolvingFactoryAccessor",
+    "TileEntityExtraPressingFactoryAccessor",
     "TileEntityEMExtraDissolvingFactoryAccessor",
     "TileEntityAlloyerAccessor",
     "TileEntitySolidifierAccessor",
