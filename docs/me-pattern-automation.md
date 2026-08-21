@@ -128,7 +128,7 @@ For optional integration, pick one:
 [[dependencies.mymod]]
     modId="mekenergistics"
     type="optional"
-    versionRange="[3.0.5,)"
+    versionRange="[3.0.6,)"
     ordering="NONE"
     side="BOTH"
 ```

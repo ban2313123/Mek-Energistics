@@ -128,7 +128,7 @@ Tile 类如果直接 `implements IMePatternAutomationHost`，没有 Mek Energist
 [[dependencies.mymod]]
     modId="mekenergistics"
     type="optional"
-    versionRange="[3.0.5,)"
+    versionRange="[3.0.6,)"
     ordering="NONE"
     side="BOTH"
 ```

@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.0.6
+
+### English
+
+#### Change
+
+- Adapted Mekanism Magic original machines to ME pattern-provider upgrades through `IMekanismMagicAutomation`, and registered `IN_WORLD_GRID_NODE_HOST` so NeoForge AE2 can discover the hosts.
+- Added the first-party ME pattern-automation SPI (`IMePatternAutomationHost` / `MePatternAutomation`) so third-party Mekanism machines can take pattern-provider upgrades on their original blocks, with English and Chinese author documentation.
+
+### 中文
+
+#### 变更
+
+- 通过 `IMekanismMagicAutomation` 为 Mekanism Magic 原机接入 ME 样板供应，并注册 `IN_WORLD_GRID_NODE_HOST`，使 NeoForge AE2 能发现主机。
+- 提供 ME 样板自动化公共接口（`IMePatternAutomationHost` / `MePatternAutomation`），第三方 Mekanism 机器可在原方块上接入样板供应器升级，并附中英文作者文档。
+
 ## 3.0.5
 
 ### English
@@ -8,8 +24,6 @@
 
 - Updated the Mekanism Extras compile and runtime dependency to CurseMaven file `8677677` (Mekanism Extras `1.4.1`).
 - Added ME variants for the Absolute, Supreme, Cosmic, and Infinite Pressing factories.
-- Added the first-party ME pattern-automation SPI (`IMePatternAutomationHost` / `MePatternAutomation`) so third-party Mekanism machines can take pattern-provider upgrades on their original blocks. Author guide: `docs/me-pattern-automation.md`.
-- Adapted Mekanism Magic machines through that SPI mapping (dimensional miner excluded) and registered `IN_WORLD_GRID_NODE_HOST` so AE cables discover the same hosts.
 
 #### Fix
 
@@ -23,8 +37,6 @@
 
 - 将 Mekanism Extras 的编译与运行依赖更新为 CurseMaven 文件 `8677677`（Mekanism Extras `1.4.1`）。
 - 新增 Absolute、Supreme、Cosmic 与 Infinite 四种压制工厂的 ME 变体。
-- 新增 ME 样板自动化公共接口（`IMePatternAutomationHost` / `MePatternAutomation`），第三方 Mekanism 机器可在原方块上接入样板供应器升级。作者文档：`docs/me-pattern-automation.zh.md`。
-- 通过该接口映射适配 Mekanism Magic 机器（排除次元采矿机），并注册 `IN_WORLD_GRID_NODE_HOST`，使 AE 线缆能发现同一批主机。
 
 #### 修复
 
