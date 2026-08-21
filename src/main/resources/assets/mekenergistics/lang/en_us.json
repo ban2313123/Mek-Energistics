@@ -798,8 +798,6 @@
   "container.mekenergistics.me_infinite_multiversal_planting_factory": "ME Infinite Multiversal Planting Factory",
   "block.mekenergistics.me_infinite_multiversal_replicating_factory": "ME Infinite Multiversal Replicating Factory",
   "container.mekenergistics.me_infinite_multiversal_replicating_factory": "ME Infinite Multiversal Replicating Factory",
-  "block.mekenergistics.me_chemical_replicator": "ME Chemical Replicator",
-  "container.mekenergistics.me_chemical_replicator": "ME Chemical Replicator",
   "block.mekenergistics.me_fluid_replicator": "ME Fluid Replicator",
   "container.mekenergistics.me_fluid_replicator": "ME Fluid Replicator",
   "block.mekenergistics.me_absolute_overclocked_washing_factory": "ME Absolute Overclocked Washing Factory",
@@ -871,12 +869,6 @@
   "message.mekenergistics.upgrade_uninstall_failed.not_installed": "That upgrade is not installed",
   "message.mekenergistics.upgrade_uninstall_failed.guards": "Cannot uninstall: clear the pattern inventory and uninstall the passive crafting upgrade first"
 ,
-  "gui.mekenergistics.me_upgrades.title": "ME Upgrades",
-  "gui.mekenergistics.me_upgrades.button": "ME Upgrades",
-  "gui.mekenergistics.me_upgrades.uninstall": "Uninstall",
-  "gui.mekenergistics.me_upgrades.empty": "No ME upgrades installed",
-  "message.mekenergistics.upgrade_uninstall_failed.not_installed": "That upgrade is not installed",
-  "message.mekenergistics.upgrade_uninstall_failed.guards": "Cannot uninstall: clear the pattern inventory and uninstall the passive crafting upgrade first",
   "pack.mekenergistics.mek_pack.title": "Mek Energistics Upgrade Card Textures",
   "pack.mekenergistics.mek_pack.desc": "Author: Fish_Dian_"
 }

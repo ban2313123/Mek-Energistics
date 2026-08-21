@@ -715,13 +715,6 @@
   "gui.mekenergistics.me_upgrades.uninstall": "Снять",
   "gui.mekenergistics.me_upgrades.empty": "ME улучшения не установлены",
   "message.mekenergistics.upgrade_uninstall_failed.not_installed": "Это улучшение не установлено",
-  "message.mekenergistics.upgrade_uninstall_failed.guards": "Нельзя снять: очистите инвентарь шаблонов и сначала снимите улучшение пассивного крафта"
-,
-  "gui.mekenergistics.me_upgrades.title": "ME улучшения",
-  "gui.mekenergistics.me_upgrades.button": "ME улучшения",
-  "gui.mekenergistics.me_upgrades.uninstall": "Снять",
-  "gui.mekenergistics.me_upgrades.empty": "ME улучшения не установлены",
-  "message.mekenergistics.upgrade_uninstall_failed.not_installed": "Это улучшение не установлено",
   "message.mekenergistics.upgrade_uninstall_failed.guards": "Нельзя снять: очистите инвентарь шаблонов и сначала снимите улучшение пассивного крафта",
   "pack.mekenergistics.mek_pack.title": "Mek Energistics Upgrade Card Textures",
   "pack.mekenergistics.mek_pack.desc": "Author: Fish_Dian_"
