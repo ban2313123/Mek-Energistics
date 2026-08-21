@@ -88,7 +88,7 @@ class MeMekanismMachineDefinitionTest {
     @Test
     void everyDeclarationHasCompleteIntrinsicMetadata() {
         MeMekanismMachine[] machines = MeMekanismMachine.values();
-        assertEquals(406, machines.length);
+        assertEquals(407, machines.length);
         for (int ordinal = 0; ordinal < machines.length; ordinal++) {
             MeMekanismMachine machine = machines[ordinal];
             assertSame(machine, MeMekanismMachine.valueOf(machine.name()), machine.name());
@@ -131,7 +131,7 @@ class MeMekanismMachineDefinitionTest {
         String digest = HexFormat.of().formatHex(
                 MessageDigest.getInstance("SHA-256").digest(names.getBytes(StandardCharsets.UTF_8)));
 
-        assertEquals("744fb5065a4a1f14d4b77eb2b759fa4a061a984dfc3e78a68342a1e4b85ea2d0", digest);
+        assertEquals("b9ec9933ea6cca3dc26f7adda658ac915b976b716d9a74b4cb6f86d76297b40e", digest);
     }
 
     @Test

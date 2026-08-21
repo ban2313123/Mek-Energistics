@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineKind;
 import com.beipuo.mekenergistics.compat.catalog.CompatMod;
 import java.io.IOException;
@@ -76,9 +77,11 @@ class MekanismMachineFallbackTest {
 
     private static List<MeMekanismMachine> mekanismMachines() {
         // Intrinsic metadata only: availability filtering needs a running game.
+        // Identities without an ME block variant never enter the provider registration path.
         return java.util.Arrays.stream(MeMekanismMachine.values())
                 .filter(machine -> machine.provider() == CompatMod.MEKANISM)
                 .filter(machine -> machine.machineKind() == CompatMachineKind.MACHINE)
+                .filter(CompatMachineCatalog::hasMeVariant)
                 .collect(Collectors.toList());
     }
 

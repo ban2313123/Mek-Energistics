@@ -85,6 +85,7 @@
     "AdvancedFactoryMeUpgradeEnergyMixin",
     "MekmmSimpleRecipeMachineMeUpgradeMixin",
     "MekmmComplexRecipeMachineMeUpgradeMixin",
+    "MekanismMagicMachineMeUpgradeMixin",
     "MeklmLargeRecipeMachineMeUpgradeMixin",
     "EnrichmentChamberItemContainerCreatorMixin",
     "MekanismContainerPatternQuickMoveMixin",

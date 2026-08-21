@@ -69,6 +69,10 @@ public final class OptionalCompatClasses {
         return isLoaded("appflux");
     }
 
+    public static boolean hasMekanismMagic() {
+        return isLoaded("mekanism_magic");
+    }
+
     /**
      * Reflection results keyed by tier id. These resolve to constants, but the lookups sit on
      * tooltip and GUI layout paths that re-ask every frame, so each tier is resolved once.

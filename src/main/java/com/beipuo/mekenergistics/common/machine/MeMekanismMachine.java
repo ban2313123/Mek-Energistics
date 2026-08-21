@@ -161,6 +161,15 @@ public final class MeMekanismMachine implements Comparable<MeMekanismMachine> {
         generateFactories(EXTRA_TIERS, MEKE_PRESSING_TYPE, CompatMachineFamily.MEKE_MEKMM_FACTORY);
     }
 
+    /**
+     * Identity for Mekanism Magic tiles adapted through {@code IMekanismMagicAutomation}.
+     * There is no ME block variant; Magic machines stay on their original blocks and receive ME
+     * cards through the upgrade path only. Declared after factory generation so legacy ordinals
+     * stay stable.
+     */
+    public static final MeMekanismMachine MEKANISM_MAGIC_AUTOMATION = register(
+            "MEKANISM_MAGIC_AUTOMATION", (FactoryType) null, "magic_automation", "ME Mekanism Magic Automation");
+
     private final String name;
     private final int ordinal;
     private final MeMachineDefinition definition;
@@ -313,6 +322,7 @@ public final class MeMekanismMachine implements Comparable<MeMekanismMachine> {
         DIMENSIONAL_STABILIZER,
         OREDICTIONIFICATOR,
         MODIFICATION_STATION,
+        MEKANISM_MAGIC_AUTOMATION,
         RECYCLER,
         PLANTING_STATION,
         CNC_STAMPER,

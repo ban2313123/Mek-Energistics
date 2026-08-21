@@ -98,3 +98,10 @@ config="${mod_id}.mixins.json"
     versionRange="*"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="mekanism_magic"
+    type="optional"
+    versionRange="*"
+    ordering="AFTER"
+    side="BOTH"

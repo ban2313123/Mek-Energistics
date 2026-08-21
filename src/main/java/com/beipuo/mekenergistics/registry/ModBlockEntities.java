@@ -11,7 +11,10 @@ import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.provider.CompatMachineProviders;
 import com.beipuo.mekenergistics.registry.machine.MachineFactory;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeSupportRegistrar;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.registration.impl.TileEntityTypeDeferredRegister;
@@ -77,10 +80,15 @@ public final class ModBlockEntities {
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        Block[] upgradeTargets = CompatMachineCatalog.available()
+        // NeoForge AE2 resolves cable hosts only via AECapabilities.IN_WORLD_GRID_NODE_HOST
+        // (GridHelper.getNodeHost). Mixin-implemented IInWorldGridNodeHost is not enough.
+        List<Block> upgradeTargetList = new ArrayList<>();
+        CompatMachineCatalog.available()
                 .map(spec -> BuiltInRegistries.BLOCK.get(spec.sourceBlockId()))
                 .filter(block -> block != null && block != net.minecraft.world.level.block.Blocks.AIR)
-                .toArray(Block[]::new);
+                .forEach(upgradeTargetList::add);
+        upgradeTargetList.addAll(MeUpgradeSupportRegistrar.magicPatternUpgradeBlocks());
+        Block[] upgradeTargets = upgradeTargetList.toArray(Block[]::new);
         if (upgradeTargets.length > 0) {
             event.registerBlock(AECapabilities.IN_WORLD_GRID_NODE_HOST,
                     (level, pos, state, blockEntity, context) ->

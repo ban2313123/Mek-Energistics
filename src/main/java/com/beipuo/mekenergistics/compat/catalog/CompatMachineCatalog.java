@@ -33,7 +33,9 @@ public final class CompatMachineCatalog {
             MeMekanismMachine.DIMENSIONAL_STABILIZER,
             MeMekanismMachine.OREDICTIONIFICATOR,
             MeMekanismMachine.MODIFICATION_STATION,
-            MeMekanismMachine.SEISMIC_VIBRATOR);
+            MeMekanismMachine.SEISMIC_VIBRATOR,
+            // Magic machines keep their original blocks and only accept ME cards via upgrades.
+            MeMekanismMachine.MEKANISM_MAGIC_AUTOMATION);
 
     private CompatMachineCatalog() {
     }
