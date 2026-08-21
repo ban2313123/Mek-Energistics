@@ -876,5 +876,7 @@
   "gui.mekenergistics.me_upgrades.uninstall": "Uninstall",
   "gui.mekenergistics.me_upgrades.empty": "No ME upgrades installed",
   "message.mekenergistics.upgrade_uninstall_failed.not_installed": "That upgrade is not installed",
-  "message.mekenergistics.upgrade_uninstall_failed.guards": "Cannot uninstall: clear the pattern inventory and uninstall the passive crafting upgrade first"
+  "message.mekenergistics.upgrade_uninstall_failed.guards": "Cannot uninstall: clear the pattern inventory and uninstall the passive crafting upgrade first",
+  "pack.mekenergistics.mek_pack.title": "Mek Energistics Upgrade Card Textures",
+  "pack.mekenergistics.mek_pack.desc": "Author: Fish_Dian_"
 }

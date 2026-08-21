@@ -12,6 +12,7 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 public final class MekEnergisticsClient {
     public MekEnergisticsClient(IEventBus modEventBus, ModContainer container) {
         ClientSetup.register(modEventBus);
+        MeBuiltinPacks.register(modEventBus);
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
 }

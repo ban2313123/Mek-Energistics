@@ -876,5 +876,7 @@
   "gui.mekenergistics.me_upgrades.uninstall": "卸载",
   "gui.mekenergistics.me_upgrades.empty": "未安装 ME 升级",
   "message.mekenergistics.upgrade_uninstall_failed.not_installed": "该升级未安装",
-  "message.mekenergistics.upgrade_uninstall_failed.guards": "无法卸载：请先清空样板库存并卸载被动合成升级"
+  "message.mekenergistics.upgrade_uninstall_failed.guards": "无法卸载：请先清空样板库存并卸载被动合成升级",
+  "pack.mekenergistics.mek_pack.title": "Mek Energistics 升级卡材质",
+  "pack.mekenergistics.mek_pack.desc": "作者：Fish_Dian_"
 }
