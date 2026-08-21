@@ -87,7 +87,7 @@ public final class ModBlockEntities {
                 .map(spec -> BuiltInRegistries.BLOCK.get(spec.sourceBlockId()))
                 .filter(block -> block != null && block != net.minecraft.world.level.block.Blocks.AIR)
                 .forEach(upgradeTargetList::add);
-        upgradeTargetList.addAll(MeUpgradeSupportRegistrar.magicPatternUpgradeBlocks());
+        upgradeTargetList.addAll(MeUpgradeSupportRegistrar.externalPatternUpgradeBlocks());
         Block[] upgradeTargets = upgradeTargetList.toArray(Block[]::new);
         if (upgradeTargets.length > 0) {
             event.registerBlock(AECapabilities.IN_WORLD_GRID_NODE_HOST,

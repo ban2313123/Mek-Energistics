@@ -1,49 +1,25 @@
 package com.beipuo.mekenergistics.compat.magic;
 
+import com.beipuo.mekenergistics.api.upgrade.IMePatternAutomationHost;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
-import com.beipuo.mekenergistics.blockentity.support.io.MeMachineIoAdapter;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
-import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
+import com.beipuo.mekenergistics.upgrade.MePatternAutomationProfiles;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
-import java.util.ArrayList;
 import java.util.List;
+import mekanism.api.energy.IEnergyContainer;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.common.tile.base.TileEntityMekanism;
-import net.minecraft.world.item.ItemStack;
 
 /**
- * Builds ME-upgrade profiles from Mekanism Magic's published automation surface.
- *
- * <p>Pattern inputs/outputs come from {@code IMekanismMagicAutomation}. Persistent setup slots and
- * manual-only slots are intentionally omitted so AE patterns never encode chalk, spirit sources, or
- * ritual selectors.</p>
+ * Magic-facing facade over {@link MePatternAutomationProfiles}. Existing call sites and tests keep
+ * these entry points; mapping is the generic SPI path plus {@link MagicPatternAutomationBridge}.
  */
 public final class MekanismMagicUpgradeProfiles {
     private MekanismMagicUpgradeProfiles() {
     }
 
     public static MeUpgradeMachineProfile<?> forTile(TileEntityMekanism tile) {
-        if (!MekanismMagicAutomationAccess.isMagicAutomation(tile)
-                || !MekanismMagicAutomationAccess.supportsPatternAutomation(tile)) {
-            return null;
-        }
-        return profile(tile);
-    }
-
-    private static <TILE extends TileEntityMekanism> MeUpgradeMachineProfile<TILE> profile(TILE tile) {
-        return new MeUpgradeMachineProfile<>(
-                candidate -> candidate == tile
-                        && MekanismMagicAutomationAccess.isMagicAutomation(candidate)
-                        && MekanismMagicAutomationAccess.supportsPatternAutomation(candidate),
-                MekanismMagicUpgradeProfiles::inputLayout,
-                MekanismMagicUpgradeProfiles::outputPorts,
-                MeMekanismMachine.MEKANISM_MAGIC_AUTOMATION,
-                candidate -> new ItemStack(candidate.getBlockState().getBlock()),
-                candidate -> candidate.getBlockState().getBlock().getName());
-    }
-
-    private static MeInputLayout inputLayout(TileEntityMekanism tile) {
-        return inputLayoutFor(MekanismMagicAutomationAccess.patternInputs(tile), isSpiritFactory(tile));
+        return MePatternAutomationProfiles.forTile(tile);
     }
 
     /**
@@ -51,31 +27,11 @@ public final class MekanismMagicUpgradeProfiles {
      * unit tests can drive the real shipped function without constructing a Mekanism tile.
      */
     static MeInputLayout inputLayoutFor(List<IInventorySlot> slots, boolean spiritFactory) {
-        if (slots == null || slots.isEmpty()) {
-            return MeInputLayout.empty();
-        }
-        // Spirit factories expose one identical process input per lane. Group them so multi-count
-        // recipes are not split across lanes the way Mekanism's own factory redistribution expects.
-        // Ritual machines keep distinct ports because activation/sacrifice are role-specific slots.
-        if (slots.size() > 1 && spiritFactory) {
-            return MeInputLayout.unordered(List.of(MeMachineIoAdapter.autoSortedFactoryItemInput(slots)));
-        }
-        List<com.beipuo.mekenergistics.blockentity.support.io.MeInputPort> ports = new ArrayList<>(slots.size());
-        for (IInventorySlot slot : slots) {
-            ports.add(MeMachineIoAdapter.itemInput(slot));
-        }
-        return MeInputLayout.unordered(ports);
+        return MePatternAutomationProfiles.inputLayout(new SlotOnlyHost(slots, List.of(), spiritFactory, true));
     }
 
     static List<? extends MeOutputPort> outputPortsFor(List<IInventorySlot> slots) {
-        if (slots == null || slots.isEmpty()) {
-            return List.of();
-        }
-        List<MeOutputPort> ports = new ArrayList<>(slots.size());
-        for (IInventorySlot slot : slots) {
-            ports.add(MeMachineIoAdapter.itemOutput(slot));
-        }
-        return List.copyOf(ports);
+        return MePatternAutomationProfiles.outputPorts(new SlotOnlyHost(List.of(), slots, false, true));
     }
 
     static boolean isSpiritFactory(Object tile) {
@@ -86,7 +42,43 @@ public final class MekanismMagicUpgradeProfiles {
         return className.endsWith("SpiritFactoryBlockEntity") || className.contains("SpiritFactory");
     }
 
-    private static List<? extends MeOutputPort> outputPorts(TileEntityMekanism tile) {
-        return outputPortsFor(MekanismMagicAutomationAccess.patternOutputs(tile));
+    private static final class SlotOnlyHost implements IMePatternAutomationHost {
+        private final List<IInventorySlot> inputs;
+        private final List<IInventorySlot> outputs;
+        private final boolean group;
+        private final boolean enabled;
+
+        private SlotOnlyHost(List<IInventorySlot> inputs, List<IInventorySlot> outputs, boolean group,
+                boolean enabled) {
+            this.inputs = inputs == null ? List.of() : inputs;
+            this.outputs = outputs == null ? List.of() : outputs;
+            this.group = group;
+            this.enabled = enabled;
+        }
+
+        @Override
+        public boolean meSupportsPatternAutomation() {
+            return this.enabled;
+        }
+
+        @Override
+        public List<IInventorySlot> mePatternItemInputs() {
+            return this.inputs;
+        }
+
+        @Override
+        public List<IInventorySlot> mePatternItemOutputs() {
+            return this.outputs;
+        }
+
+        @Override
+        public IEnergyContainer meEnergyContainer() {
+            return null;
+        }
+
+        @Override
+        public boolean meGroupParallelItemInputs() {
+            return this.group;
+        }
     }
 }

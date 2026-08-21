@@ -23,6 +23,8 @@ public final class MekanismMagicAutomationAccess {
     private static @Nullable Method supportsPatternAutomation;
     private static @Nullable Method patternInputs;
     private static @Nullable Method patternOutputs;
+    private static @Nullable Method persistentInputs;
+    private static @Nullable Method manualOnlySlots;
     private static @Nullable Method energyContainer;
     private static @Nullable Method isBusy;
 
@@ -48,6 +50,14 @@ public final class MekanismMagicAutomationAccess {
 
     public static List<IInventorySlot> patternOutputs(Object tile) {
         return inventorySlots(invoke(patternOutputs, tile));
+    }
+
+    public static List<IInventorySlot> persistentInputs(Object tile) {
+        return inventorySlots(invoke(persistentInputs, tile));
+    }
+
+    public static List<IInventorySlot> manualOnlySlots(Object tile) {
+        return inventorySlots(invoke(manualOnlySlots, tile));
     }
 
     public static @Nullable IEnergyContainer energyContainer(Object tile) {
@@ -101,6 +111,8 @@ public final class MekanismMagicAutomationAccess {
             supportsPatternAutomation = api.getMethod("mekanismMagicSupportsPatternAutomation");
             patternInputs = api.getMethod("mekanismMagicPatternInputs");
             patternOutputs = api.getMethod("mekanismMagicPatternOutputs");
+            persistentInputs = optionalMethod(api, "mekanismMagicPersistentInputs");
+            manualOnlySlots = optionalMethod(api, "mekanismMagicManualOnlySlots");
             energyContainer = api.getMethod("mekanismMagicEnergyContainer");
             isBusy = api.getMethod("mekanismMagicIsBusy");
         } catch (ReflectiveOperationException | RuntimeException ignored) {
@@ -113,8 +125,19 @@ public final class MekanismMagicAutomationAccess {
         supportsPatternAutomation = null;
         patternInputs = null;
         patternOutputs = null;
+        persistentInputs = null;
+        manualOnlySlots = null;
         energyContainer = null;
         isBusy = null;
+    }
+
+    @Nullable
+    private static Method optionalMethod(Class<?> api, String name) {
+        try {
+            return api.getMethod(name);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
     }
 
     /** Test seam: installs a resolved API class without requiring the Magic mod loader entry. */

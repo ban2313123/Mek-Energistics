@@ -134,7 +134,16 @@ public final class MeUpgradeRecipeMachineRuntime {
         return active ? this.support.wrapRecipeEnergy(energy, recipe) : recipe;
     }
 
+    private long lastProcessTick = Long.MIN_VALUE;
+
     public boolean tick(boolean active, boolean changed) {
+        long gameTime = this.tile.getLevel() != null ? this.tile.getLevel().getGameTime() : Long.MIN_VALUE;
+        if (gameTime != Long.MIN_VALUE && gameTime == this.lastProcessTick) {
+            return changed;
+        }
+        if (gameTime != Long.MIN_VALUE) {
+            this.lastProcessTick = gameTime;
+        }
         switch (this.state.transitionTo(active)) {
             case ACTIVATE -> {
                 syncOwner();

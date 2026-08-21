@@ -4,17 +4,14 @@ import com.beipuo.mekenergistics.blockentity.api.AeOutputMode;
 import com.beipuo.mekenergistics.blockentity.support.AbstractMeAeSupport;
 import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
-import com.beipuo.mekenergistics.compat.magic.MekanismMagicUpgradeProfiles;
+import com.beipuo.mekenergistics.upgrade.MePatternAutomationProfiles;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeContainer;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeMachineProfile;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeRecipeMachineAdapter;
 import com.beipuo.mekenergistics.upgrade.MeUpgradeRecipeMachineRuntime;
 import com.example.mekanismmagic.blockentity.NativeMagicMachineBlockEntity;
 import java.util.List;
-import mekanism.api.IContentsListener;
-import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.tile.base.TileEntityMekanism;
-import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -54,7 +51,7 @@ public abstract class MekanismMagicMachineMeUpgradeMixin implements MeUpgradeRec
 
     @Override
     public MeUpgradeMachineProfile<?> getMeUpgradeProfile() {
-        return MekanismMagicUpgradeProfiles.forTile(mekenergistics$tile());
+        return MePatternAutomationProfiles.forTile(mekenergistics$tile());
     }
 
     @Override
@@ -85,12 +82,6 @@ public abstract class MekanismMagicMachineMeUpgradeMixin implements MeUpgradeRec
     @Override
     public List<? extends MeOutputPort> getPatternOutputPorts() {
         return MeUpgradeRecipeMachineAdapter.super.getPatternOutputPorts();
-    }
-
-    @Inject(method = "getInitialInventory", at = @At("RETURN"), cancellable = true)
-    private void mekenergistics$addPatternSlots(IContentsListener listener,
-            CallbackInfoReturnable<@NotNull IInventorySlotHolder> cir) {
-        cir.setReturnValue(addMePatternSlots(cir.getReturnValue(), listener));
     }
 
     @Inject(method = "onUpdateServer", at = @At("RETURN"), cancellable = true)

@@ -1,5 +1,6 @@
 package com.beipuo.mekenergistics.upgrade;
 
+import com.beipuo.mekenergistics.api.upgrade.MePatternAutomation;
 import com.beipuo.mekenergistics.compat.OptionalCompatClasses;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.registry.ModBlocks;
@@ -29,9 +30,20 @@ public final class MeUpgradeSupportRegistrar {
     }
 
     /**
-     * Magic blocks that accept ME pattern cards. Shared with AE capability registration so cables
-     * can discover the same hosts NeoForge AE2 finds only through
-     * {@code AECapabilities.IN_WORLD_GRID_NODE_HOST}.
+     * External blocks that accept ME pattern cards: SPI-registered hosts plus discovered Magic
+     * machines. Shared with AE capability registration so cables can discover the same hosts
+     * NeoForge AE2 finds only through {@code AECapabilities.IN_WORLD_GRID_NODE_HOST}.
+     */
+    public static List<Block> externalPatternUpgradeBlocks() {
+        LinkedHashSet<Block> blocks = new LinkedHashSet<>();
+        blocks.addAll(MePatternAutomation.resolveRegisteredBlocks());
+        blocks.addAll(magicPatternUpgradeBlocks());
+        return List.copyOf(blocks);
+    }
+
+    /**
+     * Magic blocks that accept ME pattern cards. Dimensional miner is excluded because it reports
+     * {@code supportsPatternAutomation = false}.
      */
     public static List<Block> magicPatternUpgradeBlocks() {
         if (!OptionalCompatClasses.hasMekanismMagic()) {
@@ -61,7 +73,7 @@ public final class MeUpgradeSupportRegistrar {
                 targets.add(meBlock.get());
             }
         });
-        targets.addAll(magicPatternUpgradeBlocks());
+        targets.addAll(externalPatternUpgradeBlocks());
         targets.forEach(MeUpgradeSupportRegistrar::addMeUpgrades);
     }
 

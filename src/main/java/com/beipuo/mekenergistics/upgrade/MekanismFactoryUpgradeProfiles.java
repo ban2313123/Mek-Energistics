@@ -4,7 +4,7 @@ import com.beipuo.mekenergistics.blockentity.support.io.MeInputLayout;
 import com.beipuo.mekenergistics.blockentity.support.io.MeOutputPort;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
-import com.beipuo.mekenergistics.compat.magic.MekanismMagicUpgradeProfiles;
+
 import java.util.List;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.factory.TileEntityFactory;
@@ -33,9 +33,8 @@ public final class MekanismFactoryUpgradeProfiles {
                 .map(spec -> spec.machine().isFactory() ? spec.machine() : null)
                 .orElse(null);
         if (machine == null) {
-            // Spirit factories publish the same automation surface as the single-process machines.
-            MeUpgradeMachineProfile<?> magic = MekanismMagicUpgradeProfiles.forTile(tile);
-            return magic == null ? null : (MeUpgradeMachineProfile) magic;
+            MeUpgradeMachineProfile<?> external = MePatternAutomationProfiles.forTile(tile);
+            return external == null ? null : (MeUpgradeMachineProfile) external;
         }
         return new MeUpgradeMachineProfile<>(candidate -> candidate == tile,
                 candidate -> ioAccess.mekenergistics$getFactoryInputLayout(),

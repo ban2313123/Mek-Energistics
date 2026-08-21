@@ -19,6 +19,7 @@ Mek Energistics adds AE2-connected Mekanism machines that process encoded patter
 - Adds AE output toggles to Mekanism item, chemical, and fluid side configuration screens.
 - Supports JEI recipe viewing and hides duplicate ME factory variants from JEI displays.
 - Supports Jade integration for displaying AE network status.
+- Publishes a first-party ME pattern-automation SPI so third-party Mekanism machines can take ME pattern-provider upgrades without shipping ME block variants. See [ME Pattern Automation SPI](docs/me-pattern-automation.md).
 
 ## Configuration
 

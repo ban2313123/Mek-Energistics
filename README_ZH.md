@@ -18,6 +18,7 @@ Mek Energistics 为 Mekanism 机器添加可接入 Applied Energistics 2 自动�
 - 在 Mekanism 配置界面中为物品、化学品、流体输出添加 AE 输出开关。
 - 支持 JEI 配方查看，并隐藏重复的 ME 工厂机器显示，配方页面仅保留基础 ME 机器作为代表。
 - 支持 Jade 显示机器 AE 在线状态。
+- 提供 ME 样板自动化公共接口，第三方 Mekanism 机器无需再做 ME 方块变体即可接入样板供应器升级。见 [ME 样板自动化接口](docs/me-pattern-automation.zh.md)。
 
 ## 配置选项
 

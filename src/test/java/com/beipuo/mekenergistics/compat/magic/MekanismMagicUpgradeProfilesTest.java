@@ -96,13 +96,10 @@ class MekanismMagicUpgradeProfilesTest {
         assertTrue(access.contains("mekanismMagicPatternOutputs"));
         assertTrue(access.contains("mekanismMagicSupportsPatternAutomation"));
 
-        assertTrue(profiles.contains("MekanismMagicAutomationAccess.patternInputs"));
-        assertTrue(profiles.contains("MekanismMagicAutomationAccess.patternOutputs"));
-        assertTrue(profiles.contains("autoSortedFactoryItemInput"));
+        assertTrue(profiles.contains("MePatternAutomationProfiles"));
 
         assertTrue(mixin.contains("NativeMagicMachineBlockEntity"));
-        assertTrue(mixin.contains("MekanismMagicUpgradeProfiles.forTile"));
-        assertTrue(mixin.contains("addMePatternSlots"));
+        assertTrue(mixin.contains("MePatternAutomationProfiles.forTile"));
         assertTrue(mixin.contains("processMePatternIo"));
 
         assertTrue(config.contains("\"MekanismMagicMachineMeUpgradeMixin\""));
@@ -110,14 +107,15 @@ class MekanismMagicUpgradeProfilesTest {
         assertTrue(plugin.contains("Gate.target(\"mekanism_magic\""));
         assertTrue(plugin.contains("NativeMagicMachineBlockEntity"));
 
-        assertTrue(factoryProfiles.contains("MekanismMagicUpgradeProfiles.forTile"));
+        assertTrue(factoryProfiles.contains("MePatternAutomationProfiles.forTile"));
+        assertTrue(registrar.contains("externalPatternUpgradeBlocks()"));
         assertTrue(registrar.contains("magicPatternUpgradeBlocks()"));
         assertTrue(registrar.contains("hasMekanismMagic()"));
         assertTrue(registrar.contains("mekanism_magic"));
         assertTrue(registrar.contains("dimension_miner"));
 
-        // NeoForge AE2 only finds hosts through this capability; Magic blocks must be included.
-        assertTrue(blockEntities.contains("MeUpgradeSupportRegistrar.magicPatternUpgradeBlocks()"));
+        // NeoForge AE2 only finds hosts through this capability; Magic + SPI blocks must be included.
+        assertTrue(blockEntities.contains("MeUpgradeSupportRegistrar.externalPatternUpgradeBlocks()"));
         assertTrue(blockEntities.contains("AECapabilities.IN_WORLD_GRID_NODE_HOST"));
         assertTrue(blockEntities.contains("isMeUpgradeActive()"));
 

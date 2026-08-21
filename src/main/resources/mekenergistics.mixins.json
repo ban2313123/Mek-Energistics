@@ -89,6 +89,8 @@
     "MeklmLargeRecipeMachineMeUpgradeMixin",
     "EnrichmentChamberItemContainerCreatorMixin",
     "MekanismContainerPatternQuickMoveMixin",
+    "IMePatternAutomationHostUpgradeMixin",
+    "TileEntityExternalPatternAutomationMeUpgradeMixin",
     "TileEntityMekanismMeUpgradeLifecycleMixin",
     "ae2.CraftingCpuLogicMixin",
     "ae2.ExecutingCraftingJobAccessor",

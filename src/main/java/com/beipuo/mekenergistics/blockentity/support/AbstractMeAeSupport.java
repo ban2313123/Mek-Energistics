@@ -285,11 +285,28 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
     }
 
     public final IInventorySlotHolder withPatternSlots(IInventorySlotHolder original) {
-        return side -> {
-            List<mekanism.api.inventory.IInventorySlot> slots = new ArrayList<>(original.getInventorySlots(side));
+        if (original instanceof MePatternSlotInventoryHolder) {
+            return original;
+        }
+        return new PatternSlotHolder(original, this.patternSlots);
+    }
+
+    private static final class PatternSlotHolder implements MePatternSlotInventoryHolder {
+        private final IInventorySlotHolder original;
+        private final List<? extends mekanism.api.inventory.IInventorySlot> patternSlots;
+
+        private PatternSlotHolder(IInventorySlotHolder original,
+                List<? extends mekanism.api.inventory.IInventorySlot> patternSlots) {
+            this.original = original;
+            this.patternSlots = patternSlots;
+        }
+
+        @Override
+        public List<mekanism.api.inventory.IInventorySlot> getInventorySlots(net.minecraft.core.Direction side) {
+            List<mekanism.api.inventory.IInventorySlot> slots = new ArrayList<>(this.original.getInventorySlots(side));
             slots.addAll(this.patternSlots);
             return slots;
-        };
+        }
     }
 
     public final List<IPatternDetails> getAvailablePatterns() {
