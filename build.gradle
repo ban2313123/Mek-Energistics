@@ -179,7 +179,7 @@ dependencies {
     compileOnly "curse.maven:jei-238222:8678372"                        // jei, Magic requires >=19.39.0
     compileOnly "curse.maven:iglee-library-541199:7000755"              // igleelib 1.21.1-1.2.7
     compileOnly "curse.maven:evolved-mekanism-1230085:7599592"          // evolvedmekanism 1.2.1-fix3
-    compileOnly "curse.maven:evolved-mekanism-extras-1268159:8118026"   // emextras 1.2.1
+    compileOnly "curse.maven:evolved-mekanism-extras-1268159:8678947"   // emextras 1.2.2
     compileOnly "curse.maven:mekanism-extras-1026040:8677677"           // mekanism_extras 1.4.1
     compileOnly "curse.maven:mekanism-more-machine-1275257:8659501"     // mekmm 1.4.0, also ships the meklm large machines
     compileOnly "curse.maven:jade-324717:7545219"                       // jade 15.10.5+neoforge
@@ -198,7 +198,7 @@ dependencies {
     localRuntime "curse.maven:ae2-jei-integration-1074338:7727898"      // ae2jeiintegration 1.2.1
     localRuntime "curse.maven:iglee-library-541199:7000755"             // igleelib 1.21.1-1.2.7
     localRuntime "curse.maven:evolved-mekanism-1230085:7599592"         // evolvedmekanism 1.2.1-fix3
-    localRuntime "curse.maven:evolved-mekanism-extras-1268159:8118026"  // emextras 1.2.1
+    localRuntime "curse.maven:evolved-mekanism-extras-1268159:8678947"  // emextras 1.2.2
     localRuntime "curse.maven:mekanism-extras-1026040:8677677"          // mekanism_extras 1.4.1
     localRuntime "curse.maven:mekanism-more-machine-1275257:8659501"    // mekmm 1.4.0
     localRuntime "curse.maven:productivebees-377897:8022994"            // productivebees 1.21.1-13.13.5
