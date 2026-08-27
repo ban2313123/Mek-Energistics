@@ -80,7 +80,7 @@ public final class MeNetworkEnergyHelper {
      * same no matter which machine populated it; otherwise a machine with a huge local buffer would
      * ask for less and poison the cache for every other machine on the grid.
      */
-    private static final long NETWORK_QUERY_AMOUNT = Long.MAX_VALUE / 2;
+    static final long NETWORK_QUERY_AMOUNT = Long.MAX_VALUE / 2;
 
     public static long networkAvailableFe(IGrid grid, IActionSource source, long local, long gameTick) {
         if (grid == null) {
@@ -97,6 +97,18 @@ public final class MeNetworkEnergyHelper {
             gridAvailableCache.put(grid, new long[]{gameTick, available});
         }
         return available;
+    }
+
+    /**
+     * Test-only helper retained for {@code MeNetworkEnergyHelperTest}: combines a local buffer with a
+     * simulated network extraction using the same large query amount as the production cache path, so
+     * the "network availability is not capped by the local buffer" contract stays covered.
+     */
+    static long availableWithNetwork(long local, LongUnaryOperator simulatedNetworkExtraction) {
+        if (local >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return totalAvailableEnergy(local, simulatedNetworkExtraction.applyAsLong(NETWORK_QUERY_AMOUNT));
     }
 
     public static long availableWithLocalBuffer(MachineEnergyContainer<?> localEnergy, IGrid grid, IActionSource source) {

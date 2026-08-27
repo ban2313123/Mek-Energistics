@@ -26,7 +26,7 @@ class MeNetworkEnergyHelperTest {
         });
 
         assertEquals(50_000, available);
-        assertEquals(Long.MAX_VALUE, requestedFromNetwork.get(),
+        assertEquals(MeNetworkEnergyHelper.NETWORK_QUERY_AMOUNT, requestedFromNetwork.get(),
                 "availability must query the network beyond the local FE buffer capacity");
         assertEquals(1, available / energyPerTick,
                 "Mekanism must see enough network energy for one operation even when its cost exceeds the local buffer");
