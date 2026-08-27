@@ -1,17 +1,17 @@
-name: Build Mod Jar
+name: Build and Release
 
 on:
   push:
     branches: [main, master]
-  pull_request:
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
-    name: Build and upload jar
+    name: Build and release jar
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -35,9 +35,19 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build --no-daemon
 
-      - name: Upload built jar
-        uses: actions/upload-artifact@v4
+      - name: Remove previous nightly release/tag (push to main only)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete nightly -y || true
+          git push origin :refs/tags/nightly || true
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
         with:
-          name: MekEnergistics-jar
-          path: build/libs/!(*-@(dev|sources|javadoc)).jar
-          if-no-files-found: error
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'nightly' }}
+          name: ${{ github.ref_type == 'tag' && github.ref_name || format('Nightly {0}', github.run_number) }}
+          prerelease: ${{ github.ref_type != 'tag' }}
+          generate_release_notes: ${{ github.ref_type == 'tag' }}
+          files: build/libs/!(*-@(dev|sources|javadoc)).jar
