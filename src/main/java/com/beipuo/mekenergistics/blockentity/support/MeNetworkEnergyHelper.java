@@ -55,20 +55,52 @@ public final class MeNetworkEnergyHelper {
                 : localEnergy.extract(amount, action, automationType);
     }
 
+    /**
+     * Per-grid, per-tick cache of the network-available FE. The recipe engine asks for the same
+     * grid-wide value from every machine on that grid, many times per tick; answering each with a
+     * live AE energy-service SIMULATE is the dominant cost that drops TPS. The value is stable
+     * within a tick because SIMULATE never mutates the grid, so one query per grid per tick suffices.
+     */
+    private static final java.util.Map<IGrid, long[]> gridAvailableCache = new java.util.WeakHashMap<>();
+
+    /** Returns the current server tick, or -1 when no server is available (e.g. client side). */
+    public static long currentGameTick() {
+        net.minecraft.server.MinecraftServer server = net.neoforged.fml.common.ServerLifecycleHooks.getCurrentServer();
+        return server == null ? -1 : server.getTickCount();
+    }
+
+    /**
+     * Network-available FE for {@code grid}, cached for the current game tick. The amount is a fixed
+     * large query (independent of any single machine's buffer) so the cached grid-wide value is the
+     * same no matter which machine populated it; otherwise a machine with a huge local buffer would
+     * ask for less and poison the cache for every other machine on the grid.
+     */
+    private static final long NETWORK_QUERY_AMOUNT = Long.MAX_VALUE / 2;
+
+    public static long networkAvailableFe(IGrid grid, IActionSource source, long local, long gameTick) {
+        if (grid == null) {
+            return 0;
+        }
+        if (gameTick >= 0) {
+            long[] cached = gridAvailableCache.get(grid);
+            if (cached != null && cached[0] == gameTick) {
+                return cached[1];
+            }
+        }
+        long available = extractNetworkFe(grid, source, NETWORK_QUERY_AMOUNT, Action.SIMULATE);
+        if (gameTick >= 0) {
+            gridAvailableCache.put(grid, new long[]{gameTick, available});
+        }
+        return available;
+    }
+
     public static long availableWithLocalBuffer(MachineEnergyContainer<?> localEnergy, IGrid grid, IActionSource source) {
         long local = localEnergy instanceof LocalEnergyBuffer buffer ? buffer.getLocalEnergy() : localEnergy.getEnergy();
         if (grid == null) {
             return local;
         }
-        return availableWithNetwork(local,
-                requested -> extractNetworkFe(grid, source, requested, Action.SIMULATE));
-    }
-
-    static long availableWithNetwork(long local, LongUnaryOperator simulatedNetworkExtraction) {
-        if (local >= Long.MAX_VALUE) {
-            return Long.MAX_VALUE;
-        }
-        return totalAvailableEnergy(local, simulatedNetworkExtraction.applyAsLong(Long.MAX_VALUE - Math.max(0, local)));
+        long net = networkAvailableFe(grid, source, local, currentGameTick());
+        return totalAvailableEnergy(local, net);
     }
 
     static long totalAvailableEnergy(long local, long network) {

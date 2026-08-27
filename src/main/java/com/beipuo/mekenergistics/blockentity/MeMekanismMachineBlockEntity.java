@@ -298,7 +298,16 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         if (requestedFe <= 0) {
             return 0;
         }
-        return MeNetworkEnergyHelper.extractNetworkFe(getGrid(), this.actionSource, requestedFe, action);
+        IGrid grid = getGrid();
+        if (grid == null) {
+            return 0;
+        }
+        if (action == Action.SIMULATE) {
+            return Math.min(requestedFe,
+                    MeNetworkEnergyHelper.networkAvailableFe(grid, this.actionSource,
+                            this.energyContainer.getEnergy(), MeNetworkEnergyHelper.currentGameTick()));
+        }
+        return MeNetworkEnergyHelper.extractNetworkFe(grid, this.actionSource, requestedFe, action);
     }
 
     boolean canAddChemical(ChemicalStack stack) {

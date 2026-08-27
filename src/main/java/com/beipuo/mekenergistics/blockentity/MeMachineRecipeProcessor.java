@@ -17,6 +17,23 @@ import org.jetbrains.annotations.Nullable;
 public class MeMachineRecipeProcessor {
     private final MeMekanismMachineBlockEntity machine;
 
+    /**
+     * The recipe engine already keeps an input cache, but re-querying it every tick for every
+     * machine is still avoidable work. While the input stacks are the same instance the resolved
+     * recipe cannot change, so it is memoized here and only re-resolved when an input actually
+     * changes.
+     */
+    private ItemStack singleIn;
+    private ItemStackToItemStackRecipe singleRecipe;
+    private ItemStack combinerIn;
+    private ItemStack combinerSec;
+    private CombinerRecipe combinerRecipe;
+    private ItemStack sawIn;
+    private SawmillRecipe sawRecipe;
+    private ItemStack chemIn;
+    private ChemicalStack chemStack;
+    private ItemStackChemicalToItemStackRecipe chemRecipe;
+
     public MeMachineRecipeProcessor(MeMekanismMachineBlockEntity machine) {
         this.machine = machine;
     }
@@ -70,12 +87,30 @@ public class MeMachineRecipeProcessor {
 
     @Nullable
     private ItemStackToItemStackRecipe getSingleItemRecipe(ItemStack input) {
-        return switch (machine.getMachine().factoryType()) {
+        if (input == this.singleIn && this.singleRecipe != null) {
+            return this.singleRecipe;
+        }
+        ItemStackToItemStackRecipe recipe = switch (machine.getMachine().factoryType()) {
             case ENRICHING -> MekanismRecipeType.ENRICHING.getInputCache().findFirstRecipe(machine.getLevel(), input);
             case CRUSHING -> MekanismRecipeType.CRUSHING.getInputCache().findFirstRecipe(machine.getLevel(), input);
             case SMELTING -> MekanismRecipeType.SMELTING.getInputCache().findFirstRecipe(machine.getLevel(), input);
             case null, default -> null;
         };
+        this.singleIn = input;
+        this.singleRecipe = recipe;
+        return recipe;
+    }
+
+    @Nullable
+    private CombinerRecipe getCombinerRecipe(ItemStack input, ItemStack secondary) {
+        if (input == this.combinerIn && secondary == this.combinerSec && this.combinerRecipe != null) {
+            return this.combinerRecipe;
+        }
+        CombinerRecipe recipe = MekanismRecipeType.COMBINING.getInputCache().findFirstRecipe(machine.getLevel(), input, secondary);
+        this.combinerIn = input;
+        this.combinerSec = secondary;
+        this.combinerRecipe = recipe;
+        return recipe;
     }
 
     private boolean canProcessCombinerRecipe() {
@@ -84,7 +119,7 @@ public class MeMachineRecipeProcessor {
         if (input.isEmpty() || secondary.isEmpty()) {
             return false;
         }
-        CombinerRecipe recipe = MekanismRecipeType.COMBINING.getInputCache().findFirstRecipe(machine.getLevel(), input, secondary);
+        CombinerRecipe recipe = getCombinerRecipe(input, secondary);
         if (recipe == null) {
             return false;
         }
@@ -94,11 +129,10 @@ public class MeMachineRecipeProcessor {
         return neededInput > 0 && neededSecondary > 0 && !output.isEmpty() && canFitOutput(MeMekanismMachineBlockEntity.OUTPUT_SLOT, output);
     }
 
-    private boolean canProcessItemChemicalRecipe() {
-        ChemicalStack chemicalStack = machine.getChemicalStack();
-        ItemStack input = machine.getStack(MeMekanismMachineBlockEntity.INPUT_SLOT);
-        if (input.isEmpty() || chemicalStack.isEmpty()) {
-            return false;
+    @Nullable
+    private ItemStackChemicalToItemStackRecipe getItemChemicalRecipe(ItemStack input, ChemicalStack chemicalStack) {
+        if (input == this.chemIn && chemicalStack == this.chemStack && this.chemRecipe != null) {
+            return this.chemRecipe;
         }
         ItemStackChemicalToItemStackRecipe recipe = switch (machine.getMachine().factoryType()) {
             case COMPRESSING -> MekanismRecipeType.COMPRESSING.getInputCache().findFirstRecipe(machine.getLevel(), input, chemicalStack);
@@ -107,6 +141,19 @@ public class MeMachineRecipeProcessor {
             case PURIFYING -> MekanismRecipeType.PURIFYING.getInputCache().findFirstRecipe(machine.getLevel(), input, chemicalStack);
             default -> null;
         };
+        this.chemIn = input;
+        this.chemStack = chemicalStack;
+        this.chemRecipe = recipe;
+        return recipe;
+    }
+
+    private boolean canProcessItemChemicalRecipe() {
+        ChemicalStack chemicalStack = machine.getChemicalStack();
+        ItemStack input = machine.getStack(MeMekanismMachineBlockEntity.INPUT_SLOT);
+        if (input.isEmpty() || chemicalStack.isEmpty()) {
+            return false;
+        }
+        ItemStackChemicalToItemStackRecipe recipe = getItemChemicalRecipe(input, chemicalStack);
         if (recipe == null) {
             return false;
         }
@@ -116,12 +163,23 @@ public class MeMachineRecipeProcessor {
         return neededInput > 0 && neededChemical > 0 && !output.isEmpty() && canFitOutput(MeMekanismMachineBlockEntity.OUTPUT_SLOT, output);
     }
 
+    @Nullable
+    private SawmillRecipe getSawingRecipe(ItemStack input) {
+        if (input == this.sawIn && this.sawRecipe != null) {
+            return this.sawRecipe;
+        }
+        SawmillRecipe recipe = MekanismRecipeType.SAWING.getInputCache().findFirstRecipe(machine.getLevel(), input);
+        this.sawIn = input;
+        this.sawRecipe = recipe;
+        return recipe;
+    }
+
     private boolean canProcessSawingRecipe() {
         ItemStack input = machine.getStack(MeMekanismMachineBlockEntity.INPUT_SLOT);
         if (input.isEmpty()) {
             return false;
         }
-        SawmillRecipe recipe = MekanismRecipeType.SAWING.getInputCache().findFirstRecipe(machine.getLevel(), input);
+        SawmillRecipe recipe = getSawingRecipe(input);
         if (recipe == null) {
             return false;
         }
@@ -144,7 +202,6 @@ public class MeMachineRecipeProcessor {
         if (recipe == null) {
             return;
         }
-
         int needed = clampNeeded(recipe.getInput().getNeededAmount(input));
         ItemStack output = recipe.getOutput(input);
         if (needed <= 0 || output.isEmpty() || !canFitOutput(MeMekanismMachineBlockEntity.OUTPUT_SLOT, output)) {
@@ -162,7 +219,7 @@ public class MeMachineRecipeProcessor {
         if (input.isEmpty() || secondary.isEmpty()) {
             return;
         }
-        CombinerRecipe recipe = MekanismRecipeType.COMBINING.getInputCache().findFirstRecipe(machine.getLevel(), input, secondary);
+        CombinerRecipe recipe = getCombinerRecipe(input, secondary);
         if (recipe == null) {
             return;
         }
@@ -188,13 +245,7 @@ public class MeMachineRecipeProcessor {
             return;
         }
 
-        ItemStackChemicalToItemStackRecipe recipe = switch (machine.getMachine().factoryType()) {
-            case COMPRESSING -> MekanismRecipeType.COMPRESSING.getInputCache().findFirstRecipe(machine.getLevel(), input, chemicalStack);
-            case INFUSING -> MekanismRecipeType.METALLURGIC_INFUSING.getInputCache().findFirstRecipe(machine.getLevel(), input, chemicalStack);
-            case INJECTING -> MekanismRecipeType.INJECTING.getInputCache().findFirstRecipe(machine.getLevel(), input, chemicalStack);
-            case PURIFYING -> MekanismRecipeType.PURIFYING.getInputCache().findFirstRecipe(machine.getLevel(), input, chemicalStack);
-            default -> null;
-        };
+        ItemStackChemicalToItemStackRecipe recipe = getItemChemicalRecipe(input, chemicalStack);
         if (recipe == null) {
             return;
         }
@@ -252,7 +303,7 @@ public class MeMachineRecipeProcessor {
             return;
         }
 
-        SawmillRecipe recipe = MekanismRecipeType.SAWING.getInputCache().findFirstRecipe(machine.getLevel(), input);
+        SawmillRecipe recipe = getSawingRecipe(input);
         if (recipe == null) {
             return;
         }

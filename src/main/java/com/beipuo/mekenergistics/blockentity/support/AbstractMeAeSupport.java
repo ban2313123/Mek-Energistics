@@ -45,6 +45,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
 
@@ -399,13 +400,38 @@ public abstract class AbstractMeAeSupport<O extends MePatternIoOwner> {
         return this.nodeLifecycle.getGrid();
     }
 
-    /** Refills every local FE buffer before Mekanism evaluates machine work for this tick. */
+    /**
+     * Refills local FE buffers so external cables can draw from the machine. Internal machine work
+     * pulls network power directly through {@link MeNetworkEnergyHelper#availableWithLocalBuffer},
+     * so the local buffer only feeds side connections and need not be serviced every tick. Refills
+     * are therefore throttled (staggered per tile) and forced only when a buffer has run dry, which
+     * removes a per-machine, per-tick AE energy transaction that was dragging TPS down.
+     */
+    private static final int ENERGY_REFILL_INTERVAL = 8;
+
     public final void refillLocalEnergyBuffers() {
         if (isInterfaceMode()) {
             return;
         }
         IGrid grid = getGrid();
         if (grid == null) {
+            return;
+        }
+        Level level = this.ownerTile.getLevel();
+        if (level == null) {
+            return;
+        }
+        long gameTime = level.getGameTime();
+        BlockPos pos = this.ownerTile.getBlockPos();
+        int phase = (int) ((pos.getX() * 31L + pos.getZ() * 17L) & (ENERGY_REFILL_INTERVAL - 1));
+        boolean critical = false;
+        for (IEnergyContainer energyContainer : this.ownerTile.getEnergyContainers(null)) {
+            if (energyContainer.getEnergy() <= 0) {
+                critical = true;
+                break;
+            }
+        }
+        if (!critical && ((gameTime + phase) & (ENERGY_REFILL_INTERVAL - 1)) != 0) {
             return;
         }
         for (IEnergyContainer energyContainer : this.ownerTile.getEnergyContainers(null)) {
