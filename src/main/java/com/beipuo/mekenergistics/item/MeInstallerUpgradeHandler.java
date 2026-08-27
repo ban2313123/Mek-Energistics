@@ -3,8 +3,11 @@ package com.beipuo.mekenergistics.item;
 import com.beipuo.mekenergistics.MekEnergistics;
 import com.beipuo.mekenergistics.blockentity.api.MeAeMachine;
 import com.beipuo.mekenergistics.blockentity.api.MeFactoryAeMachine;
+import com.beipuo.mekenergistics.blockentity.api.MeUpgradeableMachine;
 import com.beipuo.mekenergistics.blockentity.support.MeOwnerHelper;
 import com.beipuo.mekenergistics.blockentity.support.MePatternSlotTransfer;
+import com.beipuo.mekenergistics.upgrade.MeUpgradePersistence;
+import com.beipuo.mekenergistics.upgrade.MeUpgradeStateOwner;
 import com.beipuo.mekenergistics.common.machine.MeMekanismMachine;
 import com.beipuo.mekenergistics.compat.catalog.CompatMachineCatalog;
 import com.beipuo.mekenergistics.compat.provider.CompatMachineProvider;
@@ -107,6 +110,13 @@ public final class MeInstallerUpgradeHandler {
         }
         CompoundTag mePatternSlots = MePatternSlotTransfer.save(oldTile, level.registryAccess());
         CompoundTag meState = MePatternSlotTransfer.saveMeState(oldTile, level.registryAccess());
+        // Carry the ME upgrade installation (pattern provider / output interface) across the upgrade.
+        // runtime.save only persists the AE support state, so without this the active upgrade would
+        // rely entirely on Mekanism's native component transfer and could be lost, leaving the machine
+        // inactive and its patterns invisible to the network after the upgrade.
+        if (oldTile instanceof MeUpgradeStateOwner oldUpg && !oldUpg.getMeUpgradeContainer().data().isEmpty()) {
+            MeUpgradePersistence.save(meState, oldUpg.getMeUpgradeContainer().data());
+        }
         Block targetBlock = ModBlocks.getMachineBlock(target).get();
         BlockState upgradeState = BlockStateHelper.copyStateData(state, targetBlock.defaultBlockState());
         AttributeHasBounding upgradeBounding = Attribute.get(upgradeState, AttributeHasBounding.class);
@@ -142,6 +152,12 @@ public final class MeInstallerUpgradeHandler {
             }
             MePatternSlotTransfer.load(upgradedTile, level.registryAccess(), mePatternSlots);
             MePatternSlotTransfer.loadMeState(upgradedTile, level.registryAccess(), meState);
+            // Push any carried-over ME upgrade data into the upgraded machine's native component so
+            // isMeUpgradeActive() reports the upgrade as installed even when parseUpgradeData/copy
+            // did not transfer the Mekanism upgrade module.
+            if (upgradedTile instanceof MeUpgradeStateOwner upgraded) {
+                upgraded.getMeUpgradeContainer().migrateToNativeComponent();
+            }
             refreshMeLifecycle(upgradedTile);
             if (player instanceof ServerPlayer serverPlayer) {
                 if (upgradedTile instanceof MeAeMachine machine) {
@@ -196,6 +212,8 @@ public final class MeInstallerUpgradeHandler {
             machine.getRecipeAeSupport().refreshAfterWorldMutation();
         } else if (upgradedTile instanceof MeFactoryAeMachine machine) {
             machine.getAeSupport().refreshAfterWorldMutation();
+        } else if (upgradedTile instanceof MeUpgradeableMachine machine) {
+            machine.getRecipeAeSupport().refreshAfterWorldMutation();
         }
     }
 
