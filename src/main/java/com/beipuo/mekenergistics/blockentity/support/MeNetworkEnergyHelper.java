@@ -63,10 +63,15 @@ public final class MeNetworkEnergyHelper {
      */
     private static final java.util.Map<IGrid, long[]> gridAvailableCache = new java.util.WeakHashMap<>();
 
-    /** Returns the current server tick, or -1 when no server is available (e.g. client side). */
+    /**
+     * Returns a monotonically increasing bucket that changes roughly once per game tick (50 ms).
+     * Used only to invalidate the per-grid energy cache; it intentionally avoids any Minecraft/Forge
+     * tick API so the helper stays version-independent. The value may drift slightly from the true
+     * server tick, which is harmless: a stale SIMULATE availability is at worst under-reported and
+     * always corrected by a live MODULATE extraction.
+     */
     public static long currentGameTick() {
-        net.minecraft.server.MinecraftServer server = net.neoforged.fml.common.ServerLifecycleHooks.getCurrentServer();
-        return server == null ? -1 : server.getTickCount();
+        return System.currentTimeMillis() / 50L;
     }
 
     /**
