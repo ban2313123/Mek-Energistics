@@ -304,8 +304,7 @@ public class MeMekanismMachineBlockEntity extends TileEntityConfigurableMachine
         }
         if (action == Action.SIMULATE) {
             return Math.min(requestedFe,
-                    MeNetworkEnergyHelper.networkAvailableFe(grid, this.actionSource,
-                            this.energyContainer.getEnergy(), MeNetworkEnergyHelper.currentGameTick()));
+                    MeNetworkEnergyHelper.availableWithLocalBuffer(this.energyContainer, grid, this.actionSource));
         }
         return MeNetworkEnergyHelper.extractNetworkFe(grid, this.actionSource, requestedFe, action);
     }
